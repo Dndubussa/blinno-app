@@ -15,6 +15,7 @@ import { Footer } from "@/components/Footer";
 import { CategoriesGrid } from "@/components/CategoriesGrid";
 import { AnimatedSection } from "@/components/AnimatedSection";
 import { SEO } from "@/components/SEO";
+import { generateProductSchema } from '@/lib/schemaMarkup';
 
 type Product = {
   id: string;
@@ -188,12 +189,31 @@ const Marketplace = () => {
     );
   }
 
+  // Generate schema markup for the first few products
+  const productSchemas = products.slice(0, 5).map((product) => 
+    generateProductSchema({
+      name: product.title,
+      description: product.description,
+      image: product.image_url,
+      price: product.price,
+      currency: 'TZS',
+      in_stock: !('stock_quantity' in product) || product.stock_quantity > 0,
+      brand: product.display_name,
+      average_rating: product.rating,
+      review_count: product.reviews_count,
+      url: 'type' in product && product.type === 'course' 
+        ? `https://www.blinno.app/course/${product.id}` 
+        : `https://www.blinno.app/product/${product.id}`
+    })
+  );
+
   return (
     <div className="min-h-screen bg-background">
       <SEO
         title="Marketplace - Authentic Tanzanian Products & Courses"
         description="Shop authentic Tanzanian products and online courses from local sellers. Discover handmade crafts, traditional goods, and educational content from Tanzanian creators."
         keywords={["Tanzanian marketplace", "local products", "handmade crafts", "Tanzanian courses", "online shopping Tanzania", "authentic products", "local sellers", "Tanzanian creators"]}
+        schemaMarkup={productSchemas.length > 0 ? productSchemas : undefined}
       />
       <Header />
       

@@ -9,6 +9,7 @@ interface SEOProps {
   url?: string;
   type?: string;
   keywords?: string[];
+  schemaMarkup?: any;
 }
 
 export function SEO({
@@ -17,7 +18,8 @@ export function SEO({
   image = defaultSEO.image,
   url,
   type = 'website',
-  keywords = []
+  keywords = [],
+  schemaMarkup
 }: SEOProps) {
   const fullTitle = title.includes('BLINNO') ? title : `${title} | BLINNO`;
 
@@ -41,6 +43,13 @@ export function SEO({
       
       {/* Keywords */}
       {keywords.length > 0 && <meta name="keywords" content={keywords.join(', ')} />}
+      
+      {/* Schema Markup */}
+      {schemaMarkup && (
+        <script type="application/ld+json">
+          {JSON.stringify(schemaMarkup)}
+        </script>
+      )}
     </Helmet>
   );
 }
