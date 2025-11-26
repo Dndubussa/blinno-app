@@ -1808,6 +1808,21 @@ class ApiClient {
   async getMyTrackStats() {
     return this.request<any>('/music/my/stats');
   }
+
+  // Password Reset
+  async forgotPassword(email: string) {
+    return this.request<any>('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  async resetPassword(token: string, password: string) {
+    return this.request<any>('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, password }),
+    });
+  }
 }
 
 export const api = new ApiClient(API_BASE_URL);

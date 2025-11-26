@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { EventRegistrationForm } from "@/components/EventRegistrationForm";
 import { api } from '@/lib/api';
 import { useToast } from "@/components/ui/use-toast";
+import { SEO } from "@/components/SEO";
 
 interface Event {
   id: string;
@@ -70,6 +71,11 @@ export default function Events() {
 
   return (
     <div className="container mx-auto py-8">
+      <SEO
+        title="Events - Upcoming Tanzanian Cultural & Business Events"
+        description="Discover upcoming events in Tanzania. Register to attend cultural festivals, business conferences, workshops, and community gatherings across Dar es Salaam, Mwanza, Zanzibar and more."
+        keywords={["Tanzanian events", "cultural festivals", "business conferences", "workshops", "community gatherings", "Dar es Salaam events", "Mwanza events", "Zanzibar events"]}
+      />
       <div className="mb-8 text-center">
         <h1 className="text-4xl font-bold mb-4">Events</h1>
         <p className="text-lg text-muted-foreground">

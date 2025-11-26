@@ -3,7 +3,7 @@
  * Handles automatic client creation and management
  */
 
-import { pool } from '../config/database.js';
+import { supabase } from '../config/supabase.js';
 
 export interface CreateClientData {
   freelancerId: string;
@@ -29,55 +29,70 @@ export async function ensureClientExists(data: CreateClientData): Promise<string
 
   try {
     // Check if client already exists
-    const existingResult = await pool.query(
-      'SELECT id FROM clients WHERE freelancer_id = $1 AND user_id = $2',
-      [freelancerId, userId]
-    );
+    const { data: existingClient, error: existingError } = await supabase
+      .from('clients')
+      .select('id')
+      .eq('freelancer_id', freelancerId)
+      .eq('user_id', userId)
+      .single();
 
-    if (existingResult.rows.length > 0) {
-      return existingResult.rows[0].id;
+    if (existingError && existingError.code !== 'PGRST116') {
+      throw existingError;
+    }
+
+    if (existingClient) {
+      return existingClient.id;
     }
 
     // Get user profile information
-    const profileResult = await pool.query(
-      `SELECT p.display_name, p.email, p.phone, u.email as user_email
-       FROM profiles p
-       JOIN users u ON p.user_id = u.id
-       WHERE p.user_id = $1`,
-      [userId]
-    );
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('display_name, email, phone')
+      .eq('user_id', userId)
+      .single();
 
-    const profile = profileResult.rows[0];
-
-    // Create new client with user information
-    // Try to insert, if it fails due to unique constraint, fetch existing
-    try {
-      const result = await pool.query(
-        `INSERT INTO clients (freelancer_id, user_id, company_name, contact_name, email, phone, payment_terms)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
-         RETURNING id`,
-        [
-          freelancerId,
-          userId,
-          data.companyName || null,
-          data.contactName || profile?.display_name || null,
-          data.email || profile?.email || profile?.user_email || null,
-          data.phone || profile?.phone || null,
-          data.paymentTerms || null,
-        ]
-      );
-      return result.rows[0]?.id || null;
-    } catch (error: any) {
-      // If unique constraint violation, fetch existing client
-      if (error.code === '23505') {
-        const existingResult = await pool.query(
-          'SELECT id FROM clients WHERE freelancer_id = $1 AND user_id = $2',
-          [freelancerId, userId]
-        );
-        return existingResult.rows[0]?.id || null;
-      }
-      throw error;
+    if (profileError && profileError.code !== 'PGRST116') {
+      throw profileError;
     }
+
+    // Get user email from auth.users
+    const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(userId);
+    
+    // Create new client with user information
+    const { data: newClient, error: insertError } = await supabase
+      .from('clients')
+      .insert({
+        freelancer_id: freelancerId,
+        user_id: userId,
+        company_name: data.companyName || null,
+        contact_name: data.contactName || profile?.display_name || null,
+        email: data.email || profile?.email || authUser?.user?.email || null,
+        phone: data.phone || profile?.phone || null,
+        payment_terms: data.paymentTerms || null,
+      })
+      .select('id')
+      .single();
+
+    if (insertError) {
+      // If unique constraint violation, fetch existing client
+      if (insertError.code === '23505') {
+        const { data: existingClient, error: fetchError } = await supabase
+          .from('clients')
+          .select('id')
+          .eq('freelancer_id', freelancerId)
+          .eq('user_id', userId)
+          .single();
+        
+        if (fetchError) {
+          throw fetchError;
+        }
+        
+        return existingClient?.id || null;
+      }
+      throw insertError;
+    }
+
+    return newClient?.id || null;
   } catch (error: any) {
     console.error('Error ensuring client exists:', error);
     // Don't throw - return null to allow the main operation to continue
@@ -90,14 +105,19 @@ export async function ensureClientExists(data: CreateClientData): Promise<string
  */
 export async function isFreelancer(userId: string): Promise<boolean> {
   try {
-    const result = await pool.query(
-      `SELECT role FROM user_roles WHERE user_id = $1 AND role = 'freelancer'`,
-      [userId]
-    );
-    return result.rows.length > 0;
+    const { data, error } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .eq('role', 'freelancer');
+
+    if (error) {
+      throw error;
+    }
+    
+    return data.length > 0;
   } catch (error) {
     console.error('Error checking freelancer role:', error);
     return false;
   }
 }
-

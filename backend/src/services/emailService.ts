@@ -311,7 +311,11 @@ export async function sendNotificationEmail(
       to: userEmail,
       subject: notificationTitle,
       html,
-      text: `${notificationTitle}\n\n${notificationMessage}${notificationUrl ? `\n\nView Details: ${notificationUrl}` : ''}`,
+      text: `${notificationTitle}
+
+${notificationMessage}${notificationUrl ? `
+
+View Details: ${notificationUrl}` : ''}`,
       emailType,
       replyTo: EMAIL_ADDRESSES.support,
     });
@@ -319,7 +323,7 @@ export async function sendNotificationEmail(
 }
 
 // Export email addresses getter for use in other modules
-export { getSenderEmail, type EmailType };
+export type { EmailType };
 
 // Helper to get all email addresses (read-only)
 export function getEmailAddresses() {

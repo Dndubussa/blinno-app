@@ -14,6 +14,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { CategoriesGrid } from "@/components/CategoriesGrid";
 import { AnimatedSection } from "@/components/AnimatedSection";
+import { SEO } from "@/components/SEO";
 
 type Product = {
   id: string;
@@ -189,6 +190,11 @@ const Marketplace = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Marketplace - Authentic Tanzanian Products & Courses"
+        description="Shop authentic Tanzanian products and online courses from local sellers. Discover handmade crafts, traditional goods, and educational content from Tanzanian creators."
+        keywords={["Tanzanian marketplace", "local products", "handmade crafts", "Tanzanian courses", "online shopping Tanzania", "authentic products", "local sellers", "Tanzanian creators"]}
+      />
       <Header />
       
       <div className="pt-24 pb-16">

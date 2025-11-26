@@ -1,4 +1,4 @@
-import { pool } from '../config/database.js';
+import { supabase } from '../config/supabase.js';
 import { checkProductLimit, checkPortfolioLimit } from './subscriptionLimits.js';
 
 /**
@@ -12,21 +12,30 @@ async function testSubscriptionModels() {
   
   try {
     // Clean up any existing test data
-    await pool.query('DELETE FROM platform_subscriptions WHERE user_id = $1', [testUserId]);
+    await supabase
+      .from('platform_subscriptions')
+      .delete()
+      .eq('user_id', testUserId);
     
     // Test 1: Free tier subscription model
     console.log('📋 Test 1: Free tier subscription model');
-    await pool.query(
-      `INSERT INTO platform_subscriptions (
-        user_id, tier, pricing_model, monthly_price, 
-        current_period_start, current_period_end, status, payment_status
-      ) VALUES ($1, $2, $3, $4, now(), now() + interval '1 month', 'active', 'paid')
-      ON CONFLICT (user_id) DO UPDATE
-      SET tier = $2, pricing_model = $3, monthly_price = $4,
-          current_period_start = now(), current_period_end = now() + interval '1 month',
-          status = 'active', payment_status = 'paid', updated_at = now()`,
-      [testUserId, 'free', 'subscription', 0]
-    );
+    const { error: freeTierError } = await supabase
+      .from('platform_subscriptions')
+      .upsert({
+        user_id: testUserId,
+        tier: 'free',
+        pricing_model: 'subscription',
+        monthly_price: 0,
+        current_period_start: new Date().toISOString(),
+        current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        status: 'active',
+        payment_status: 'paid',
+        updated_at: new Date().toISOString()
+      });
+
+    if (freeTierError) {
+      throw freeTierError;
+    }
     
     const freeProductLimit = await checkProductLimit(testUserId);
     const freePortfolioLimit = await checkPortfolioLimit(testUserId);
@@ -35,12 +44,19 @@ async function testSubscriptionModels() {
     
     // Test 2: Creator tier subscription model (unlimited)
     console.log('📋 Test 2: Creator tier subscription model (unlimited)');
-    await pool.query(
-      `UPDATE platform_subscriptions 
-       SET tier = $2, pricing_model = $3, monthly_price = $4
-       WHERE user_id = $1`,
-      [testUserId, 'creator', 'subscription', 15000]
-    );
+    const { error: creatorTierError } = await supabase
+      .from('platform_subscriptions')
+      .update({
+        tier: 'creator',
+        pricing_model: 'subscription',
+        monthly_price: 15000,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', testUserId);
+
+    if (creatorTierError) {
+      throw creatorTierError;
+    }
     
     const creatorProductLimit = await checkProductLimit(testUserId);
     const creatorPortfolioLimit = await checkPortfolioLimit(testUserId);
@@ -49,12 +65,20 @@ async function testSubscriptionModels() {
     
     // Test 3: Basic tier percentage model (limited)
     console.log('📋 Test 3: Basic tier percentage model (limited)');
-    await pool.query(
-      `UPDATE platform_subscriptions 
-       SET tier = $2, pricing_model = $3, percentage_tier = $4, monthly_price = $5
-       WHERE user_id = $1`,
-      [testUserId, 'percentage', 'percentage', 'basic', 0]
-    );
+    const { error: basicTierError } = await supabase
+      .from('platform_subscriptions')
+      .update({
+        tier: 'percentage',
+        pricing_model: 'percentage',
+        percentage_tier: 'basic',
+        monthly_price: 0,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', testUserId);
+
+    if (basicTierError) {
+      throw basicTierError;
+    }
     
     const basicProductLimit = await checkProductLimit(testUserId);
     const basicPortfolioLimit = await checkPortfolioLimit(testUserId);
@@ -63,12 +87,20 @@ async function testSubscriptionModels() {
     
     // Test 4: Premium tier percentage model (unlimited)
     console.log('📋 Test 4: Premium tier percentage model (unlimited)');
-    await pool.query(
-      `UPDATE platform_subscriptions 
-       SET tier = $2, pricing_model = $3, percentage_tier = $4, monthly_price = $5
-       WHERE user_id = $1`,
-      [testUserId, 'percentage', 'percentage', 'premium', 0]
-    );
+    const { error: premiumTierError } = await supabase
+      .from('platform_subscriptions')
+      .update({
+        tier: 'percentage',
+        pricing_model: 'percentage',
+        percentage_tier: 'premium',
+        monthly_price: 0,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', testUserId);
+
+    if (premiumTierError) {
+      throw premiumTierError;
+    }
     
     const premiumProductLimit = await checkProductLimit(testUserId);
     const premiumPortfolioLimit = await checkPortfolioLimit(testUserId);
@@ -77,12 +109,20 @@ async function testSubscriptionModels() {
     
     // Test 5: Switch back to subscription model
     console.log('📋 Test 5: Switch back to subscription model');
-    await pool.query(
-      `UPDATE platform_subscriptions 
-       SET tier = $2, pricing_model = $3, percentage_tier = NULL, monthly_price = $4
-       WHERE user_id = $1`,
-      [testUserId, 'professional', 'subscription', 40000]
-    );
+    const { error: professionalTierError } = await supabase
+      .from('platform_subscriptions')
+      .update({
+        tier: 'professional',
+        pricing_model: 'subscription',
+        percentage_tier: null,
+        monthly_price: 40000,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', testUserId);
+
+    if (professionalTierError) {
+      throw professionalTierError;
+    }
     
     const professionalProductLimit = await checkProductLimit(testUserId);
     const professionalPortfolioLimit = await checkPortfolioLimit(testUserId);
@@ -90,7 +130,10 @@ async function testSubscriptionModels() {
     console.log(`   Portfolio limit: ${professionalPortfolioLimit.canCreate ? '✅ Can create (unlimited)' : '❌ Cannot create'} (${professionalPortfolioLimit.currentCount}/∞)\n`);
     
     // Clean up test data
-    await pool.query('DELETE FROM platform_subscriptions WHERE user_id = $1', [testUserId]);
+    await supabase
+      .from('platform_subscriptions')
+      .delete()
+      .eq('user_id', testUserId);
     
     console.log('✅ All tests completed successfully!');
     console.log('\n📊 Summary:');

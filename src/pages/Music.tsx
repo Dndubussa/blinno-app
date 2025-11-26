@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Play, Pause, Heart, Share2, Filter, Music as MusicIcon, Volume2 } from "lucide-react";
 import { MediaPlayer } from "@/components/MediaPlayer";
+import { SEO } from "@/components/SEO";
 
 const tracks = [
   {
@@ -107,6 +108,12 @@ const Music = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Music - Discover Tanzanian Artists and Tracks"
+        description="Explore music from Tanzanian artists. Listen to bongo flava, taarab, and other local genres. Support local musicians and discover new sounds."
+        keywords={["Tanzanian music", "Bongo Flava", "Taarab", "Local artists", "Music streaming", "Diamond Platnumz", "Ali Kiba", "Harmonize"]}
+      />
+      
       <Header />
       
       <div className="pt-24 pb-16">

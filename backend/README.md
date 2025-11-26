@@ -1,6 +1,6 @@
 # BLINNO Backend API
 
-Node.js + Express + PostgreSQL backend for the BLINNO platform.
+Node.js + Express + Supabase backend for the BLINNO platform.
 
 ## Setup
 
@@ -10,22 +10,28 @@ Node.js + Express + PostgreSQL backend for the BLINNO platform.
    npm install
    ```
 
-2. **Set up PostgreSQL database:**
-   ```bash
-   # Create database
-   createdb blinno
+2. **Set up Supabase:**
+   - Create a Supabase account at https://supabase.com
+   - Create a new project
+   - Get your project credentials from Settings > API
 
-   # Run schema
-   psql -d blinno -f src/db/schema.sql
+3. **Run database migrations:**
+   - Go to SQL Editor in Supabase Dashboard
+   - Run migration files from `supabase/migrations/`
+
+   OR use Supabase CLI:
+   ```bash
+   supabase link --project-ref YOUR_PROJECT_REF
+   supabase db push
    ```
 
-3. **Configure environment:**
+4. **Configure environment:**
    ```bash
    cp .env.example .env
-   # Edit .env with your database credentials
+   # Edit .env with your Supabase credentials
    ```
 
-4. **Start development server:**
+5. **Start development server:**
    ```bash
    npm run dev
    ```
@@ -82,5 +88,5 @@ Authorization: Bearer <token>
 
 ## File Uploads
 
-Uploaded files are stored in the `uploads/` directory and served at `/api/uploads/`.
-
+For development, uploaded files are stored in the `uploads/` directory and served at `/api/uploads/`.
+For production, consider using cloud storage (S3, Cloudinary, etc.).

@@ -1,36 +1,31 @@
 # Quick Setup Instructions
 
-## Step 1: Set Up Database
+## Step 1: Set Up Supabase
 
-### Option A: Using the Setup Script (Windows PowerShell)
+### Option A: Using Supabase Dashboard
 
-1. Open PowerShell in the project root directory
-2. Run:
-   ```powershell
-   .\setup-database.ps1
-   ```
-3. Follow the prompts to enter your PostgreSQL credentials
+1. Go to https://supabase.com and create an account
+2. Create a new project
+3. Get your project credentials from Settings > API:
+   - Project URL
+   - anon/public key
+   - service_role key
 
-### Option B: Manual Setup
+### Option B: Using Supabase CLI
 
-1. **Find psql.exe**:
-   - **Standard PostgreSQL**: `C:\Program Files\PostgreSQL\[version]\bin\psql.exe`
-   - **EDB PostgreSQL**: `C:\Program Files\edb\as\[version]\bin\psql.exe`
-   - Or add PostgreSQL bin directory to your PATH
-
-2. **Create the database**:
+1. Install Supabase CLI:
    ```bash
-   psql -U postgres
-   ```
-   Then in psql:
-   ```sql
-   CREATE DATABASE blinno;
-   \q
+   npm install -g supabase
    ```
 
-3. **Run the schema**:
+2. Login to Supabase:
    ```bash
-   psql -U postgres -d blinno -f backend/src/db/schema.sql
+   supabase login
+   ```
+
+3. Create a new project:
+   ```bash
+   supabase projects create
    ```
 
 ## Step 2: Configure Backend
@@ -50,14 +45,14 @@
    copy .env.example .env
    ```
 
-4. **Edit .env** with your database credentials:
+4. **Edit .env** with your Supabase credentials:
    ```env
-   DB_HOST=localhost
-   DB_PORT=5432
-   DB_NAME=blinno
-   DB_USER=postgres
-   DB_PASSWORD=your_password_here
+   # Supabase Configuration
+   SUPABASE_URL=https://your-project-ref.supabase.co
+   SUPABASE_ANON_KEY=your-anon-public-key
+   SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
    
+   # Other configuration
    JWT_SECRET=your_super_secret_jwt_key_change_this
    JWT_EXPIRES_IN=7d
    
@@ -65,7 +60,20 @@
    CORS_ORIGIN=http://localhost:5173
    ```
 
-## Step 3: Start Backend
+## Step 3: Run Database Migrations
+
+1. **Run migrations in Supabase**:
+   - Go to your Supabase project dashboard
+   - Navigate to SQL Editor
+   - Open and run the migration files from `supabase/migrations/`
+
+   OR use Supabase CLI:
+   ```bash
+   supabase link --project-ref YOUR_PROJECT_REF
+   supabase db push
+   ```
+
+## Step 4: Start Backend
 
 ```bash
 cd backend
@@ -74,14 +82,16 @@ npm run dev
 
 You should see:
 ```
-✅ Connected to PostgreSQL database
+✅ Connected to Supabase database
 🚀 Server running on port 3001
 ```
 
-## Step 4: Configure Frontend
+## Step 5: Configure Frontend
 
 1. **Create/update .env** in the root directory:
    ```env
+   VITE_SUPABASE_URL=https://your-project-ref.supabase.co
+   VITE_SUPABASE_ANON_KEY=your-anon-public-key
    VITE_API_URL=http://localhost:3001/api
    ```
 
@@ -90,13 +100,13 @@ You should see:
    npm install
    ```
 
-## Step 5: Start Frontend
+## Step 6: Start Frontend
 
 ```bash
 npm run dev
 ```
 
-## Step 6: Test
+## Step 7: Test
 
 1. Open http://localhost:5173
 2. Try registering a new user
@@ -105,17 +115,10 @@ npm run dev
 
 ## Troubleshooting
 
-### psql not found
-- **Standard PostgreSQL**: Add bin directory to PATH:
-  - `C:\Program Files\PostgreSQL\[version]\bin`
-- **EDB PostgreSQL**: Add bin directory to PATH:
-  - `C:\Program Files\edb\as\[version]\bin`
-- Or use full path to psql.exe in the setup script
-
-### Database connection errors
-- Verify PostgreSQL service is running
-- Check credentials in backend/.env
-- Test connection: `psql -U postgres -d blinno`
+### Supabase connection errors
+- Verify your Supabase credentials are correct
+- Check that your project is active
+- Ensure you're using the correct project URL and keys
 
 ### Port already in use
 - Change PORT in backend/.env
@@ -125,3 +128,6 @@ npm run dev
 - Ensure CORS_ORIGIN in backend/.env matches frontend URL
 - Default: `http://localhost:5173`
 
+### Authentication issues
+- Check that your Supabase Auth is properly configured
+- Verify email templates are set up correctly

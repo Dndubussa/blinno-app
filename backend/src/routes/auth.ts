@@ -217,43 +217,34 @@ router.post('/reset-password', async (req, res) => {
       return res.status(400).json({ error: 'Token and password are required' });
     }
 
-    // Use Supabase Auth to reset password
-    // Note: This requires the user to be authenticated with the reset token
-    // The token is typically handled via the redirect URL from the email
-    // For API-based reset, you need to use Supabase's updateUser method
-    // after verifying the token from the request headers or body
-
-    // The token should be passed as a Bearer token in the Authorization header
-    // or we need to create a session from the token first
-    // For now, we'll use the admin client to update the password
-    // In a real implementation, you'd verify the token and create a session first
+    // With Supabase, the proper way to handle password reset is:
+    // 1. Use the token to create a new session (this verifies the token)
+    // 2. Once verified, update the password
     
-    // Get user from token (if provided in Authorization header)
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Reset token is required' });
-    }
-
-    const resetToken = authHeader.replace('Bearer ', '');
+    // Attempt to exchange the recovery token for a session
+    const { data, error } = await supabaseAdmin.auth.exchangeCodeForSession(token);
     
-    // Verify token and get user
-    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(resetToken);
-    
-    if (userError || !user) {
+    if (error) {
+      console.error('Password reset token exchange error:', error);
       return res.status(401).json({ error: 'Invalid or expired reset token' });
     }
-
-    // Update password using admin client
-    const { data, error } = await supabaseAdmin.auth.admin.updateUserById(user.id, {
-      password: password,
-    });
-
-    if (error) {
-      console.error('Password reset error:', error);
-      return res.status(400).json({ error: 'Invalid or expired reset token' });
+    
+    // If exchange succeeded, update the password
+    if (data?.session?.user?.id) {
+      const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+        data.session.user.id,
+        { password }
+      );
+      
+      if (updateError) {
+        console.error('Password update error:', updateError);
+        return res.status(500).json({ error: 'Failed to update password' });
+      }
+      
+      return res.json({ message: 'Password reset successfully' });
     }
-
-    res.json({ message: 'Password reset successfully' });
+    
+    return res.status(401).json({ error: 'Invalid or expired reset token' });
   } catch (error: any) {
     console.error('Reset password error:', error);
     res.status(500).json({ error: 'Failed to reset password' });

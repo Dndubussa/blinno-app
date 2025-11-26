@@ -1,75 +1,31 @@
-# Deployment Guide - BLINNO Platform
+# Deployment Guide
 
-This guide covers deploying the BLINNO platform to production at **www.blinno.app**.
+This guide covers deploying the BLINNO platform to production with Supabase.
 
-## Production Domain
+## Prerequisites
 
-- **Frontend**: `https://www.blinno.app`
-- **Backend API**: `https://www.blinno.app/api` (or separate subdomain)
-- **Database**: PostgreSQL (configured separately)
-
-## Environment Configuration
-
-### Backend Environment Variables
-
-Create `backend/.env` with the following:
-
-```env
-# Server Configuration
-PORT=3001
-NODE_ENV=production
-
-# Database Configuration
-DB_HOST=your_db_host
-DB_PORT=5432
-DB_NAME=blinno
-DB_USER=your_db_user
-DB_PASSWORD=your_db_password
-
-# JWT Configuration
-JWT_SECRET=your_super_secret_jwt_key_change_this_in_production
-JWT_EXPIRES_IN=7d
-
-# File Upload Configuration
-UPLOAD_DIR=./uploads
-MAX_FILE_SIZE=10485760
-ALLOWED_FILE_TYPES=image/jpeg,image/png,image/webp,image/gif
-
-# CORS Configuration
-CORS_ORIGIN=https://www.blinno.app
-
-# Click Pesa Configuration
-CLICKPESA_CLIENT_ID=your_clickpesa_client_id
-CLICKPESA_API_KEY=your_clickpesa_api_key
-CLICKPESA_BASE_URL=https://api.clickpesa.com
-APP_URL=https://www.blinno.app
-```
-
-### Frontend Environment Variables
-
-Create `.env` in the root directory:
-
-```env
-VITE_API_URL=https://www.blinno.app/api
-```
+1. **Supabase Account**: Create an account at https://supabase.com
+2. **Domain**: A domain name (e.g., www.blinno.app)
+3. **Server**: A server/VPS for backend (Node.js 18+)
+4. **Click Pesa Account**: For payment processing (optional)
 
 ## Deployment Steps
 
-### 1. Database Setup
+### 1. Supabase Setup
 
-1. **Create production database**:
-   ```bash
-   psql -U postgres -c "CREATE DATABASE blinno;"
-   ```
+1. **Create Supabase project**:
+   - Go to Supabase Dashboard
+   - Create new project
+   - Note your project credentials
 
-2. **Run schema migration**:
-   ```bash
-   psql -U postgres -d blinno -f backend/src/db/schema.sql
-   ```
+2. **Run database migrations**:
+   - Go to SQL Editor in Supabase Dashboard
+   - Run migration files from `supabase/migrations/`
 
-3. **Run payment tables migration**:
+   OR use Supabase CLI:
    ```bash
-   psql -U postgres -d blinno -f backend/src/db/migrations/add_payments.sql
+   supabase link --project-ref YOUR_PROJECT_REF
+   supabase db push
    ```
 
 ### 2. Backend Deployment
@@ -158,16 +114,11 @@ sudo certbot --nginx -d www.blinno.app
 
 ### 6. File Uploads
 
-Ensure the uploads directory is writable:
-
-```bash
-mkdir -p backend/uploads/{avatars,portfolios,products,images}
-chmod -R 755 backend/uploads
-```
+For production, consider using cloud storage (S3, Cloudinary, etc.) instead of local file storage.
 
 ## Production Checklist
 
-- [ ] Database created and migrations run
+- [ ] Supabase project created and migrations run
 - [ ] Environment variables configured
 - [ ] Backend server running
 - [ ] Frontend built and deployed
@@ -175,7 +126,6 @@ chmod -R 755 backend/uploads
 - [ ] CORS configured correctly
 - [ ] Click Pesa credentials configured
 - [ ] Webhook URL configured in Click Pesa
-- [ ] File uploads directory configured
 - [ ] Error logging configured
 - [ ] Backup strategy in place
 - [ ] Monitoring set up
@@ -208,7 +158,7 @@ tail -f /var/log/nginx/error.log
 3. **HTTPS**: Always use HTTPS in production
 4. **Rate Limiting**: Already configured in backend
 5. **CORS**: Restrict to production domain only
-6. **Database**: Use strong passwords and restrict access
+6. **Database**: Supabase handles security, but use strong passwords
 7. **File Uploads**: Validate file types and sizes
 
 ## Troubleshooting
@@ -228,8 +178,8 @@ tail -f /var/log/nginx/error.log
 - Review backend logs for incoming requests
 
 ### File uploads failing
-- Check directory permissions
-- Verify `UPLOAD_DIR` path is correct
+- Check directory permissions (if using local storage)
+- Verify file storage configuration
 - Check disk space
 
 ## Support
@@ -239,4 +189,3 @@ For deployment issues:
 - Review error messages
 - Verify environment variables
 - Test API endpoints directly
-

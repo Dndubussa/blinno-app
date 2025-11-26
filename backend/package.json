@@ -9,6 +9,10 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "migrate": "node dist/db/migrate.js",
+    "seed:email-templates": "node src/scripts/seedEmailTemplates.js",
+    "seed:email-templates-supabase": "node src/scripts/seedEmailTemplatesSupabase.js",
+    "test:email-templates": "node src/scripts/testEmailTemplates.js",
+    "test:template-loading": "node src/scripts/testTemplateLoading.js",
     "test:email": "node scripts/test-email-service.js",
     "test:email-config": "node scripts/simple-email-test.js"
   },

@@ -13,6 +13,7 @@ import { Search, MapPin, Filter, Star, Loader2, X, Calendar, Clock, User, Briefc
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { AnimatedSection } from "@/components/AnimatedSection";
+import { SEO } from "@/components/SEO";
 
 type Service = {
   id: string;
@@ -158,6 +159,11 @@ const Services = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Services - Book Local Providers in Tanzania"
+        description="Discover and book services from local providers in Tanzania. Find freelancers, artisans, restaurants, lodging, and event services from trusted Tanzanian professionals."
+        keywords={["Tanzanian services", "local providers", "freelancers", "artisans", "restaurants", "lodging", "event services", "book services Tanzania"]}
+      />
       <Header />
       
       <div className="pt-24 pb-16">

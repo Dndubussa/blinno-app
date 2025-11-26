@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to BLINNO</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background-color: #4f46e5;
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .content h2 {
+            color: #4f46e5;
+            font-size: 24px;
+            margin-top: 0;
+        }
+        .content p {
+            margin: 15px 0;
+        }
+        .button {
+            display: inline-block;
+            background-color: #4f46e5;
+            color: white;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .button:hover {
+            background-color: #4338ca;
+        }
+        .features {
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .feature {
+            margin: 15px 0;
+            padding-left: 20px;
+            border-left: 3px solid #4f46e5;
+        }
+        .footer {
+            background-color: #f1f5f9;
+            padding: 20px;
+            text-align: center;
+            font-size: 14px;
+            color: #64748b;
+        }
+        .footer a {
+            color: #4f46e5;
+            text-decoration: none;
+        }
+        .social-links {
+            margin: 15px 0;
+        }
+        .social-links a {
+            display: inline-block;
+            margin: 0 10px;
+            color: #4f46e5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Welcome to BLINNO!</h1>
+            <p>Discover, Create & Connect with All Things Tanzanian</p>
+        </div>
+        
+        <div class="content">
+            <h2>Hello {{user_name}}!</h2>
+            
+            <p>Welcome to BLINNO, the platform that connects Tanzanian creators, events, marketplace, music, and more. We're thrilled to have you join our community of innovators and creators.</p>
+            
+            <p>Your journey to discover and showcase the best of Tanzania starts now. Here's what you can do:</p>
+            
+            <div class="features">
+                <div class="feature">
+                    <strong>Explore the Marketplace</strong>
+                    <p>Discover authentic Tanzanian products and services from local creators and entrepreneurs.</p>
+                </div>
+                
+                <div class="feature">
+                    <strong>Find Events</strong>
+                    <p>Stay updated on cultural festivals, business conferences, workshops, and community gatherings.</p>
+                </div>
+                
+                <div class="feature">
+                    <strong>Discover Music</strong>
+                    <p>Listen to bongo flava, taarab, and other local genres from Tanzanian artists.</p>
+                </div>
+                
+                <div class="feature">
+                    <strong>Showcase Your Talent</strong>
+                    <p>Create your profile and share your skills, products, or services with our community.</p>
+                </div>
+            </div>
+            
+            <p>
+                <a href="{{dashboard_url}}" class="button">Go to Your Dashboard</a>
+            </p>
+            
+            <p>If you have any questions, our support team is here to help at <a href="mailto:support@blinno.app">support@blinno.app</a>.</p>
+            
+            <p>Welcome aboard!</p>
+            <p><strong>The BLINNO Team</strong></p>
+        </div>
+        
+        <div class="footer">
+            <div class="social-links">
+                <a href="https://twitter.com/BlinnoTZ">Twitter</a>
+                <a href="https://facebook.com/BlinnoTZ">Facebook</a>
+                <a href="https://instagram.com/BlinnoTZ">Instagram</a>
+            </div>
+            
+            <p>
+                BLINNO - BLISSFUL INNOVATIONS<br>
+                Dar es Salaam, Tanzania
+            </p>
+            
+            <p>
+                <a href="{{unsubscribe_url}}">Unsubscribe</a> | 
+                <a href="{{preferences_url}}">Email Preferences</a>
+            </p>
+            
+            <p>© 2025 BLINNO. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

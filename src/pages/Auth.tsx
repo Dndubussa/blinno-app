@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, User, Briefcase, Palette, Store, Home, UtensilsCrossed, GraduationCap, Newspaper, Wrench, Calendar, ArrowLeft } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import logo from "@/assets/logo.png";
+import { SEO } from "@/components/SEO";
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
@@ -89,6 +90,11 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Sign In or Sign Up - BLINNO Platform"
+        description="Join BLINNO to connect with Tanzanian creators, discover events, shop authentic products, and explore music. Create an account or sign in to access your dashboard."
+        keywords={["BLINNO login", "Tanzanian platform", "sign in", "sign up", "create account", "Tanzania creators", "authentic products", "local events"]}
+      />
       {/* Minimal Auth Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -146,6 +152,14 @@ export default function Auth() {
                         required
                       />
                     </div>
+                    <Button 
+                      variant="link" 
+                      type="button" 
+                      onClick={() => navigate("/auth/forgot-password")}
+                      className="px-0 text-sm text-muted-foreground hover:text-foreground"
+                    >
+                      Forgot password?
+                    </Button>
                     <Button type="submit" className="w-full" disabled={isLoading}>
                       {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       Sign In

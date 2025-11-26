@@ -1,4 +1,4 @@
-import { pool } from '../config/database.js';
+import { supabase } from '../config/supabase.js';
 import { checkProductLimit, checkPortfolioLimit } from './subscriptionLimits.js';
 
 async function testSubscriptionModels() {
@@ -12,17 +12,23 @@ async function testSubscriptionModels() {
     console.log('Testing subscription-based model...');
     
     // Insert a test subscription record for subscription-based model
-    await pool.query(
-      `INSERT INTO platform_subscriptions (
-        user_id, tier, pricing_model, monthly_price, 
-        current_period_start, current_period_end, status, payment_status
-      ) VALUES ($1, $2, $3, $4, now(), now() + interval '1 month', 'active', 'paid')
-      ON CONFLICT (user_id) DO UPDATE
-      SET tier = $2, pricing_model = $3, monthly_price = $4,
-          current_period_start = now(), current_period_end = now() + interval '1 month',
-          status = 'active', payment_status = 'paid', updated_at = now()`,
-      [testUserId, 'creator', 'subscription', 15000]
-    );
+    const { error: subscriptionError } = await supabase
+      .from('platform_subscriptions')
+      .upsert({
+        user_id: testUserId,
+        tier: 'creator',
+        pricing_model: 'subscription',
+        monthly_price: 15000,
+        current_period_start: new Date().toISOString(),
+        current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        status: 'active',
+        payment_status: 'paid',
+        updated_at: new Date().toISOString()
+      });
+
+    if (subscriptionError) {
+      throw subscriptionError;
+    }
     
     // Test product limit for subscription-based model
     const productLimitSub = await checkProductLimit(testUserId);
@@ -36,17 +42,24 @@ async function testSubscriptionModels() {
     console.log('Testing percentage-based model...');
     
     // Update the test subscription record for percentage-based model
-    await pool.query(
-      `INSERT INTO platform_subscriptions (
-        user_id, tier, pricing_model, percentage_tier, monthly_price, 
-        current_period_start, current_period_end, status, payment_status
-      ) VALUES ($1, $2, $3, $4, $5, now(), now() + interval '1 month', 'active', 'paid')
-      ON CONFLICT (user_id) DO UPDATE
-      SET tier = $2, pricing_model = $3, percentage_tier = $4, monthly_price = $5,
-          current_period_start = now(), current_period_end = now() + interval '1 month',
-          status = 'active', payment_status = 'paid', updated_at = now()`,
-      [testUserId, 'percentage', 'percentage', 'premium', 0]
-    );
+    const { error: percentageError } = await supabase
+      .from('platform_subscriptions')
+      .upsert({
+        user_id: testUserId,
+        tier: 'percentage',
+        pricing_model: 'percentage',
+        percentage_tier: 'premium',
+        monthly_price: 0,
+        current_period_start: new Date().toISOString(),
+        current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        status: 'active',
+        payment_status: 'paid',
+        updated_at: new Date().toISOString()
+      });
+
+    if (percentageError) {
+      throw percentageError;
+    }
     
     // Test product limit for percentage-based model
     const productLimitPct = await checkProductLimit(testUserId);

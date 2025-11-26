@@ -1,4 +1,4 @@
-import { pool } from '../config/database.js';
+import { supabase } from '../config/supabase.js';
 
 // Define subscription tiers with their limits
 const SUBSCRIPTION_TIERS = {
@@ -22,18 +22,19 @@ const PERCENTAGE_TIERS = {
 export async function checkProductLimit(userId: string): Promise<{ canCreate: boolean; limit?: number; currentCount: number }> {
   try {
     // Get user's subscription
-    const subscriptionResult = await pool.query(
-      `SELECT tier, pricing_model, percentage_tier FROM platform_subscriptions WHERE user_id = $1`,
-      [userId]
-    );
+    const { data: subscriptionData, error: subscriptionError } = await supabase
+      .from('platform_subscriptions')
+      .select('tier, pricing_model, percentage_tier')
+      .eq('user_id', userId)
+      .single();
 
     let tierInfo;
     
-    if (subscriptionResult.rows.length === 0) {
+    if (subscriptionError || !subscriptionData) {
       // User has no subscription, use free tier limits
       tierInfo = SUBSCRIPTION_TIERS.free;
     } else {
-      const subscription = subscriptionResult.rows[0];
+      const subscription = subscriptionData;
       
       if (subscription.pricing_model === 'percentage') {
         tierInfo = PERCENTAGE_TIERS[subscription.percentage_tier as keyof typeof PERCENTAGE_TIERS] || 
@@ -50,12 +51,16 @@ export async function checkProductLimit(userId: string): Promise<{ canCreate: bo
     }
 
     // Count user's current products
-    const productCountResult = await pool.query(
-      'SELECT COUNT(*) as count FROM products WHERE creator_id = $1',
-      [userId]
-    );
+    const { count: productCount, error: countError } = await supabase
+      .from('products')
+      .select('*', { count: 'exact' })
+      .eq('creator_id', userId);
 
-    const currentCount = parseInt(productCountResult.rows[0].count);
+    if (countError) {
+      throw countError;
+    }
+
+    const currentCount = productCount || 0;
 
     return {
       canCreate: currentCount < tierInfo.limits.products,
@@ -77,18 +82,19 @@ export async function checkProductLimit(userId: string): Promise<{ canCreate: bo
 export async function checkPortfolioLimit(userId: string): Promise<{ canCreate: boolean; limit?: number; currentCount: number }> {
   try {
     // Get user's subscription
-    const subscriptionResult = await pool.query(
-      `SELECT tier, pricing_model, percentage_tier FROM platform_subscriptions WHERE user_id = $1`,
-      [userId]
-    );
+    const { data: subscriptionData, error: subscriptionError } = await supabase
+      .from('platform_subscriptions')
+      .select('tier, pricing_model, percentage_tier')
+      .eq('user_id', userId)
+      .single();
 
     let tierInfo;
     
-    if (subscriptionResult.rows.length === 0) {
+    if (subscriptionError || !subscriptionData) {
       // User has no subscription, use free tier limits
       tierInfo = SUBSCRIPTION_TIERS.free;
     } else {
-      const subscription = subscriptionResult.rows[0];
+      const subscription = subscriptionData;
       
       if (subscription.pricing_model === 'percentage') {
         tierInfo = PERCENTAGE_TIERS[subscription.percentage_tier as keyof typeof PERCENTAGE_TIERS] || 
@@ -105,12 +111,16 @@ export async function checkPortfolioLimit(userId: string): Promise<{ canCreate: 
     }
 
     // Count user's current portfolios
-    const portfolioCountResult = await pool.query(
-      'SELECT COUNT(*) as count FROM portfolios WHERE creator_id = $1',
-      [userId]
-    );
+    const { count: portfolioCount, error: countError } = await supabase
+      .from('portfolios')
+      .select('*', { count: 'exact' })
+      .eq('creator_id', userId);
 
-    const currentCount = parseInt(portfolioCountResult.rows[0].count);
+    if (countError) {
+      throw countError;
+    }
+
+    const currentCount = portfolioCount || 0;
 
     return {
       canCreate: currentCount < tierInfo.limits.portfolios,

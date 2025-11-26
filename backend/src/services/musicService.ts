@@ -3,7 +3,7 @@
  * Handles music track management for musicians
  */
 
-import { pool } from '../config/database.js';
+import { supabase } from '../config/supabase.js';
 
 export interface MusicTrack {
   id: string;
@@ -69,128 +69,205 @@ export async function createTrack(data: CreateTrackData): Promise<MusicTrack> {
     tags = []
   } = data;
 
-  const result = await pool.query(
-    `INSERT INTO music_tracks (
-      musician_id, title, description, genre, duration, 
-      image_url, audio_url, price, currency, is_published, tags
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-    RETURNING *`,
-    [
-      musician_id, title, description, genre, duration,
-      image_url, audio_url, price, currency, is_published, tags
-    ]
-  );
+  const { data: track, error } = await supabase
+    .from('music_tracks')
+    .insert({
+      musician_id,
+      title,
+      description,
+      genre,
+      duration,
+      image_url,
+      audio_url,
+      price,
+      currency,
+      is_published,
+      tags
+    })
+    .select()
+    .single();
 
-  return result.rows[0];
+  if (error) {
+    throw error;
+  }
+
+  return track;
 }
 
 /**
  * Get all published tracks
  */
 export async function getTracks(): Promise<MusicTrack[]> {
-  const result = await pool.query(
-    `SELECT * FROM music_tracks 
-     WHERE is_published = true 
-     ORDER BY created_at DESC`
-  );
+  const { data, error } = await supabase
+    .from('music_tracks')
+    .select('*')
+    .eq('is_published', true)
+    .order('created_at', { ascending: false });
 
-  return result.rows;
+  if (error) {
+    throw error;
+  }
+
+  return data;
 }
 
 /**
  * Get a specific track by ID
  */
 export async function getTrackById(id: string): Promise<MusicTrack | null> {
-  const result = await pool.query(
-    'SELECT * FROM music_tracks WHERE id = $1',
-    [id]
-  );
+  const { data, error } = await supabase
+    .from('music_tracks')
+    .select('*')
+    .eq('id', id)
+    .single();
 
-  return result.rows[0] || null;
+  if (error) {
+    if (error.code === 'PGRST116') {
+      return null;
+    }
+    throw error;
+  }
+
+  return data;
 }
 
 /**
  * Get tracks for a specific musician
  */
 export async function getMusicianTracks(musicianId: string): Promise<MusicTrack[]> {
-  const result = await pool.query(
-    'SELECT * FROM music_tracks WHERE musician_id = $1 ORDER BY created_at DESC',
-    [musicianId]
-  );
+  const { data, error } = await supabase
+    .from('music_tracks')
+    .select('*')
+    .eq('musician_id', musicianId)
+    .order('created_at', { ascending: false });
 
-  return result.rows;
+  if (error) {
+    throw error;
+  }
+
+  return data;
 }
 
 /**
  * Update a track
  */
 export async function updateTrack(id: string, data: UpdateTrackData): Promise<MusicTrack | null> {
-  const fields = [];
-  const values = [];
-  let index = 1;
+  // Remove undefined values
+  const updateData = Object.fromEntries(
+    Object.entries(data).filter(([_, value]) => value !== undefined)
+  );
 
-  for (const [key, value] of Object.entries(data)) {
-    if (value !== undefined) {
-      fields.push(`${key} = $${index}`);
-      values.push(value);
-      index++;
-    }
-  }
-
-  if (fields.length === 0) {
+  if (Object.keys(updateData).length === 0) {
     throw new Error('No fields to update');
   }
 
-  values.push(id);
+  const { data: track, error } = await supabase
+    .from('music_tracks')
+    .update({
+      ...updateData,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', id)
+    .select()
+    .single();
 
-  const result = await pool.query(
-    `UPDATE music_tracks 
-     SET ${fields.join(', ')}, updated_at = NOW()
-     WHERE id = $${index}
-     RETURNING *`,
-    values
-  );
+  if (error) {
+    if (error.code === 'PGRST116') {
+      return null;
+    }
+    throw error;
+  }
 
-  return result.rows[0] || null;
+  return track;
 }
 
 /**
  * Delete a track
  */
 export async function deleteTrack(id: string): Promise<boolean> {
-  const result = await pool.query(
-    'DELETE FROM music_tracks WHERE id = $1',
-    [id]
-  );
+  const { error } = await supabase
+    .from('music_tracks')
+    .delete()
+    .eq('id', id);
 
-  return (result.rowCount || 0) > 0;
+  if (error) {
+    throw error;
+  }
+
+  return true;
 }
 
 /**
  * Get musician stats
  */
 export async function getTrackStats(musicianId: string): Promise<any> {
-  const result = await pool.query(
-    `SELECT 
-      COUNT(*) as total_tracks,
-      COALESCE(SUM(plays_count), 0) as total_plays,
-      COALESCE(SUM(likes_count), 0) as total_likes
-    FROM music_tracks 
-    WHERE musician_id = $1`,
-    [musicianId]
-  );
+  // Get count of tracks
+  const { count: trackCount, error: countError } = await supabase
+    .from('music_tracks')
+    .select('*', { count: 'exact' })
+    .eq('musician_id', musicianId);
 
-  return result.rows[0];
+  if (countError) {
+    throw countError;
+  }
+
+  // Get sum of plays
+  const { data: playsData, error: playsError } = await supabase
+    .from('music_tracks')
+    .select('plays_count')
+    .eq('musician_id', musicianId);
+
+  if (playsError) {
+    throw playsError;
+  }
+
+  const totalPlays = playsData.reduce((sum, track) => sum + (track.plays_count || 0), 0);
+
+  // Get sum of likes
+  const { data: likesData, error: likesError } = await supabase
+    .from('music_tracks')
+    .select('likes_count')
+    .eq('musician_id', musicianId);
+
+  if (likesError) {
+    throw likesError;
+  }
+
+  const totalLikes = likesData.reduce((sum, track) => sum + (track.likes_count || 0), 0);
+
+  return {
+    total_tracks: trackCount || 0,
+    total_plays: totalPlays,
+    total_likes: totalLikes
+  };
 }
 
 /**
  * Increment play count for a track
  */
 export async function incrementPlayCount(trackId: string): Promise<void> {
-  await pool.query(
-    'UPDATE music_tracks SET plays_count = plays_count + 1 WHERE id = $1',
-    [trackId]
-  );
+  // Get current track
+  const { data: track, error: fetchError } = await supabase
+    .from('music_tracks')
+    .select('plays_count')
+    .eq('id', trackId)
+    .single();
+
+  if (fetchError) {
+    throw fetchError;
+  }
+
+  // Update plays count
+  const { error: updateError } = await supabase
+    .from('music_tracks')
+    .update({
+      plays_count: (track.plays_count || 0) + 1
+    })
+    .eq('id', trackId);
+
+  if (updateError) {
+    throw updateError;
+  }
 }
 
 /**
@@ -198,16 +275,35 @@ export async function incrementPlayCount(trackId: string): Promise<void> {
  */
 export async function likeTrack(trackId: string, userId: string): Promise<boolean> {
   try {
-    await pool.query(
-      'INSERT INTO music_likes (track_id, user_id) VALUES ($1, $2)',
-      [trackId, userId]
-    );
+    const { error } = await supabase
+      .from('music_likes')
+      .insert({
+        track_id: trackId,
+        user_id: userId
+      });
+
+    if (error) {
+      throw error;
+    }
     
+    // Get current track
+    const { data: track, error: fetchError } = await supabase
+      .from('music_tracks')
+      .select('likes_count')
+      .eq('id', trackId)
+      .single();
+
+    if (fetchError) {
+      throw fetchError;
+    }
+
     // Update likes count
-    await pool.query(
-      'UPDATE music_tracks SET likes_count = likes_count + 1 WHERE id = $1',
-      [trackId]
-    );
+    await supabase
+      .from('music_tracks')
+      .update({
+        likes_count: (track.likes_count || 0) + 1
+      })
+      .eq('id', trackId);
     
     return true;
   } catch (error: any) {
@@ -223,17 +319,36 @@ export async function likeTrack(trackId: string, userId: string): Promise<boolea
  * Unlike a track
  */
 export async function unlikeTrack(trackId: string, userId: string): Promise<boolean> {
-  const result = await pool.query(
-    'DELETE FROM music_likes WHERE track_id = $1 AND user_id = $2',
-    [trackId, userId]
-  );
+  const { data, error } = await supabase
+    .from('music_likes')
+    .delete()
+    .eq('track_id', trackId)
+    .eq('user_id', userId)
+    .select();
+
+  if (error) {
+    throw error;
+  }
   
-  if ((result.rowCount || 0) > 0) {
+  if (data && data.length > 0) {
+    // Get current track
+    const { data: track, error: fetchError } = await supabase
+      .from('music_tracks')
+      .select('likes_count')
+      .eq('id', trackId)
+      .single();
+
+    if (fetchError) {
+      throw fetchError;
+    }
+
     // Update likes count
-    await pool.query(
-      'UPDATE music_tracks SET likes_count = GREATEST(likes_count - 1, 0) WHERE id = $1',
-      [trackId]
-    );
+    await supabase
+      .from('music_tracks')
+      .update({
+        likes_count: Math.max(0, (track.likes_count || 0) - 1)
+      })
+      .eq('id', trackId);
     return true;
   }
   

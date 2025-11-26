@@ -17,6 +17,7 @@ import { AnimatedSection } from "@/components/AnimatedSection";
 import { SubscriptionPricing } from "@/components/SubscriptionPricing";
 import { SocialFeedPreview } from "@/components/SocialFeedPreview";
 import { QuickActions } from "@/components/QuickActions";
+import { SEO } from "@/components/SEO";
 
 const Index = () => {
   const { user, profile, loading } = useAuth();
@@ -48,6 +49,12 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="BLISSFUL INNOVATIONS - Discover, Create & Connect with All Things Tanzanian"
+        description="BLINNO connects Tanzanian creators, events, marketplace, music, and more. Discover 15,000+ creators, 500+ events, 2,000+ products across Tanzania."
+        keywords={["Tanzania", "creators", "events", "marketplace", "music", "local business", "Tanzanian culture", "Dar es Salaam", "Mwanza", "Zanzibar"]}
+      />
+      
       <Header />
       <Hero />
       

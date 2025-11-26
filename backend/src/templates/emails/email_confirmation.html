@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirm Your Email Address</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background-color: #10b981;
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .content h2 {
+            color: #10b981;
+            font-size: 24px;
+            margin-top: 0;
+        }
+        .content p {
+            margin: 15px 0;
+        }
+        .button {
+            display: inline-block;
+            background-color: #10b981;
+            color: white;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .button:hover {
+            background-color: #059669;
+        }
+        .security-note {
+            background-color: #f0f9ff;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .footer {
+            background-color: #f1f5f9;
+            padding: 20px;
+            text-align: center;
+            font-size: 14px;
+            color: #64748b;
+        }
+        .footer a {
+            color: #10b981;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Confirm Your Email</h1>
+            <p>One more step to complete your registration</p>
+        </div>
+        
+        <div class="content">
+            <h2>Hello {{user_name}}!</h2>
+            
+            <p>Thank you for registering with BLINNO. To complete your registration and activate your account, please confirm your email address by clicking the button below:</p>
+            
+            <p style="text-align: center;">
+                <a href="{{confirmation_url}}" class="button">Confirm Email Address</a>
+            </p>
+            
+            <p>Or copy and paste this link into your browser:</p>
+            <p style="word-break: break-all; color: #4f46e5;">{{confirmation_url}}</p>
+            
+            <div class="security-note">
+                <p><strong>Security Note:</strong> This link will expire in 24 hours. If you didn't create an account with BLINNO, you can safely ignore this email.</p>
+            </div>
+            
+            <p>If you have any questions, our support team is here to help at <a href="mailto:support@blinno.app">support@blinno.app</a>.</p>
+            
+            <p>Best regards,<br>
+            <strong>The BLINNO Team</strong></p>
+        </div>
+        
+        <div class="footer">
+            <p>
+                BLINNO - BLISSFUL INNOVATIONS<br>
+                Dar es Salaam, Tanzania
+            </p>
+            
+            <p>© 2025 BLINNO. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
