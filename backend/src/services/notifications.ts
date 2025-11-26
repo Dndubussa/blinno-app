@@ -3,7 +3,8 @@
  * Handles creating and sending notifications
  */
 
-import { pool } from '../config/database.js';
+import { supabase } from '../config/supabase.js';
+import { sendNotificationEmail, sendTemplatedEmail } from './emailService.js';
 
 export interface NotificationData {
   order_id?: string;
@@ -28,12 +29,25 @@ class NotificationService {
     message: string,
     data?: NotificationData
   ): Promise<string> {
-    const result = await pool.query(
-      `SELECT create_notification($1::uuid, $2::text, $3::text, $4::text, $5::jsonb) as notification_id`,
-      [userId, type, title, message, data ? JSON.stringify(data) : null]
-    );
+    // Insert notification
+    const { data: notification, error } = await supabase
+      .from('notifications')
+      .insert({
+        user_id: userId,
+        type,
+        title,
+        message,
+        data: data || null,
+        is_read: false,
+      })
+      .select()
+      .single();
 
-    const notificationId = result.rows[0].notification_id;
+    if (error) {
+      throw error;
+    }
+
+    const notificationId = notification.id;
 
     // Check user preferences and send email/SMS if enabled
     await this.sendNotificationChannels(userId, notificationId, type, title, message);
@@ -52,47 +66,48 @@ class NotificationService {
     message: string
   ): Promise<void> {
     // Get user preferences
-    const prefsResult = await pool.query(
-      `SELECT * FROM notification_preferences WHERE user_id = $1`,
-      [userId]
-    );
+    const { data: preferences } = await supabase
+      .from('notification_preferences')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
 
-    if (prefsResult.rows.length === 0) {
+    if (!preferences) {
       return; // No preferences, skip
     }
 
-    const preferences = prefsResult.rows[0];
     const typePrefs = preferences.preferences || {};
 
     // Check if this notification type is enabled
     const typeEnabled = typePrefs[type] !== false; // Default to true unless explicitly disabled
 
-    // Get user email and phone
-    const userResult = await pool.query(
-      `SELECT u.email, p.phone FROM users u
-       LEFT JOIN profiles p ON u.id = p.user_id
-       WHERE u.id = $1`,
-      [userId]
-    );
+    // Get user email and phone from Supabase Auth and profiles
+    const { data: authUser } = await supabase.auth.admin.getUserById(userId);
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('phone')
+      .eq('user_id', userId)
+      .single();
 
-    if (userResult.rows.length === 0) return;
+    if (!authUser?.user) return;
 
-    const user = userResult.rows[0];
+    const userEmail = authUser.user.email;
+    const userPhone = profile?.phone;
 
     // Send email if enabled
-    if (preferences.email_enabled && typeEnabled && user.email) {
-      await this.sendEmail(userId, notificationId, user.email, title, message);
+    if (preferences.email_enabled && typeEnabled && userEmail) {
+      await this.sendEmail(userId, notificationId, userEmail, title, message);
     }
 
     // Send SMS if enabled (requires SMS service integration)
-    if (preferences.sms_enabled && typeEnabled && user.phone) {
+    if (preferences.sms_enabled && typeEnabled && userPhone) {
       // TODO: Integrate with SMS service (e.g., Twilio, Click Pesa SMS)
-      // await this.sendSMS(userId, notificationId, user.phone, message);
+      // await this.sendSMS(userId, notificationId, userPhone, message);
     }
   }
 
   /**
-   * Send email notification
+   * Send email notification using Resend
    */
   async sendEmail(
     userId: string,
@@ -103,22 +118,57 @@ class NotificationService {
   ): Promise<void> {
     try {
       // Log email notification
-      await pool.query(
-        `INSERT INTO email_notifications (user_id, notification_id, email, subject, status)
-         VALUES ($1, $2, $3, $4, 'pending')`,
-        [userId, notificationId, email, subject]
+      const { error: logError } = await supabase
+        .from('email_notifications')
+        .insert({
+          user_id: userId,
+          notification_id: notificationId,
+          email,
+          subject,
+          status: 'pending',
+        });
+
+      if (logError) {
+        console.error('Failed to log email notification:', logError);
+      }
+
+      // Send email using Resend
+      const result = await sendNotificationEmail(
+        email,
+        subject,
+        message,
+        `${process.env.APP_URL || 'https://www.blinno.app'}/notifications/${notificationId}`
       );
 
-      // TODO: Integrate with email service (e.g., SendGrid, AWS SES, Nodemailer)
-      // For now, just log it
-      console.log(`Email notification queued: ${email} - ${subject}`);
+      // Update email notification status
+      const status = result.success ? 'sent' : 'failed';
+      await supabase
+        .from('email_notifications')
+        .update({
+          status,
+          error_message: result.error || null,
+          sent_at: result.success ? new Date().toISOString() : null,
+        })
+        .eq('notification_id', notificationId)
+        .eq('user_id', userId);
 
-      // In production, you would:
-      // 1. Use an email service (SendGrid, AWS SES, etc.)
-      // 2. Update status to 'sent' or 'failed'
-      // 3. Handle bounces and errors
-    } catch (error) {
+      if (result.success) {
+        console.log(`Email sent successfully: ${email} - ${subject}`);
+      } else {
+        console.error(`Failed to send email: ${email} - ${subject}`, result.error);
+      }
+    } catch (error: any) {
       console.error('Send email error:', error);
+      
+      // Update status to failed
+      await supabase
+        .from('email_notifications')
+        .update({
+          status: 'failed',
+          error_message: error.message || 'Unknown error',
+        })
+        .eq('notification_id', notificationId)
+        .eq('user_id', userId);
     }
   }
 
@@ -255,4 +305,3 @@ class NotificationService {
 }
 
 export const notificationService = new NotificationService();
-

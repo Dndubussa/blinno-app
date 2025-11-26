@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import { pool } from '../config/database.js';
+import { supabase } from '../config/supabase.js';
 
 export interface AuthRequest extends Request {
   userId?: string;
@@ -20,30 +19,35 @@ export const authenticate = async (
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
-    
-    // Verify user exists
-    const result = await pool.query(
-      'SELECT id, email, email_verified FROM users WHERE id = $1',
-      [decoded.userId]
-    );
+    // Verify token with Supabase
+    const { data: { user }, error } = await supabase.auth.getUser(token);
 
-    if (result.rows.length === 0) {
-      return res.status(401).json({ error: 'User not found' });
+    if (error || !user) {
+      return res.status(401).json({ error: 'Invalid or expired token' });
     }
 
-    req.userId = decoded.userId;
-    req.user = result.rows[0];
+    req.userId = user.id;
+    req.user = {
+      id: user.id,
+      email: user.email,
+      email_verified: user.email_confirmed_at !== null,
+    };
 
-    // Get user roles
-    const rolesResult = await pool.query(
-      'SELECT role FROM user_roles WHERE user_id = $1',
-      [decoded.userId]
-    );
-    req.userRoles = rolesResult.rows.map((row) => row.role);
+    // Get user roles from Supabase
+    const { data: rolesData, error: rolesError } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id);
+
+    if (!rolesError && rolesData) {
+      req.userRoles = rolesData.map((row) => row.role);
+    } else {
+      req.userRoles = ['user']; // Default role
+    }
 
     next();
   } catch (error) {
+    console.error('Authentication error:', error);
     return res.status(401).json({ error: 'Invalid or expired token' });
   }
 };
@@ -55,14 +59,19 @@ export const requireRole = (...roles: string[]) => {
     }
 
     try {
-      // Check if user has any of the required roles
-      const placeholders = roles.map((_, index) => `$${index + 2}`).join(', ');
-      const query = `SELECT role FROM user_roles 
-                     WHERE user_id = $1 AND role IN (${placeholders})`;
-      
-      const result = await pool.query(query, [req.userId, ...roles]);
+      // Check if user has any of the required roles using Supabase
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', req.userId)
+        .in('role', roles);
 
-      if (result.rows.length === 0) {
+      if (error) {
+        console.error('Role check error:', error);
+        return res.status(500).json({ error: 'Error checking permissions', details: error.message });
+      }
+
+      if (!data || data.length === 0) {
         return res.status(403).json({ error: 'Insufficient permissions' });
       }
 

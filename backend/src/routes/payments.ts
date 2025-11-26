@@ -1,11 +1,12 @@
 import express from 'express';
-import { pool } from '../config/database.js';
+import { supabase } from '../config/supabase.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import ClickPesaService, { PaymentRequest } from '../services/clickpesa.js';
 import dotenv from 'dotenv';
 import { platformFees } from '../services/platformFees.js';
 import { financialTracking } from '../services/financialTracking.js';
 import { notificationService } from '../services/notifications.js';
+import { userPreferences } from '../services/userPreferences.js';
 
 dotenv.config();
 
@@ -24,49 +25,71 @@ const clickPesa = new ClickPesaService({
 router.post('/create', authenticate, async (req: AuthRequest, res) => {
   try {
     const { orderId, customerPhone, customerEmail, customerName } = req.body;
+    
+    // Check if user is authenticated
+    if (!req.userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    
+    // Get user's preferred currency
+    const userPrefs = await userPreferences.getUserPreferences(req.userId);
+    const currency = userPrefs.currency || 'TZS';
 
     if (!orderId || !customerPhone) {
       return res.status(400).json({ error: 'Order ID and customer phone are required' });
     }
 
     // Get order details
-    const orderResult = await pool.query(
-      `SELECT o.*, u.email, p.display_name, p.phone
-       FROM orders o
-       JOIN users u ON o.user_id = u.id
-       LEFT JOIN profiles p ON o.user_id = p.user_id
-       WHERE o.id = $1 AND o.user_id = $2`,
-      [orderId, req.userId]
-    );
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .select(`
+        *,
+        user:profiles!orders_user_id_fkey(display_name, phone)
+      `)
+      .eq('id', orderId)
+      .eq('user_id', req.userId)
+      .single();
 
-    if (orderResult.rows.length === 0) {
+    if (orderError || !order) {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    const order = orderResult.rows[0];
+    // Get user email
+    const { data: authUser } = await supabase.auth.admin.getUserById(req.userId);
 
     if (order.status !== 'pending') {
       return res.status(400).json({ error: 'Order is not in pending status' });
     }
 
-    // Create payment record
-    const paymentResult = await pool.query(
-      `INSERT INTO payments (order_id, user_id, amount, currency, status, payment_method)
-       VALUES ($1, $2, $3, $4, 'pending', 'clickpesa')
-       RETURNING *`,
-      [orderId, req.userId, order.total_amount, 'TZS']
-    );
+    // Calculate fees based on user's currency
+    const feeCalculation = platformFees.calculateMarketplaceFee(parseFloat(order.total_amount), undefined, currency);
 
-    const payment = paymentResult.rows[0];
+    // Create payment record with currency support
+    const { data: payment, error: paymentError } = await supabase
+      .from('payments')
+      .insert({
+        order_id: orderId,
+        user_id: req.userId,
+        amount: feeCalculation.total,
+        currency: currency,
+        status: 'pending',
+        payment_method: 'clickpesa',
+      })
+      .select()
+      .single();
+
+    if (paymentError || !payment) {
+      throw paymentError;
+    }
 
     // Create Click Pesa payment request
     const paymentRequest: PaymentRequest = {
-      amount: parseFloat(order.total_amount),
-      currency: 'TZS',
+      amount: feeCalculation.total,
+      currency: currency,
       orderId: orderId,
       customerPhone: customerPhone,
-      customerEmail: customerEmail || order.email,
-      customerName: customerName || order.display_name || 'Customer',
+      customerEmail: customerEmail || authUser?.user?.email || '',
+      customerName: customerName || order.user?.display_name || 'Customer',
       description: `Payment for order #${orderId}`,
       callbackUrl: `${process.env.APP_URL || 'https://www.blinno.app'}/api/payments/webhook`,
     };
@@ -75,10 +98,13 @@ router.post('/create', authenticate, async (req: AuthRequest, res) => {
 
     if (!clickPesaResponse.success) {
       // Update payment status to failed
-      await pool.query(
-        `UPDATE payments SET status = 'failed', error_message = $1 WHERE id = $2`,
-        [clickPesaResponse.error || 'Payment creation failed', payment.id]
-      );
+      await supabase
+        .from('payments')
+        .update({
+          status: 'failed',
+          error_message: clickPesaResponse.error || 'Payment creation failed',
+        })
+        .eq('id', payment.id);
 
       return res.status(400).json({
         error: clickPesaResponse.error || 'Failed to create payment',
@@ -86,23 +112,21 @@ router.post('/create', authenticate, async (req: AuthRequest, res) => {
     }
 
     // Update payment with Click Pesa details
-    await pool.query(
-      `UPDATE payments 
-       SET payment_id = $1, transaction_id = $2, checkout_url = $3, status = 'initiated'
-       WHERE id = $4`,
-      [
-        clickPesaResponse.paymentId,
-        clickPesaResponse.transactionId,
-        clickPesaResponse.checkoutUrl,
-        payment.id,
-      ]
-    );
+    await supabase
+      .from('payments')
+      .update({
+        payment_id: clickPesaResponse.paymentId,
+        transaction_id: clickPesaResponse.transactionId,
+        checkout_url: clickPesaResponse.checkoutUrl,
+        status: 'initiated',
+      })
+      .eq('id', payment.id);
 
     // Update order status
-    await pool.query(
-      `UPDATE orders SET status = 'payment_pending' WHERE id = $1`,
-      [orderId]
-    );
+    await supabase
+      .from('orders')
+      .update({ status: 'payment_pending' })
+      .eq('id', orderId);
 
     res.json({
       success: true,
@@ -123,16 +147,16 @@ router.get('/:paymentId/status', authenticate, async (req: AuthRequest, res) => 
   try {
     const { paymentId } = req.params;
 
-    const paymentResult = await pool.query(
-      `SELECT * FROM payments WHERE id = $1 AND user_id = $2`,
-      [paymentId, req.userId]
-    );
+    const { data: payment, error: paymentError } = await supabase
+      .from('payments')
+      .select('*')
+      .eq('id', paymentId)
+      .eq('user_id', req.userId)
+      .single();
 
-    if (paymentResult.rows.length === 0) {
+    if (paymentError || !payment) {
       return res.status(404).json({ error: 'Payment not found' });
     }
-
-    const payment = paymentResult.rows[0];
 
     // If payment has Click Pesa payment ID, check status with Click Pesa
     if (payment.payment_id && payment.status === 'initiated') {
@@ -151,17 +175,20 @@ router.get('/:paymentId/status', authenticate, async (req: AuthRequest, res) => 
         }
 
         if (newStatus !== payment.status) {
-          await pool.query(
-            `UPDATE payments SET status = $1, updated_at = now() WHERE id = $2`,
-            [newStatus, payment.id]
-          );
+          await supabase
+            .from('payments')
+            .update({
+              status: newStatus,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', payment.id);
 
           // Update order status if payment completed
           if (newStatus === 'completed') {
-            await pool.query(
-              `UPDATE orders SET status = 'paid' WHERE id = $1`,
-              [payment.order_id]
-            );
+            await supabase
+              .from('orders')
+              .update({ status: 'paid' })
+              .eq('id', payment.order_id);
           }
 
           payment.status = newStatus;
@@ -194,17 +221,16 @@ router.post('/webhook', async (req, res) => {
     }
 
     // Find payment by Click Pesa payment ID
-    const paymentResult = await pool.query(
-      `SELECT * FROM payments WHERE payment_id = $1`,
-      [payment_id]
-    );
+    const { data: payment, error: paymentError } = await supabase
+      .from('payments')
+      .select('*')
+      .eq('payment_id', payment_id)
+      .single();
 
-    if (paymentResult.rows.length === 0) {
+    if (paymentError || !payment) {
       console.error('Payment not found for webhook:', payment_id);
       return res.status(404).json({ error: 'Payment not found' });
     }
-
-    const payment = paymentResult.rows[0];
 
     // Map Click Pesa status to our status
     let newStatus = payment.status;
@@ -217,12 +243,14 @@ router.post('/webhook', async (req, res) => {
     }
 
     // Update payment
-    await pool.query(
-      `UPDATE payments 
-       SET status = $1, transaction_id = $2, updated_at = now()
-       WHERE id = $3`,
-      [newStatus, transaction_id || payment.transaction_id, payment.id]
-    );
+    await supabase
+      .from('payments')
+      .update({
+        status: newStatus,
+        transaction_id: transaction_id || payment.transaction_id,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', payment.id);
 
     // Handle different payment types
     const paymentType = payment.payment_type || 'order';
@@ -232,19 +260,24 @@ router.post('/webhook', async (req, res) => {
       // Handle based on payment type
       if (orderId.startsWith('subscription_')) {
         // Platform subscription
-        await pool.query(
-          `UPDATE platform_subscriptions
-           SET status = 'active', payment_status = 'paid', updated_at = now()
-           WHERE user_id = $1 AND status = 'pending'`,
-          [payment.user_id]
-        );
+        await supabase
+          .from('platform_subscriptions')
+          .update({
+            status: 'active',
+            payment_status: 'paid',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('user_id', payment.user_id)
+          .eq('status', 'pending');
       } else if (paymentType === 'booking') {
         // Service booking
-        const bookingId = orderId;
-        await pool.query(
-          `UPDATE bookings SET status = 'confirmed', updated_at = now() WHERE id = $1`,
-          [bookingId]
-        );
+        await supabase
+          .from('bookings')
+          .update({
+            status: 'confirmed',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', orderId);
       } else if (paymentType === 'digital_product') {
         // Digital product purchase
         const match = orderId.match(/digital_product_([^_]+)_(.+)/);
@@ -256,90 +289,108 @@ router.post('/webhook', async (req, res) => {
           const expiresAt = new Date();
           expiresAt.setDate(expiresAt.getDate() + 7);
           
-          await pool.query(
-            `UPDATE digital_product_purchases
-             SET payment_status = 'paid', download_url = $1, download_expires_at = $2
-             WHERE product_id = $3 AND buyer_id = $4`,
-            [downloadUrl, expiresAt, productId, buyerId]
-          );
+          await supabase
+            .from('digital_product_purchases')
+            .update({
+              payment_status: 'paid',
+              download_url: downloadUrl,
+              download_expires_at: expiresAt.toISOString(),
+            })
+            .eq('product_id', productId)
+            .eq('buyer_id', buyerId);
         }
       } else if (paymentType === 'tip') {
         // Tip
         const tipId = orderId.replace('tip_', '');
-        await pool.query(
-          `UPDATE tips SET payment_status = 'paid' WHERE id = $1`,
-          [tipId]
-        );
+        await supabase
+          .from('tips')
+          .update({ payment_status: 'paid' })
+          .eq('id', tipId);
       } else if (paymentType === 'commission') {
         // Commission payment
         const commissionId = orderId.replace('commission_', '');
-        await pool.query(
-          `UPDATE commissions SET payment_status = 'paid' WHERE id = $1`,
-          [commissionId]
-        );
+        await supabase
+          .from('commissions')
+          .update({ payment_status: 'paid' })
+          .eq('id', commissionId);
       } else if (paymentType === 'performance_booking') {
         // Performance booking
         const bookingId = orderId.replace('performance_booking_', '');
-        await pool.query(
-          `UPDATE performance_bookings SET payment_status = 'paid', status = 'confirmed', updated_at = now() WHERE id = $1`,
-          [bookingId]
-        );
+        await supabase
+          .from('performance_bookings')
+          .update({
+            payment_status: 'paid',
+            status: 'confirmed',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', bookingId);
       } else if (paymentType === 'featured_listing') {
         // Featured listing
         const listingId = orderId.replace('featured_', '');
-        await pool.query(
-          `UPDATE featured_listings SET status = 'active', payment_status = 'paid', updated_at = now() WHERE id = $1`,
-          [listingId]
-        );
+        await supabase
+          .from('featured_listings')
+          .update({
+            status: 'active',
+            payment_status: 'paid',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', listingId);
       } else if (paymentType === 'lodging_booking') {
         // Lodging booking
         const bookingId = orderId.replace('lodging_booking_', '');
-        await pool.query(
-          `UPDATE lodging_bookings SET status = 'confirmed', updated_at = now() WHERE id = $1`,
-          [bookingId]
-        );
+        await supabase
+          .from('lodging_bookings')
+          .update({
+            status: 'confirmed',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', bookingId);
       } else if (paymentType === 'restaurant_order') {
         // Restaurant order (uses orders table)
-        await pool.query(
-          `UPDATE orders SET status = 'paid' WHERE id = $1`,
-          [orderId]
-        );
+        await supabase
+          .from('orders')
+          .update({ status: 'paid' })
+          .eq('id', orderId);
       } else {
         // Default: regular order
-        await pool.query(
-          `UPDATE orders SET status = 'paid' WHERE id = $1`,
-          [orderId]
-        );
+        await supabase
+          .from('orders')
+          .update({ status: 'paid' })
+          .eq('id', orderId);
       }
 
       // Mark platform fees as collected and record earnings
-      const feesResult = await pool.query(
-        `UPDATE platform_fees 
-         SET status = 'collected', updated_at = now()
-         WHERE transaction_id = $1 AND status = 'pending'
-         RETURNING user_id, creator_payout, transaction_type, transaction_id`,
-        [orderId]
-      );
+      const { data: fees } = await supabase
+        .from('platform_fees')
+        .update({
+          status: 'collected',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('transaction_id', orderId)
+        .eq('status', 'pending')
+        .select('user_id, creator_payout, transaction_type, transaction_id');
 
       // Record earnings for creators
-      for (const fee of feesResult.rows) {
-        if (fee.creator_payout > 0) {
-          await financialTracking.recordEarnings(
-            fee.user_id,
-            parseFloat(fee.creator_payout),
-            fee.transaction_id,
-            fee.transaction_type,
-            `Earnings from ${fee.transaction_type}`,
-            { transaction_id: fee.transaction_id }
-          );
+      if (fees) {
+        for (const fee of fees) {
+          if (fee.creator_payout > 0) {
+            await financialTracking.recordEarnings(
+              fee.user_id,
+              parseFloat(fee.creator_payout.toString()),
+              fee.transaction_id,
+              fee.transaction_type,
+              `Earnings from ${fee.transaction_type}`,
+              { transaction_id: fee.transaction_id }
+            );
 
-          // Notify creator about payment
-          await notificationService.notifyPayment(
-            fee.user_id,
-            payment.id,
-            'received',
-            parseFloat(fee.creator_payout)
-          );
+            // Notify creator about payment
+            await notificationService.notifyPayment(
+              fee.user_id,
+              payment.id,
+              'received',
+              parseFloat(fee.creator_payout.toString())
+            );
+          }
         }
       }
 
@@ -348,82 +399,101 @@ router.post('/webhook', async (req, res) => {
         payment.user_id,
         payment.id,
         'received',
-        parseFloat(payment.amount)
+        parseFloat(payment.amount.toString())
       );
     } else if (newStatus === 'failed') {
       // Handle failures
       if (orderId.startsWith('subscription_')) {
-        await pool.query(
-          `UPDATE platform_subscriptions
-           SET status = 'expired', payment_status = 'failed', updated_at = now()
-           WHERE user_id = $1 AND status = 'pending'`,
-          [payment.user_id]
-        );
+        await supabase
+          .from('platform_subscriptions')
+          .update({
+            status: 'expired',
+            payment_status: 'failed',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('user_id', payment.user_id)
+          .eq('status', 'pending');
       } else if (paymentType === 'booking') {
-        const bookingId = orderId;
-        await pool.query(
-          `UPDATE bookings SET status = 'cancelled', updated_at = now() WHERE id = $1`,
-          [bookingId]
-        );
+        await supabase
+          .from('bookings')
+          .update({
+            status: 'cancelled',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', orderId);
       } else if (paymentType === 'digital_product') {
         const match = orderId.match(/digital_product_([^_]+)_(.+)/);
         if (match) {
           const productId = match[1];
           const buyerId = match[2];
-          await pool.query(
-            `UPDATE digital_product_purchases SET payment_status = 'failed' WHERE product_id = $1 AND buyer_id = $2`,
-            [productId, buyerId]
-          );
+          await supabase
+            .from('digital_product_purchases')
+            .update({ payment_status: 'failed' })
+            .eq('product_id', productId)
+            .eq('buyer_id', buyerId);
         }
       } else if (paymentType === 'tip') {
         const tipId = orderId.replace('tip_', '');
-        await pool.query(
-          `UPDATE tips SET payment_status = 'failed' WHERE id = $1`,
-          [tipId]
-        );
+        await supabase
+          .from('tips')
+          .update({ payment_status: 'failed' })
+          .eq('id', tipId);
       } else if (paymentType === 'commission') {
         const commissionId = orderId.replace('commission_', '');
-        await pool.query(
-          `UPDATE commissions SET payment_status = 'failed' WHERE id = $1`,
-          [commissionId]
-        );
+        await supabase
+          .from('commissions')
+          .update({ payment_status: 'failed' })
+          .eq('id', commissionId);
       } else if (paymentType === 'performance_booking') {
         const bookingId = orderId.replace('performance_booking_', '');
-        await pool.query(
-          `UPDATE performance_bookings SET payment_status = 'failed', status = 'cancelled', updated_at = now() WHERE id = $1`,
-          [bookingId]
-        );
+        await supabase
+          .from('performance_bookings')
+          .update({
+            payment_status: 'failed',
+            status: 'cancelled',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', bookingId);
       } else if (paymentType === 'featured_listing') {
         const listingId = orderId.replace('featured_', '');
-        await pool.query(
-          `UPDATE featured_listings SET status = 'cancelled', payment_status = 'failed', updated_at = now() WHERE id = $1`,
-          [listingId]
-        );
+        await supabase
+          .from('featured_listings')
+          .update({
+            status: 'cancelled',
+            payment_status: 'failed',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', listingId);
       } else if (paymentType === 'lodging_booking') {
         const bookingId = orderId.replace('lodging_booking_', '');
-        await pool.query(
-          `UPDATE lodging_bookings SET status = 'cancelled', updated_at = now() WHERE id = $1`,
-          [bookingId]
-        );
+        await supabase
+          .from('lodging_bookings')
+          .update({
+            status: 'cancelled',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', bookingId);
       } else if (paymentType === 'restaurant_order') {
-        await pool.query(
-          `UPDATE orders SET status = 'payment_failed' WHERE id = $1`,
-          [orderId]
-        );
+        await supabase
+          .from('orders')
+          .update({ status: 'payment_failed' })
+          .eq('id', orderId);
       } else {
-        await pool.query(
-          `UPDATE orders SET status = 'payment_failed' WHERE id = $1`,
-          [orderId]
-        );
+        await supabase
+          .from('orders')
+          .update({ status: 'payment_failed' })
+          .eq('id', orderId);
       }
 
       // Mark platform fees as refunded/cancelled
-      await pool.query(
-        `UPDATE platform_fees 
-         SET status = 'refunded', updated_at = now()
-         WHERE transaction_id = $1 AND status = 'pending'`,
-        [orderId]
-      );
+      await supabase
+        .from('platform_fees')
+        .update({
+          status: 'refunded',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('transaction_id', orderId)
+        .eq('status', 'pending');
     }
 
     res.json({ success: true, message: 'Webhook processed' });
@@ -438,16 +508,26 @@ router.post('/webhook', async (req, res) => {
  */
 router.get('/history', authenticate, async (req: AuthRequest, res) => {
   try {
-    const result = await pool.query(
-      `SELECT p.*, o.total_amount, o.status as order_status
-       FROM payments p
-       JOIN orders o ON p.order_id = o.id
-       WHERE p.user_id = $1
-       ORDER BY p.created_at DESC`,
-      [req.userId]
-    );
+    const { data, error } = await supabase
+      .from('payments')
+      .select(`
+        *,
+        orders!inner(total_amount, status)
+      `)
+      .eq('user_id', req.userId)
+      .order('created_at', { ascending: false });
 
-    res.json(result.rows);
+    if (error) {
+      throw error;
+    }
+
+    // Transform to match expected format
+    const transformed = (data || []).map((p: any) => ({
+      ...p,
+      order_status: p.orders?.status,
+    }));
+
+    res.json(transformed);
   } catch (error: any) {
     console.error('Get payment history error:', error);
     res.status(500).json({ error: 'Failed to get payment history' });
@@ -455,4 +535,3 @@ router.get('/history', authenticate, async (req: AuthRequest, res) => {
 });
 
 export default router;
-

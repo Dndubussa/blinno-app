@@ -1,5 +1,5 @@
 import express from 'express';
-import { pool } from '../config/database.js';
+import { supabase } from '../config/supabase.js';
 import { authenticate, AuthRequest, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -11,11 +11,17 @@ router.use(requireRole('freelancer'));
 // Projects
 router.get('/projects', async (req: AuthRequest, res) => {
   try {
-    const result = await pool.query(
-      'SELECT * FROM projects WHERE freelancer_id = $1 ORDER BY created_at DESC',
-      [req.userId]
-    );
-    res.json(result.rows);
+    const { data, error } = await supabase
+      .from('projects')
+      .select('*')
+      .eq('freelancer_id', req.userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    res.json(data || []);
   } catch (error: any) {
     console.error('Get projects error:', error);
     res.status(500).json({ error: 'Failed to get projects' });
@@ -25,13 +31,27 @@ router.get('/projects', async (req: AuthRequest, res) => {
 router.post('/projects', async (req: AuthRequest, res) => {
   try {
     const { title, description, billingType, budget, status, startDate, endDate } = req.body;
-    const result = await pool.query(
-      `INSERT INTO projects (freelancer_id, title, description, billing_type, budget, status, start_date, end_date)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING *`,
-      [req.userId, title, description, billingType, budget ? parseFloat(budget) : null, status || 'draft', startDate || null, endDate || null]
-    );
-    res.status(201).json(result.rows[0]);
+    
+    const { data, error } = await supabase
+      .from('projects')
+      .insert({
+        freelancer_id: req.userId,
+        title,
+        description,
+        billing_type: billingType,
+        budget: budget ? parseFloat(budget) : null,
+        status: status || 'draft',
+        start_date: startDate || null,
+        end_date: endDate || null,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    res.status(201).json(data);
   } catch (error: any) {
     console.error('Create project error:', error);
     res.status(500).json({ error: 'Failed to create project' });
@@ -41,34 +61,29 @@ router.post('/projects', async (req: AuthRequest, res) => {
 router.put('/projects/:id', async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
-    const updates: string[] = [];
-    const values: any[] = [];
-    let paramCount = 1;
+    const updates: any = {
+      updated_at: new Date().toISOString(),
+    };
 
     ['title', 'description', 'billing_type', 'budget', 'status', 'start_date', 'end_date'].forEach(field => {
       if (req.body[field] !== undefined) {
-        updates.push(`${field} = $${paramCount++}`);
-        values.push(req.body[field]);
+        updates[field] = req.body[field];
       }
     });
 
-    if (updates.length === 0) {
-      return res.status(400).json({ error: 'No fields to update' });
-    }
+    const { data, error } = await supabase
+      .from('projects')
+      .update(updates)
+      .eq('id', id)
+      .eq('freelancer_id', req.userId)
+      .select()
+      .single();
 
-    values.push(id, req.userId);
-    const result = await pool.query(
-      `UPDATE projects SET ${updates.join(', ')}, updated_at = now()
-       WHERE id = $${paramCount} AND freelancer_id = $${paramCount + 1}
-       RETURNING *`,
-      values
-    );
-
-    if (result.rows.length === 0) {
+    if (error || !data) {
       return res.status(404).json({ error: 'Project not found' });
     }
 
-    res.json(result.rows[0]);
+    res.json(data);
   } catch (error: any) {
     console.error('Update project error:', error);
     res.status(500).json({ error: 'Failed to update project' });
@@ -78,7 +93,17 @@ router.put('/projects/:id', async (req: AuthRequest, res) => {
 router.delete('/projects/:id', async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
-    await pool.query('DELETE FROM projects WHERE id = $1 AND freelancer_id = $2', [id, req.userId]);
+    
+    const { error } = await supabase
+      .from('projects')
+      .delete()
+      .eq('id', id)
+      .eq('freelancer_id', req.userId);
+
+    if (error) {
+      throw error;
+    }
+
     res.json({ message: 'Project deleted' });
   } catch (error: any) {
     console.error('Delete project error:', error);
@@ -89,11 +114,17 @@ router.delete('/projects/:id', async (req: AuthRequest, res) => {
 // Proposals
 router.get('/proposals', async (req: AuthRequest, res) => {
   try {
-    const result = await pool.query(
-      'SELECT * FROM proposals WHERE freelancer_id = $1 ORDER BY created_at DESC',
-      [req.userId]
-    );
-    res.json(result.rows);
+    const { data, error } = await supabase
+      .from('proposals')
+      .select('*')
+      .eq('freelancer_id', req.userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    res.json(data || []);
   } catch (error: any) {
     console.error('Get proposals error:', error);
     res.status(500).json({ error: 'Failed to get proposals' });
@@ -111,57 +142,70 @@ router.post('/proposals', async (req: AuthRequest, res) => {
 
     // If projectId is provided, get the project to find the client
     if (projectId && !clientId) {
-      const projectResult = await pool.query(
-        'SELECT client_id FROM projects WHERE id = $1',
-        [projectId]
-      );
-      if (projectResult.rows.length > 0) {
-        const projectClientId = projectResult.rows[0].client_id;
-        if (projectClientId) {
-          // Get user_id from client
-          const clientResult = await pool.query(
-            'SELECT user_id FROM clients WHERE id = $1',
-            [projectClientId]
-          );
-          if (clientResult.rows.length > 0 && clientResult.rows[0].user_id) {
-            // Auto-create client if needed
-            const createdClientId = await ensureClientExists({
-              freelancerId: req.userId,
-              userId: clientResult.rows[0].user_id,
-            });
-            if (createdClientId) {
-              finalClientId = createdClientId;
-            } else {
-              finalClientId = projectClientId;
-            }
+      const { data: project } = await supabase
+        .from('projects')
+        .select('client_id')
+        .eq('id', projectId)
+        .single();
+
+      if (project?.client_id) {
+        const { data: client } = await supabase
+          .from('clients')
+          .select('user_id')
+          .eq('id', project.client_id)
+          .single();
+
+        if (client?.user_id) {
+          // Auto-create client if needed
+          const createdClientId = await ensureClientExists({
+            freelancerId: req.userId,
+            userId: client.user_id,
+          });
+          if (createdClientId) {
+            finalClientId = createdClientId;
           } else {
-            finalClientId = projectClientId;
+            finalClientId = project.client_id;
           }
+        } else {
+          finalClientId = project.client_id;
         }
       }
     }
 
     // If proposal is being accepted, ensure client exists
     if (status === 'accepted' && finalClientId) {
-      const clientResult = await pool.query(
-        'SELECT user_id FROM clients WHERE id = $1',
-        [finalClientId]
-      );
-      if (clientResult.rows.length > 0 && clientResult.rows[0].user_id) {
+      const { data: client } = await supabase
+        .from('clients')
+        .select('user_id')
+        .eq('id', finalClientId)
+        .single();
+
+      if (client?.user_id) {
         await ensureClientExists({
           freelancerId: req.userId,
-          userId: clientResult.rows[0].user_id,
+          userId: client.user_id,
         });
       }
     }
 
-    const result = await pool.query(
-      `INSERT INTO proposals (project_id, freelancer_id, client_id, message, proposed_rate, status)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING *`,
-      [projectId, req.userId, finalClientId, message, proposedRate ? parseFloat(proposedRate) : null, status || 'pending']
-    );
-    res.status(201).json(result.rows[0]);
+    const { data, error } = await supabase
+      .from('proposals')
+      .insert({
+        project_id: projectId || null,
+        freelancer_id: req.userId,
+        client_id: finalClientId || null,
+        message,
+        proposed_rate: proposedRate ? parseFloat(proposedRate) : null,
+        status: status || 'pending',
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    res.status(201).json(data);
   } catch (error: any) {
     console.error('Create proposal error:', error);
     res.status(500).json({ error: 'Failed to create proposal' });
@@ -171,19 +215,38 @@ router.post('/proposals', async (req: AuthRequest, res) => {
 // Clients
 router.get('/clients', async (req: AuthRequest, res) => {
   try {
-    const result = await pool.query(
-      `SELECT c.*, 
-       p.display_name, p.avatar_url, u.email as user_email,
-       (SELECT COUNT(*) FROM projects WHERE client_id = c.id) as project_count,
-       (SELECT COUNT(*) FROM invoices WHERE client_id = c.id) as invoice_count
-       FROM clients c
-       LEFT JOIN users u ON c.user_id = u.id
-       LEFT JOIN profiles p ON c.user_id = p.user_id
-       WHERE c.freelancer_id = $1 
-       ORDER BY c.created_at DESC`,
-      [req.userId]
-    );
-    res.json(result.rows);
+    const { data: clients, error } = await supabase
+      .from('clients')
+      .select(`
+        *,
+        profiles!clients_user_id_fkey(display_name, avatar_url),
+        users!clients_user_id_fkey(email)
+      `)
+      .eq('freelancer_id', req.userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    // Get project and invoice counts
+    const enrichedClients = await Promise.all((clients || []).map(async (client: any) => {
+      const [projectsCount, invoicesCount] = await Promise.all([
+        supabase.from('projects').select('*', { count: 'exact', head: true }).eq('client_id', client.id),
+        supabase.from('invoices').select('*', { count: 'exact', head: true }).eq('client_id', client.id),
+      ]);
+
+      return {
+        ...client,
+        display_name: client.profiles?.display_name,
+        avatar_url: client.profiles?.avatar_url,
+        user_email: client.users?.email,
+        project_count: projectsCount.count || 0,
+        invoice_count: invoicesCount.count || 0,
+      };
+    }));
+
+    res.json(enrichedClients);
   } catch (error: any) {
     console.error('Get clients error:', error);
     res.status(500).json({ error: 'Failed to get clients' });
@@ -193,13 +256,26 @@ router.get('/clients', async (req: AuthRequest, res) => {
 router.post('/clients', async (req: AuthRequest, res) => {
   try {
     const { userId, companyName, contactName, email, phone, paymentTerms } = req.body;
-    const result = await pool.query(
-      `INSERT INTO clients (freelancer_id, user_id, company_name, contact_name, email, phone, payment_terms)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING *`,
-      [req.userId, userId || null, companyName || null, contactName, email || null, phone || null, paymentTerms || null]
-    );
-    res.status(201).json(result.rows[0]);
+    
+    const { data, error } = await supabase
+      .from('clients')
+      .insert({
+        freelancer_id: req.userId,
+        user_id: userId || null,
+        company_name: companyName || null,
+        contact_name: contactName,
+        email: email || null,
+        phone: phone || null,
+        payment_terms: paymentTerms || null,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    res.status(201).json(data);
   } catch (error: any) {
     console.error('Create client error:', error);
     res.status(500).json({ error: 'Failed to create client' });
@@ -209,11 +285,17 @@ router.post('/clients', async (req: AuthRequest, res) => {
 // Services
 router.get('/services', async (req: AuthRequest, res) => {
   try {
-    const result = await pool.query(
-      'SELECT * FROM freelancer_services WHERE freelancer_id = $1 ORDER BY created_at DESC',
-      [req.userId]
-    );
-    res.json(result.rows);
+    const { data, error } = await supabase
+      .from('freelancer_services')
+      .select('*')
+      .eq('freelancer_id', req.userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    res.json(data || []);
   } catch (error: any) {
     console.error('Get services error:', error);
     res.status(500).json({ error: 'Failed to get services' });
@@ -223,13 +305,26 @@ router.get('/services', async (req: AuthRequest, res) => {
 router.post('/services', async (req: AuthRequest, res) => {
   try {
     const { name, description, category, pricingType, hourlyRate, fixedPrice } = req.body;
-    const result = await pool.query(
-      `INSERT INTO freelancer_services (freelancer_id, name, description, category, pricing_type, hourly_rate, fixed_price)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING *`,
-      [req.userId, name, description || null, category || null, pricingType, hourlyRate ? parseFloat(hourlyRate) : null, fixedPrice ? parseFloat(fixedPrice) : null]
-    );
-    res.status(201).json(result.rows[0]);
+    
+    const { data, error } = await supabase
+      .from('freelancer_services')
+      .insert({
+        freelancer_id: req.userId,
+        name,
+        description: description || null,
+        category: category || null,
+        pricing_type: pricingType,
+        hourly_rate: hourlyRate ? parseFloat(hourlyRate) : null,
+        fixed_price: fixedPrice ? parseFloat(fixedPrice) : null,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    res.status(201).json(data);
   } catch (error: any) {
     console.error('Create service error:', error);
     res.status(500).json({ error: 'Failed to create service' });
@@ -239,11 +334,17 @@ router.post('/services', async (req: AuthRequest, res) => {
 // Invoices
 router.get('/invoices', async (req: AuthRequest, res) => {
   try {
-    const result = await pool.query(
-      'SELECT * FROM invoices WHERE freelancer_id = $1 ORDER BY created_at DESC',
-      [req.userId]
-    );
-    res.json(result.rows);
+    const { data, error } = await supabase
+      .from('invoices')
+      .select('*')
+      .eq('freelancer_id', req.userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    res.json(data || []);
   } catch (error: any) {
     console.error('Get invoices error:', error);
     res.status(500).json({ error: 'Failed to get invoices' });
@@ -253,13 +354,26 @@ router.get('/invoices', async (req: AuthRequest, res) => {
 router.post('/invoices', async (req: AuthRequest, res) => {
   try {
     const { projectId, clientId, amount, description, dueDate, status } = req.body;
-    const result = await pool.query(
-      `INSERT INTO invoices (freelancer_id, project_id, client_id, amount, description, due_date, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING *`,
-      [req.userId, projectId || null, clientId || null, parseFloat(amount), description || null, dueDate || null, status || 'draft']
-    );
-    res.status(201).json(result.rows[0]);
+    
+    const { data, error } = await supabase
+      .from('invoices')
+      .insert({
+        freelancer_id: req.userId,
+        project_id: projectId || null,
+        client_id: clientId || null,
+        amount: parseFloat(amount),
+        description: description || null,
+        due_date: dueDate || null,
+        status: status || 'draft',
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    res.status(201).json(data);
   } catch (error: any) {
     console.error('Create invoice error:', error);
     res.status(500).json({ error: 'Failed to create invoice' });
@@ -270,44 +384,29 @@ router.put('/invoices/:id', async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
     const { amount, description, dueDate, status } = req.body;
-    const updates: string[] = [];
-    const values: any[] = [];
-    let paramCount = 1;
 
-    if (amount !== undefined) {
-      updates.push(`amount = $${paramCount++}`);
-      values.push(parseFloat(amount));
-    }
-    if (description !== undefined) {
-      updates.push(`description = $${paramCount++}`);
-      values.push(description);
-    }
-    if (dueDate !== undefined) {
-      updates.push(`due_date = $${paramCount++}`);
-      values.push(dueDate);
-    }
-    if (status !== undefined) {
-      updates.push(`status = $${paramCount++}`);
-      values.push(status);
-    }
+    const updates: any = {
+      updated_at: new Date().toISOString(),
+    };
 
-    if (updates.length === 0) {
-      return res.status(400).json({ error: 'No fields to update' });
-    }
+    if (amount !== undefined) updates.amount = parseFloat(amount);
+    if (description !== undefined) updates.description = description;
+    if (dueDate !== undefined) updates.due_date = dueDate;
+    if (status !== undefined) updates.status = status;
 
-    values.push(id, req.userId);
-    const result = await pool.query(
-      `UPDATE invoices SET ${updates.join(', ')}, updated_at = now()
-       WHERE id = $${paramCount} AND freelancer_id = $${paramCount + 1}
-       RETURNING *`,
-      values
-    );
+    const { data, error } = await supabase
+      .from('invoices')
+      .update(updates)
+      .eq('id', id)
+      .eq('freelancer_id', req.userId)
+      .select()
+      .single();
 
-    if (result.rows.length === 0) {
+    if (error || !data) {
       return res.status(404).json({ error: 'Invoice not found' });
     }
 
-    res.json(result.rows[0]);
+    res.json(data);
   } catch (error: any) {
     console.error('Update invoice error:', error);
     res.status(500).json({ error: 'Failed to update invoice' });
@@ -318,17 +417,22 @@ router.put('/invoices/:id', async (req: AuthRequest, res) => {
 router.get('/stats', async (req: AuthRequest, res) => {
   try {
     const [projects, proposals, clients, invoices] = await Promise.all([
-      pool.query('SELECT COUNT(*) as count FROM projects WHERE freelancer_id = $1', [req.userId]),
-      pool.query("SELECT COUNT(*) as count FROM proposals WHERE freelancer_id = $1 AND status = 'pending'", [req.userId]),
-      pool.query('SELECT COUNT(*) as count FROM clients WHERE freelancer_id = $1', [req.userId]),
-      pool.query("SELECT COALESCE(SUM(amount), 0) as total FROM invoices WHERE freelancer_id = $1 AND status = 'paid'", [req.userId]),
+      supabase.from('projects').select('*', { count: 'exact', head: true }).eq('freelancer_id', req.userId),
+      supabase.from('proposals').select('*', { count: 'exact', head: true }).eq('freelancer_id', req.userId).eq('status', 'pending'),
+      supabase.from('clients').select('*', { count: 'exact', head: true }).eq('freelancer_id', req.userId),
+      supabase.from('invoices').select('amount').eq('freelancer_id', req.userId).eq('status', 'paid'),
     ]);
 
+    let totalEarnings = 0;
+    if (invoices.data) {
+      totalEarnings = invoices.data.reduce((sum: number, inv: any) => sum + (parseFloat(inv.amount) || 0), 0);
+    }
+
     res.json({
-      activeProjects: parseInt(projects.rows[0].count),
-      pendingProposals: parseInt(proposals.rows[0].count),
-      totalClients: parseInt(clients.rows[0].count),
-      totalEarnings: parseFloat(invoices.rows[0].total || 0),
+      activeProjects: projects.count || 0,
+      pendingProposals: proposals.count || 0,
+      totalClients: clients.count || 0,
+      totalEarnings,
     });
   } catch (error: any) {
     console.error('Get stats error:', error);
@@ -337,4 +441,3 @@ router.get('/stats', async (req: AuthRequest, res) => {
 });
 
 export default router;
-

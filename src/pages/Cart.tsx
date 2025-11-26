@@ -1,18 +1,18 @@
-import { useState, useEffect } from "react";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect, useContext } from "react";
+import { useNavigate } from "react-router-dom";
+import { AuthContext } from "@/contexts/AuthContext";
+import { api } from "@/lib/api";
+import { formatPrice as formatCurrency } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Trash2, Plus, Minus, ShoppingBag, Loader2, CreditCard, CheckCircle2 } from "lucide-react";
-import { api } from "@/lib/api";
-import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
+import { Loader2, CreditCard, ShoppingCart, Plus, Minus, X, MapPin, User, Phone, ShoppingBag, Trash2 } from "lucide-react";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 
 type CartItem = {
   id: string;
@@ -25,7 +25,7 @@ type CartItem = {
 };
 
 const Cart = () => {
-  const { user, profile } = useAuth();
+  const { user, profile } = useContext(AuthContext);
   const { toast } = useToast();
   const navigate = useNavigate();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -121,21 +121,20 @@ const Cart = () => {
     }, 0);
   };
 
+  const formatPrice = (price: number) => {
+    return formatCurrency(price, 'TZS'); // Default to TZS, but could be dynamic
+  };
+
   const handleCheckout = async () => {
-    if (!user) return;
-    if (cartItems.length === 0) {
-      toast({
-        title: "Cart is empty",
-        description: "Add items to your cart before checkout",
-        variant: "destructive",
-      });
+    if (!user) {
+      navigate("/auth");
       return;
     }
 
     if (!shippingAddress.street || !shippingAddress.city) {
       toast({
         title: "Shipping address required",
-        description: "Please provide a complete shipping address",
+        description: "Please provide your shipping address",
         variant: "destructive",
       });
       return;
@@ -152,10 +151,10 @@ const Cart = () => {
       setCurrentOrder(order);
       setShowPaymentDialog(true);
     } catch (error: any) {
-      console.error("Error during checkout:", error);
+      console.error("Checkout error:", error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to create order. Please try again.",
+        title: "Checkout Error",
+        description: error.message || "Failed to process checkout",
         variant: "destructive",
       });
     } finally {
@@ -210,14 +209,6 @@ const Cart = () => {
     } finally {
       setPaymentProcessing(false);
     }
-  };
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("en-TZ", {
-      style: "currency",
-      currency: "TZS",
-      minimumFractionDigits: 0,
-    }).format(price);
   };
 
   if (loading) {

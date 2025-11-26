@@ -1,9 +1,10 @@
 import express from 'express';
-import { pool } from '../config/database.js';
+import { supabase } from '../config/supabase.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import ClickPesaService, { PaymentRequest } from '../services/clickpesa.js';
 import { platformFees } from '../services/platformFees.js';
 import dotenv from 'dotenv';
+import { userPreferences } from '../services/userPreferences.js';
 
 dotenv.config();
 
@@ -20,19 +21,28 @@ const clickPesa = new ClickPesaService({
  */
 router.get('/my-commissions', authenticate, async (req: AuthRequest, res) => {
   try {
-    const result = await pool.query(
-      `SELECT c.*, 
-              CASE WHEN c.client_id IS NULL THEN NULL ELSE p.display_name END as client_name,
-              CASE WHEN c.client_id IS NULL THEN NULL ELSE u.email END as client_email
-       FROM commissions c
-       LEFT JOIN users u ON c.client_id = u.id
-       LEFT JOIN profiles p ON c.client_id = p.user_id
-       WHERE c.creator_id = $1
-       ORDER BY c.created_at DESC`,
-      [req.userId]
-    );
+    const { data: commissions, error } = await supabase
+      .from('commissions')
+      .select(`
+        *,
+        client:profiles!commissions_client_id_fkey(display_name),
+        client_user:users!commissions_client_id_fkey(email)
+      `)
+      .eq('creator_id', req.userId)
+      .order('created_at', { ascending: false });
 
-    res.json(result.rows);
+    if (error) {
+      throw error;
+    }
+
+    // Transform to match expected format
+    const transformed = (commissions || []).map((c: any) => ({
+      ...c,
+      client_name: c.client_id ? c.client?.display_name : null,
+      client_email: c.client_id ? c.client_user?.email : null,
+    }));
+
+    res.json(transformed);
   } catch (error: any) {
     console.error('Get commissions error:', error);
     res.status(500).json({ error: 'Failed to get commissions' });
@@ -44,16 +54,25 @@ router.get('/my-commissions', authenticate, async (req: AuthRequest, res) => {
  */
 router.get('/my-requests', authenticate, async (req: AuthRequest, res) => {
   try {
-    const result = await pool.query(
-      `SELECT c.*, p.display_name as creator_name
-       FROM commissions c
-       JOIN profiles p ON c.creator_id = p.user_id
-       WHERE c.client_id = $1
-       ORDER BY c.created_at DESC`,
-      [req.userId]
-    );
+    const { data: commissions, error } = await supabase
+      .from('commissions')
+      .select(`
+        *,
+        creator:profiles!commissions_creator_id_fkey(display_name)
+      `)
+      .eq('client_id', req.userId)
+      .order('created_at', { ascending: false });
 
-    res.json(result.rows);
+    if (error) {
+      throw error;
+    }
+
+    const transformed = (commissions || []).map((c: any) => ({
+      ...c,
+      creator_name: c.creator?.display_name,
+    }));
+
+    res.json(transformed);
   } catch (error: any) {
     console.error('Get commission requests error:', error);
     res.status(500).json({ error: 'Failed to get commission requests' });
@@ -71,22 +90,26 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
       return res.status(400).json({ error: 'Creator ID, title, and budget are required' });
     }
 
-    const result = await pool.query(
-      `INSERT INTO commissions (creator_id, client_id, title, description, budget, deadline, requirements, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending')
-       RETURNING *`,
-      [
-        creatorId,
-        req.userId,
+    const { data, error } = await supabase
+      .from('commissions')
+      .insert({
+        creator_id: creatorId,
+        client_id: req.userId,
         title,
-        description || null,
-        parseFloat(budget),
-        deadline || null,
-        requirements || null,
-      ]
-    );
+        description: description || null,
+        budget: parseFloat(budget),
+        deadline: deadline || null,
+        requirements: requirements || null,
+        status: 'pending',
+      })
+      .select()
+      .single();
 
-    res.status(201).json(result.rows[0]);
+    if (error) {
+      throw error;
+    }
+
+    res.status(201).json(data);
   } catch (error: any) {
     console.error('Create commission error:', error);
     res.status(500).json({ error: 'Failed to create commission' });
@@ -102,28 +125,35 @@ router.put('/:id/status', authenticate, async (req: AuthRequest, res) => {
     const { status } = req.body;
 
     // Verify creator owns this commission
-    const checkResult = await pool.query(
-      'SELECT creator_id FROM commissions WHERE id = $1',
-      [id]
-    );
+    const { data: existing, error: checkError } = await supabase
+      .from('commissions')
+      .select('creator_id')
+      .eq('id', id)
+      .single();
 
-    if (checkResult.rows.length === 0) {
+    if (checkError || !existing) {
       return res.status(404).json({ error: 'Commission not found' });
     }
 
-    if (checkResult.rows[0].creator_id !== req.userId) {
+    if (existing.creator_id !== req.userId) {
       return res.status(403).json({ error: 'Not authorized' });
     }
 
-    const result = await pool.query(
-      `UPDATE commissions
-       SET status = $1, updated_at = now()
-       WHERE id = $2
-       RETURNING *`,
-      [status, id]
-    );
+    const { data, error } = await supabase
+      .from('commissions')
+      .update({
+        status,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select()
+      .single();
 
-    res.json(result.rows[0]);
+    if (error) {
+      throw error;
+    }
+
+    res.json(data);
   } catch (error: any) {
     console.error('Update commission status error:', error);
     res.status(500).json({ error: 'Failed to update commission' });
@@ -142,21 +172,32 @@ router.post('/:id/payment', authenticate, async (req: AuthRequest, res) => {
       return res.status(400).json({ error: 'Customer phone number is required' });
     }
 
-    // Get commission details
-    const commissionResult = await pool.query(
-      `SELECT c.*, u.email, p.display_name
-       FROM commissions c
-       JOIN users u ON c.client_id = u.id
-       LEFT JOIN profiles p ON c.client_id = p.user_id
-       WHERE c.id = $1 AND c.client_id = $2`,
-      [id, req.userId]
-    );
+    // Check if user is authenticated
+    if (!req.userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
 
-    if (commissionResult.rows.length === 0) {
+    // Get user's preferred currency
+    const userPrefs = await userPreferences.getUserPreferences(req.userId);
+    const currency = userPrefs.currency || 'TZS';
+
+    // Get commission details
+    const { data: commission, error: commissionError } = await supabase
+      .from('commissions')
+      .select(`
+        *,
+        client:profiles!commissions_client_id_fkey(display_name)
+      `)
+      .eq('id', id)
+      .eq('client_id', req.userId)
+      .single();
+
+    if (commissionError || !commission) {
       return res.status(404).json({ error: 'Commission not found' });
     }
 
-    const commission = commissionResult.rows[0];
+    // Get client email
+    const { data: authUser } = await supabase.auth.admin.getUserById(req.userId);
 
     if (commission.status !== 'completed') {
       return res.status(400).json({ error: 'Commission must be completed before payment' });
@@ -166,46 +207,52 @@ router.post('/:id/payment', authenticate, async (req: AuthRequest, res) => {
       return res.status(400).json({ error: 'Commission already paid' });
     }
 
-    // Calculate fees
-    const feeCalculation = platformFees.calculateCommissionFee(parseFloat(commission.budget));
+    // Calculate fees with user's currency
+    const feeCalculation = platformFees.calculateCommissionFee(parseFloat(commission.budget.toString()), undefined, currency);
 
-    // Create payment record
-    const paymentResult = await pool.query(
-      `INSERT INTO payments (order_id, user_id, amount, currency, status, payment_method, payment_type)
-       VALUES ($1, $2, $3, $4, 'pending', 'clickpesa', 'commission')
-       RETURNING *`,
-      [`commission_${id}`, req.userId, feeCalculation.total, 'TZS']
-    );
+    // Create payment record with user's currency
+    const { data: payment, error: paymentError } = await supabase
+      .from('payments')
+      .insert({
+        order_id: `commission_${id}`,
+        user_id: req.userId,
+        amount: feeCalculation.total,
+        currency: currency,
+        status: 'pending',
+        payment_method: 'clickpesa',
+        payment_type: 'commission',
+      })
+      .select()
+      .single();
 
-    const payment = paymentResult.rows[0];
+    if (paymentError || !payment) {
+      throw paymentError;
+    }
 
     // Record platform fee
-    await pool.query(
-      `INSERT INTO platform_fees (
-        transaction_id, transaction_type, user_id, buyer_id,
-        subtotal, platform_fee, payment_processing_fee, total_fees, creator_payout, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending')`,
-      [
-        `commission_${id}`,
-        'commission',
-        commission.creator_id,
-        req.userId,
-        feeCalculation.subtotal,
-        feeCalculation.platformFee,
-        feeCalculation.paymentProcessingFee,
-        feeCalculation.totalFees,
-        feeCalculation.creatorPayout,
-      ]
-    );
+    await supabase
+      .from('platform_fees')
+      .insert({
+        transaction_id: `commission_${id}`,
+        transaction_type: 'commission',
+        user_id: commission.creator_id,
+        buyer_id: req.userId,
+        subtotal: feeCalculation.subtotal,
+        platform_fee: feeCalculation.platformFee,
+        payment_processing_fee: feeCalculation.paymentProcessingFee,
+        total_fees: feeCalculation.totalFees,
+        creator_payout: feeCalculation.creatorPayout,
+        status: 'pending',
+      });
 
-    // Create Click Pesa payment request
+    // Create Click Pesa payment request with user's currency
     const paymentRequest: PaymentRequest = {
       amount: feeCalculation.total,
-      currency: 'TZS',
+      currency: currency,
       orderId: `commission_${id}`,
       customerPhone: customerPhone,
-      customerEmail: customerEmail || commission.email,
-      customerName: customerName || commission.display_name || 'Customer',
+      customerEmail: customerEmail || authUser?.user?.email || '',
+      customerName: customerName || commission.client?.display_name || 'Customer',
       description: `Payment for commission: ${commission.title}`,
       callbackUrl: `${process.env.APP_URL || 'https://www.blinno.app'}/api/payments/webhook`,
     };
@@ -213,27 +260,29 @@ router.post('/:id/payment', authenticate, async (req: AuthRequest, res) => {
     const clickPesaResponse = await clickPesa.createPayment(paymentRequest);
 
     if (!clickPesaResponse.success) {
-      await pool.query(
-        `UPDATE payments SET status = 'failed', error_message = $1 WHERE id = $2`,
-        [clickPesaResponse.error || 'Payment creation failed', payment.id]
-      );
+      await supabase
+        .from('payments')
+        .update({
+          status: 'failed',
+          error_message: clickPesaResponse.error || 'Payment creation failed',
+        })
+        .eq('id', payment.id);
+
       return res.status(400).json({
         error: clickPesaResponse.error || 'Failed to create payment',
       });
     }
 
     // Update payment with Click Pesa details
-    await pool.query(
-      `UPDATE payments 
-       SET payment_id = $1, transaction_id = $2, checkout_url = $3, status = 'initiated'
-       WHERE id = $4`,
-      [
-        clickPesaResponse.paymentId,
-        clickPesaResponse.transactionId,
-        clickPesaResponse.checkoutUrl,
-        payment.id,
-      ]
-    );
+    await supabase
+      .from('payments')
+      .update({
+        payment_id: clickPesaResponse.paymentId,
+        transaction_id: clickPesaResponse.transactionId,
+        checkout_url: clickPesaResponse.checkoutUrl,
+        status: 'initiated',
+      })
+      .eq('id', payment.id);
 
     res.json({
       success: true,
@@ -248,4 +297,3 @@ router.post('/:id/payment', authenticate, async (req: AuthRequest, res) => {
 });
 
 export default router;
-

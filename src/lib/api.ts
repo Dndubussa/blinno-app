@@ -111,6 +111,28 @@ class ApiClient {
     });
   }
 
+  async updateProfilePreferences(preferences: { currency?: string; language?: string; country?: string }) {
+    const formData = new FormData();
+    
+    if (preferences.currency) {
+      formData.append('currency', preferences.currency);
+    }
+    
+    if (preferences.language) {
+      formData.append('language', preferences.language);
+    }
+    
+    if (preferences.country) {
+      formData.append('country', preferences.country);
+    }
+    
+    return this.request<any>('/profiles/me', {
+      method: 'PUT',
+      body: formData,
+      headers: {}, // Let browser set Content-Type with boundary
+    });
+  }
+
   // Portfolios
   async getPortfolios(filters?: { category?: string; creatorId?: string; featured?: boolean }) {
     const params = new URLSearchParams();
@@ -394,105 +416,314 @@ class ApiClient {
     });
   }
 
-  async setDefaultPayoutMethod(methodId: string) {
-    return this.request<any>(`/revenue/payout-methods/${methodId}/default`, {
-      method: 'POST',
-    });
+  // Payout Requests
+  async getRequestPayout() {
+    return this.request<any[]>('/revenue/payout-requests');
   }
 
-  // Payouts
-  async requestPayout(data: {
+  async createPayoutRequest(data: {
+    methodId: string;
     amount: number;
-    paymentMethodId: string;
+    currency: string;
+    description?: string;
   }) {
-    return this.request<any>('/revenue/request-payout', {
+    return this.request<any>('/revenue/payout-requests', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async getMyPayouts() {
-    return this.request<any[]>('/revenue/my-payouts');
+  async cancelPayoutRequest(requestId: string) {
+    return this.request<any>(`/revenue/payout-requests/${requestId}/cancel`, {
+      method: 'POST',
+    });
   }
 
+  // Payout History
+  async getPayoutHistory() {
+    return this.request<any[]>('/revenue/payout-history');
+  }
+
+  // Earnings
   async getEarnings() {
-    return this.request<any>('/revenue/earnings');
+    return this.request<any[]>('/revenue/earnings');
   }
 
-  // Messages
-  async getConversations() {
-    return this.request<any[]>('/messages/conversations');
+  async getEarningDetails(earningId: string) {
+    return this.request<any>(`/revenue/earnings/${earningId}`);
   }
 
-  async getMessages(userId: string) {
-    return this.request<any[]>(`/messages/${userId}`);
+  // Financial Tracking
+  async getFinancialSummary(options?: { period?: string; startDate?: string; endDate?: string }) {
+    const params = new URLSearchParams();
+    if (options?.period) params.append('period', options.period);
+    if (options?.startDate) params.append('startDate', options.startDate);
+    if (options?.endDate) params.append('endDate', options.endDate);
+    
+    const query = params.toString();
+    return this.request<any>(`/financial${query ? `?${query}` : ''}`);
   }
 
-  async sendMessage(recipientId: string, content: string) {
-    return this.request<any>('/messages', {
+  async getFinancialTransactions(filters?: { type?: string; status?: string; startDate?: string; endDate?: string }) {
+    const params = new URLSearchParams();
+    if (filters?.type) params.append('type', filters.type);
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.startDate) params.append('startDate', filters.startDate);
+    if (filters?.endDate) params.append('endDate', filters.endDate);
+    
+    const query = params.toString();
+    return this.request<any[]>(`/financial/transactions${query ? `?${query}` : ''}`);
+  }
+
+  // Commissions
+  async getCommissions(filters?: { status?: string }) {
+    const params = new URLSearchParams();
+    if (filters?.status) params.append('status', filters.status);
+    
+    const query = params.toString();
+    return this.request<any[]>(`/commissions${query ? `?${query}` : ''}`);
+  }
+
+  async getCommission(id: string) {
+    return this.request<any>(`/commissions/${id}`);
+  }
+
+  async createCommission(data: FormData) {
+    return this.request<any>('/commissions', {
       method: 'POST',
-      body: JSON.stringify({ recipientId, content }),
+      body: data,
+      headers: {}, // Let browser set Content-Type with boundary
     });
   }
 
-  async getUnreadCount() {
-    return this.request<{ count: number }>('/messages/unread/count');
-  }
-
-  // Bookings
-  async getBookings(type?: 'user' | 'creator') {
-    const params = type ? `?type=${type}` : '';
-    return this.request<any[]>(`/bookings${params}`);
-  }
-
-  // General booking endpoint
-  async createBooking(data: {
-    creatorId: string;
-    serviceType: string;
-    startDate: string;
-    totalAmount: number;
-    notes?: string;
-  }) {
-    return this.request<any>('/bookings', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async getBooking(id: string) {
-    return this.request<any>(`/bookings/${id}`);
-  }
-
-  async updateBookingStatus(bookingId: string, status: string) {
-    return this.request<any>(`/bookings/${bookingId}/status`, {
+  async updateCommission(id: string, data: FormData) {
+    return this.request<any>(`/commissions/${id}`, {
       method: 'PUT',
-      body: JSON.stringify({ status }),
+      body: data,
+      headers: {}, // Let browser set Content-Type with boundary
     });
   }
 
-  async deleteBooking(id: string) {
-    return this.request<any>(`/bookings/${id}`, {
+  async deleteCommission(id: string) {
+    return this.request<any>(`/commissions/${id}`, {
       method: 'DELETE',
     });
   }
 
-  async createBookingPayment(bookingId: string, data: {
-    customerPhone: string;
-    customerEmail?: string;
-    customerName?: string;
-  }) {
-    return this.request<{ success: boolean; paymentId: string; checkoutUrl: string; message: string }>(`/bookings/${bookingId}/payment`, {
+  async acceptCommission(id: string) {
+    return this.request<any>(`/commissions/${id}/accept`, {
+      method: 'POST',
+    });
+  }
+
+  async rejectCommission(id: string, reason: string) {
+    return this.request<any>(`/commissions/${id}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+  }
+
+  async completeCommission(id: string) {
+    return this.request<any>(`/commissions/${id}/complete`, {
+      method: 'POST',
+    });
+  }
+
+  async cancelCommission(id: string, reason: string) {
+    return this.request<any>(`/commissions/${id}/cancel`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+  }
+
+  // Tips
+  async getTips(filters?: { status?: string }) {
+    const params = new URLSearchParams();
+    if (filters?.status) params.append('status', filters.status);
+    
+    const query = params.toString();
+    return this.request<any[]>(`/tips${query ? `?${query}` : ''}`);
+  }
+
+  async sendTip(data: { creatorId: string; amount: number; currency?: string; message?: string; isAnonymous?: boolean }) {
+    return this.request<any>('/tips', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  // Digital Products
-  async getDigitalProducts(filters?: { creatorId?: string; category?: string; search?: string }) {
+  async getTip(id: string) {
+    return this.request<any>(`/tips/${id}`);
+  }
+
+  // Performance Bookings
+  async getPerformanceBookings(filters?: { status?: string; performerId?: string; clientId?: string }) {
     const params = new URLSearchParams();
-    if (filters?.creatorId) params.append('creatorId', filters.creatorId);
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.performerId) params.append('performerId', filters.performerId);
+    if (filters?.clientId) params.append('clientId', filters.clientId);
+    
+    const query = params.toString();
+    return this.request<any[]>(`/performance-bookings${query ? `?${query}` : ''}`);
+  }
+
+  async getPerformanceBooking(id: string) {
+    return this.request<any>(`/performance-bookings/${id}`);
+  }
+
+  async createPerformanceBooking(data: FormData) {
+    return this.request<any>('/performance-bookings', {
+      method: 'POST',
+      body: data,
+      headers: {}, // Let browser set Content-Type with boundary
+    });
+  }
+
+  async updatePerformanceBooking(id: string, data: FormData) {
+    return this.request<any>(`/performance-bookings/${id}`, {
+      method: 'PUT',
+      body: data,
+      headers: {}, // Let browser set Content-Type with boundary
+    });
+  }
+
+  async deletePerformanceBooking(id: string) {
+    return this.request<any>(`/performance-bookings/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async acceptPerformanceBooking(id: string) {
+    return this.request<any>(`/performance-bookings/${id}/accept`, {
+      method: 'POST',
+    });
+  }
+
+  async rejectPerformanceBooking(id: string, reason: string) {
+    return this.request<any>(`/performance-bookings/${id}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+  }
+
+  async completePerformanceBooking(id: string) {
+    return this.request<any>(`/performance-bookings/${id}/complete`, {
+      method: 'POST',
+    });
+  }
+
+  async cancelPerformanceBooking(id: string, reason: string) {
+    return this.request<any>(`/performance-bookings/${id}/cancel`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+  }
+
+  // Courses
+  async getCourses(filters?: { category?: string; educatorId?: string; published?: boolean }) {
+    const params = new URLSearchParams();
     if (filters?.category) params.append('category', filters.category);
-    if (filters?.search) params.append('search', filters.search);
+    if (filters?.educatorId) params.append('educatorId', filters.educatorId);
+    if (filters?.published !== undefined) params.append('published', filters.published.toString());
+    
+    const query = params.toString();
+    return this.request<any[]>(`/courses${query ? `?${query}` : ''}`);
+  }
+
+  async getCourse(id: string) {
+    return this.request<any>(`/courses/${id}`);
+  }
+
+  async createCourse(data: FormData) {
+    return this.request<any>('/courses', {
+      method: 'POST',
+      body: data,
+      headers: {}, // Let browser set Content-Type with boundary
+    });
+  }
+
+  async updateCourse(id: string, data: FormData) {
+    return this.request<any>(`/courses/${id}`, {
+      method: 'PUT',
+      body: data,
+      headers: {}, // Let browser set Content-Type with boundary
+    });
+  }
+
+  async deleteCourse(id: string) {
+    return this.request<any>(`/courses/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async publishCourse(id: string) {
+    return this.request<any>(`/courses/${id}/publish`, {
+      method: 'POST',
+    });
+  }
+
+  async unpublishCourse(id: string) {
+    return this.request<any>(`/courses/${id}/unpublish`, {
+      method: 'POST',
+    });
+  }
+
+  // Course Lessons
+  async getLessons(courseId: string) {
+    return this.request<any[]>(`/courses/${courseId}/lessons`);
+  }
+
+  async getLesson(id: string) {
+    return this.request<any>(`/lessons/${id}`);
+  }
+
+  async createLesson(data: FormData) {
+    return this.request<any>('/lessons', {
+      method: 'POST',
+      body: data,
+      headers: {}, // Let browser set Content-Type with boundary
+    });
+  }
+
+  async updateLesson(id: string, data: FormData) {
+    return this.request<any>(`/lessons/${id}`, {
+      method: 'PUT',
+      body: data,
+      headers: {}, // Let browser set Content-Type with boundary
+    });
+  }
+
+  async deleteLesson(id: string) {
+    return this.request<any>(`/lessons/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Course Enrollments
+  async getEnrollments(courseId: string) {
+    return this.request<any[]>(`/courses/${courseId}/enrollments`);
+  }
+
+  async enrollInCourse(courseId: string) {
+    return this.request<any>('/enrollments', {
+      method: 'POST',
+      body: JSON.stringify({ courseId }),
+    });
+  }
+
+  async getMyEnrollments() {
+    return this.request<any[]>('/enrollments/my-enrollments');
+  }
+
+  async getEnrollment(enrollmentId: string) {
+    return this.request<any>(`/enrollments/${enrollmentId}`);
+  }
+
+  // Digital Products
+  async getDigitalProducts(filters?: { category?: string; creatorId?: string }) {
+    const params = new URLSearchParams();
+    if (filters?.category) params.append('category', filters.category);
+    if (filters?.creatorId) params.append('creatorId', filters.creatorId);
     
     const query = params.toString();
     return this.request<any[]>(`/digital-products${query ? `?${query}` : ''}`);
@@ -502,18 +733,14 @@ class ApiClient {
     return this.request<any>(`/digital-products/${id}`);
   }
 
-  async purchaseDigitalProduct(productId: string, data: {
-    customerPhone: string;
-    customerEmail?: string;
-    customerName?: string;
-  }) {
-    return this.request<{ success: boolean; paymentId: string; checkoutUrl: string; message: string }>(`/digital-products/${productId}/purchase`, {
+  async createDigitalProduct(data: FormData) {
+    return this.request<any>('/digital-products', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: data,
+      headers: {}, // Let browser set Content-Type with boundary
     });
   }
 
-  // Digital Products update and delete methods
   async updateDigitalProduct(id: string, data: FormData) {
     return this.request<any>(`/digital-products/${id}`, {
       method: 'PUT',
@@ -528,953 +755,496 @@ class ApiClient {
     });
   }
 
-  async getMyPurchases() {
-    return this.request<any[]>('/digital-products/my/purchases');
-  }
-
-  // Tips
-  async sendTip(data: {
-    creatorId: string;
-    amount: number;
-    message?: string;
-    isAnonymous?: boolean;
-    customerPhone: string;
-    customerEmail?: string;
-    customerName?: string;
-  }) {
-    return this.request<{ success: boolean; paymentId: string; tipId: string; checkoutUrl: string; message: string }>('/tips', {
+  async purchaseDigitalProduct(productId: string) {
+    return this.request<any>('/digital-products/purchase', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({ productId }),
     });
   }
 
-  async getReceivedTips() {
-    return this.request<any[]>('/tips/received');
+  async getMyPurchasedProducts() {
+    return this.request<any[]>('/digital-products/my-purchases');
   }
 
-  async getSentTips() {
-    return this.request<any[]>('/tips/sent');
-  }
-
-  // Tips update and delete methods
-  async updateTip(id: string, data: any) {
-    return this.request<any>(`/tips/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async deleteTip(id: string) {
-    return this.request<any>(`/tips/${id}`, {
-      method: 'DELETE',
-    });
-  }
-
-  // Commissions
-  async getMyCommissions() {
-    return this.request<any[]>('/commissions/my-commissions');
-  }
-
-  async getMyCommissionRequests() {
-    return this.request<any[]>('/commissions/my-requests');
-  }
-
-  async createCommission(data: {
-    creatorId: string;
-    title: string;
-    description?: string;
-    budget: number;
-    deadline?: string;
-    requirements?: string;
-  }) {
-    return this.request<any>('/commissions', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async updateCommissionStatus(commissionId: string, status: string) {
-    return this.request<any>(`/commissions/${commissionId}/status`, {
-      method: 'PUT',
-      body: JSON.stringify({ status }),
-    });
-  }
-
-  // Commissions update and delete methods
-  async updateCommission(id: string, data: any) {
-    return this.request<any>(`/commissions/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async deleteCommission(id: string) {
-    return this.request<any>(`/commissions/${id}`, {
-      method: 'DELETE',
-    });
-  }
-
-  async payCommission(commissionId: string, data: {
-    customerPhone: string;
-    customerEmail?: string;
-    customerName?: string;
-  }) {
-    return this.request<{ success: boolean; paymentId: string; checkoutUrl: string; message: string }>(`/commissions/${commissionId}/payment`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  // Performance Bookings
-  async getMyPerformanceBookings() {
-    return this.request<any[]>('/performance-bookings/my-bookings');
-  }
-
-  async getMyPerformanceRequests() {
-    return this.request<any[]>('/performance-bookings/my-requests');
-  }
-
-  async createPerformanceBooking(data: {
-    performerId: string;
-    performanceType: string;
-    eventName?: string;
-    venue?: string;
-    performanceDate: string;
-    durationHours?: number;
-    fee: number;
-    requirements?: string;
-    notes?: string;
-  }) {
-    return this.request<any>('/performance-bookings', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async updatePerformanceBookingStatus(bookingId: string, status: string) {
-    return this.request<any>(`/performance-bookings/${bookingId}/status`, {
-      method: 'PUT',
-      body: JSON.stringify({ status }),
-    });
-  }
-
-  // Performance Bookings update and delete methods
-  async updatePerformanceBooking(id: string, data: any) {
-    return this.request<any>(`/performance-bookings/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async deletePerformanceBooking(id: string) {
-    return this.request<any>(`/performance-bookings/${id}`, {
-      method: 'DELETE',
-    });
-  }
-
-  async payPerformanceBooking(bookingId: string, data: {
-    customerPhone: string;
-    customerEmail?: string;
-    customerName?: string;
-  }) {
-    return this.request<{ success: boolean; paymentId: string; checkoutUrl: string; message: string }>(`/performance-bookings/${bookingId}/payment`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  // Featured Listings
-  async createFeaturedListingPayment(listingId: string, data: {
-    customerPhone: string;
-    customerEmail?: string;
-    customerName?: string;
-  }) {
-    return this.request<{ success: boolean; paymentId: string; checkoutUrl: string; message: string }>(`/featured/${listingId}/payment`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  // Lodging
-  async createLodgingBooking(data: {
-    propertyId: string;
-    roomId: string;
-    checkInDate: string;
-    checkOutDate: string;
-  }) {
-    return this.request<any>('/lodging/bookings', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async payLodgingBooking(bookingId: string, data: {
-    customerPhone: string;
-    customerEmail?: string;
-    customerName?: string;
-  }) {
-    return this.request<{ success: boolean; paymentId: string; checkoutUrl: string; message: string }>(`/lodging/bookings/${bookingId}/payment`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  // Lodging booking - NEW
-  async createLodgingReservation(data: {
-    propertyId: string;
-    roomId: string;
-    guestName: string;
-    guestEmail: string;
-    guestPhone: string;
-    checkInDate: string;
-    checkOutDate: string;
-    numberOfGuests: number;
-    specialRequests?: string;
-  }) {
-    return this.request<any>('/lodging/bookings', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  // Lodging reservation payment
-  async payLodgingReservation(bookingId: string, data: {
-    customerPhone: string;
-    customerEmail?: string;
-    customerName?: string;
-  }) {
-    return this.request<{ success: boolean; paymentId: string; checkoutUrl: string; message: string }>(`/lodging/bookings/${bookingId}/payment`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  // Lodging Bookings update and delete methods
-  async updateLodgingBooking(id: string, data: any) {
-    return this.request<any>(`/lodging/bookings/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async deleteLodgingBooking(id: string) {
-    return this.request<any>(`/lodging/bookings/${id}`, {
-      method: 'DELETE',
-    });
-  }
-
-  // Lodging-specific endpoints
-  async getLodgingProperties() {
-    return this.request<any[]>('/lodging/properties');
-  }
-
-  async getLodgingRooms(propertyId?: string) {
-    const query = propertyId ? `?propertyId=${propertyId}` : '';
-    return this.request<any[]>(`/lodging/rooms${query}`);
-  }
-
-  async getLodgingBookings() {
-    return this.request<any[]>('/lodging/bookings');
-  }
-
-  async createLodgingProperty(data: any) {
-    return this.request<any>('/lodging/properties', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async createLodgingRoom(data: any) {
-    return this.request<any>('/lodging/rooms', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async updateLodgingBookingStatus(bookingId: string, status: string) {
-    return this.request<any>(`/lodging/bookings/${bookingId}/status`, {
-      method: 'PUT',
-      body: JSON.stringify({ status }),
-    });
-  }
-
-  // Lodging update and delete methods
-  async updateLodgingProperty(id: string, data: any) {
-    return this.request<any>(`/lodging/properties/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async deleteLodgingProperty(id: string) {
-    return this.request<any>(`/lodging/properties/${id}`, {
-      method: 'DELETE',
-    });
-  }
-
-  async updateLodgingRoom(id: string, data: any) {
-    return this.request<any>(`/lodging/rooms/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async deleteLodgingRoom(id: string) {
-    return this.request<any>(`/lodging/rooms/${id}`, {
-      method: 'DELETE',
-    });
-  }
-
-  // Restaurants
-  async createRestaurantOrder(data: {
-    restaurantId: string;
-    items: Array<{ menuItemId: string; quantity: number }>;
-  }) {
-    return this.request<any>('/restaurants/orders', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async payRestaurantOrder(orderId: string, data: {
-    customerPhone: string;
-    customerEmail?: string;
-    customerName?: string;
-  }) {
-    return this.request<{ success: boolean; paymentId: string; checkoutUrl: string; message: string }>(`/restaurants/orders/${orderId}/payment`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  // Restaurant-specific endpoints
-  async getRestaurants() {
-    return this.request<any[]>('/restaurants');
-  }
-
-  async getMenuItems() {
-    return this.request<any[]>('/restaurants/menu-items');
-  }
-
-  async getRestaurantReservations() {
-    return this.request<any[]>('/restaurants/reservations');
-  }
-
-  async createRestaurant(data: any) {
-    return this.request<any>('/restaurants', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async createMenuItem(data: any) {
-    return this.request<any>('/restaurants/menu-items', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async updateRestaurantReservationStatus(reservationId: string, status: string) {
-    return this.request<any>(`/restaurants/reservations/${reservationId}/status`, {
-      method: 'PUT',
-      body: JSON.stringify({ status }),
-    });
-  }
-
-  // Restaurant reservations - NEW
-  async createRestaurantReservation(data: {
-    restaurantId: string;
-    guestName: string;
-    guestEmail: string;
-    guestPhone: string;
-    reservationDate: string;
-    reservationTime: string;
-    numberOfGuests: number;
-    specialRequests?: string;
-  }) {
-    return this.request<any>('/restaurants/reservations', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  // Restaurant reservation payment
-  async payRestaurantReservation(reservationId: string, data: {
-    customerPhone: string;
-    customerEmail?: string;
-    customerName?: string;
-  }) {
-    return this.request<{ success: boolean; paymentId: string; checkoutUrl: string; message: string }>(`/restaurants/reservations/${reservationId}/payment`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  // Restaurant update and delete methods
-  async updateRestaurant(id: string, data: any) {
-    return this.request<any>(`/restaurants/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async deleteRestaurant(id: string) {
-    return this.request<any>(`/restaurants/${id}`, {
-      method: 'DELETE',
-    });
-  }
-
-  async updateMenuItem(id: string, data: any) {
-    return this.request<any>(`/restaurants/menu-items/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async deleteMenuItem(id: string) {
-    return this.request<any>(`/restaurants/menu-items/${id}`, {
-      method: 'DELETE',
-    });
-  }
-
-  // Financial Tracking
-  async getFinancialSummary(startDate?: string, endDate?: string) {
+  // News Articles
+  async getNewsArticles(filters?: { category?: string; featured?: boolean }) {
     const params = new URLSearchParams();
-    if (startDate) params.append('startDate', startDate);
-    if (endDate) params.append('endDate', endDate);
+    if (filters?.category) params.append('category', filters.category);
+    if (filters?.featured) params.append('featured', 'true');
     
     const query = params.toString();
-    return this.request<any>(`/financial/summary${query ? `?${query}` : ''}`);
+    return this.request<any[]>(`/news${query ? `?${query}` : ''}`);
   }
 
-  async getBalance() {
-    return this.request<any>('/financial/balance');
+  async getNewsArticle(id: string) {
+    return this.request<any>(`/news/${id}`);
   }
 
-  async getTransactions(options?: {
-    limit?: number;
-    offset?: number;
-    transactionType?: string;
-    startDate?: string;
-    endDate?: string;
-  }) {
-    const params = new URLSearchParams();
-    if (options?.limit) params.append('limit', options.limit.toString());
-    if (options?.offset) params.append('offset', options.offset.toString());
-    if (options?.transactionType) params.append('transactionType', options.transactionType);
-    if (options?.startDate) params.append('startDate', options.startDate);
-    if (options?.endDate) params.append('endDate', options.endDate);
-    
-    const query = params.toString();
-    return this.request<{ transactions: any[]; total: number }>(`/financial/transactions${query ? `?${query}` : ''}`);
-  }
-
-  async getFinancialReport(period?: 'week' | 'month' | 'year', startDate?: string, endDate?: string) {
-    const params = new URLSearchParams();
-    if (period) params.append('period', period);
-    if (startDate) params.append('startDate', startDate);
-    if (endDate) params.append('endDate', endDate);
-    
-    const query = params.toString();
-    return this.request<any>(`/financial/report${query ? `?${query}` : ''}`);
-  }
-
-  // Financial update and delete methods
-  async updateFinancial(id: string, data: any) {
-    return this.request<any>(`/financial/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
+  async createNewsArticle(data: FormData) {
+    return this.request<any>('/news', {
+      method: 'POST',
+      body: data,
+      headers: {}, // Let browser set Content-Type with boundary
     });
   }
 
-  async deleteFinancial(id: string) {
-    return this.request<any>(`/financial/${id}`, {
+  async updateNewsArticle(id: string, data: FormData) {
+    return this.request<any>(`/news/${id}`, {
+      method: 'PUT',
+      body: data,
+      headers: {}, // Let browser set Content-Type with boundary
+    });
+  }
+
+  async deleteNewsArticle(id: string) {
+    return this.request<any>(`/news/${id}`, {
       method: 'DELETE',
     });
   }
 
-  async exportTransactions(startDate?: string, endDate?: string): Promise<Blob> {
+  async publishNewsArticle(id: string) {
+    return this.request<any>(`/news/${id}/publish`, {
+      method: 'POST',
+    });
+  }
+
+  async unpublishNewsArticle(id: string) {
+    return this.request<any>(`/news/${id}/unpublish`, {
+      method: 'POST',
+    });
+  }
+
+  // Artisan Services
+  async getArtisanServices(filters?: { category?: string; artisanId?: string; available?: boolean }) {
     const params = new URLSearchParams();
-    if (startDate) params.append('startDate', startDate);
-    if (endDate) params.append('endDate', endDate);
+    if (filters?.category) params.append('category', filters.category);
+    if (filters?.artisanId) params.append('artisanId', filters.artisanId);
+    if (filters?.available !== undefined) params.append('available', filters.available.toString());
     
     const query = params.toString();
-    const response = await fetch(`${this.baseUrl}/financial/transactions/export${query ? `?${query}` : ''}`, {
-      headers: {
-        'Authorization': `Bearer ${this.token}`,
-      },
+    return this.request<any[]>(`/artisan-services${query ? `?${query}` : ''}`);
+  }
+
+  async getArtisanService(id: string) {
+    return this.request<any>(`/artisan-services/${id}`);
+  }
+
+  async createArtisanService(data: FormData) {
+    return this.request<any>('/artisan-services', {
+      method: 'POST',
+      body: data,
+      headers: {}, // Let browser set Content-Type with boundary
     });
+  }
+
+  async updateArtisanService(id: string, data: FormData) {
+    return this.request<any>(`/artisan-services/${id}`, {
+      method: 'PUT',
+      body: data,
+      headers: {}, // Let browser set Content-Type with boundary
+    });
+  }
+
+  async deleteArtisanService(id: string) {
+    return this.request<any>(`/artisan-services/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async bookArtisanService(serviceId: string, data: { startDate: string; endDate?: string; notes?: string }) {
+    return this.request<any>(`/artisan-services/${serviceId}/book`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Job Postings
+  async getJobPostings(filters?: { category?: string; employerId?: string; active?: boolean }) {
+    const params = new URLSearchParams();
+    if (filters?.category) params.append('category', filters.category);
+    if (filters?.employerId) params.append('employerId', filters.employerId);
+    if (filters?.active !== undefined) params.append('active', filters.active.toString());
     
-    if (!response.ok) {
-      throw new Error('Failed to export transactions');
-    }
+    const query = params.toString();
+    return this.request<any[]>(`/jobs${query ? `?${query}` : ''}`);
+  }
+
+  async getJobPosting(id: string) {
+    return this.request<any>(`/jobs/${id}`);
+  }
+
+  async createJobPosting(data: FormData) {
+    return this.request<any>('/jobs', {
+      method: 'POST',
+      body: data,
+      headers: {}, // Let browser set Content-Type with boundary
+    });
+  }
+
+  async updateJobPosting(id: string, data: FormData) {
+    return this.request<any>(`/jobs/${id}`, {
+      method: 'PUT',
+      body: data,
+      headers: {}, // Let browser set Content-Type with boundary
+    });
+  }
+
+  async deleteJobPosting(id: string) {
+    return this.request<any>(`/jobs/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async applyForJob(jobId: string, data: FormData) {
+    return this.request<any>(`/jobs/${jobId}/apply`, {
+      method: 'POST',
+      body: data,
+      headers: {}, // Let browser set Content-Type with boundary
+    });
+  }
+
+  async getJobApplications(jobId: string) {
+    return this.request<any[]>(`/jobs/${jobId}/applications`);
+  }
+
+  async getMyJobApplications() {
+    return this.request<any[]>('/jobs/my-applications');
+  }
+
+  // Organized Events
+  async getOrganizedEvents(filters?: { category?: string; organizerId?: string; published?: boolean }) {
+    const params = new URLSearchParams();
+    if (filters?.category) params.append('category', filters.category);
+    if (filters?.organizerId) params.append('organizerId', filters.organizerId);
+    if (filters?.published !== undefined) params.append('published', filters.published.toString());
     
-    return response.blob();
+    const query = params.toString();
+    return this.request<any[]>(`/events${query ? `?${query}` : ''}`);
+  }
+
+  async getOrganizedEvent(id: string) {
+    return this.request<any>(`/events/${id}`);
+  }
+
+  async createOrganizedEvent(data: FormData) {
+    return this.request<any>('/events', {
+      method: 'POST',
+      body: data,
+      headers: {}, // Let browser set Content-Type with boundary
+    });
+  }
+
+  async updateOrganizedEvent(id: string, data: FormData) {
+    return this.request<any>(`/events/${id}`, {
+      method: 'PUT',
+      body: data,
+      headers: {}, // Let browser set Content-Type with boundary
+    });
+  }
+
+  async deleteOrganizedEvent(id: string) {
+    return this.request<any>(`/events/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async publishOrganizedEvent(id: string) {
+    return this.request<any>(`/events/${id}/publish`, {
+      method: 'POST',
+    });
+  }
+
+  async unpublishOrganizedEvent(id: string) {
+    return this.request<any>(`/events/${id}/unpublish`, {
+      method: 'POST',
+    });
+  }
+
+  async registerForEvent(eventId: string, data: { ticketCount?: number; notes?: string }) {
+    return this.request<any>(`/events/${eventId}/register`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getEventRegistrations(eventId: string) {
+    return this.request<any[]>(`/events/${eventId}/registrations`);
+  }
+
+  async getMyEventRegistrations() {
+    return this.request<any[]>('/events/my-registrations');
   }
 
   // Reviews
-  async getCreatorReviews(creatorId: string, options?: { limit?: number; offset?: number; sort?: string }) {
+  async getReviews(filters?: { creatorId?: string; reviewerId?: string; bookingId?: string }) {
     const params = new URLSearchParams();
-    if (options?.limit) params.append('limit', options.limit.toString());
-    if (options?.offset) params.append('offset', options.offset.toString());
-    if (options?.sort) params.append('sort', options.sort);
+    if (filters?.creatorId) params.append('creatorId', filters.creatorId);
+    if (filters?.reviewerId) params.append('reviewerId', filters.reviewerId);
+    if (filters?.bookingId) params.append('bookingId', filters.bookingId);
     
     const query = params.toString();
-    return this.request<{ reviews: any[]; stats: any }>(`/reviews/creator/${creatorId}${query ? `?${query}` : ''}`);
+    return this.request<any[]>(`/reviews${query ? `?${query}` : ''}`);
   }
 
-  async submitReview(data: {
-    creatorId: string;
-    bookingId?: string;
-    productId?: string;
-    rating: number;
-    comment?: string;
-  }) {
+  async getReview(id: string) {
+    return this.request<any>(`/reviews/${id}`);
+  }
+
+  async createReview(data: { creatorId: string; bookingId?: string; rating: number; comment?: string }) {
     return this.request<any>('/reviews', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async getMyReviews() {
-    return this.request<any[]>('/reviews/my-reviews');
-  }
-
-  async updateReview(reviewId: string, data: { rating?: number; comment?: string }) {
-    return this.request<any>(`/reviews/${reviewId}`, {
+  async updateReview(id: string, data: { rating?: number; comment?: string }) {
+    return this.request<any>(`/reviews/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
-  async deleteReview(reviewId: string) {
-    return this.request<any>(`/reviews/${reviewId}`, {
+  async deleteReview(id: string) {
+    return this.request<any>(`/reviews/${id}`, {
       method: 'DELETE',
+    });
+  }
+
+  // Messages
+  async getConversations() {
+    return this.request<any[]>('/messages/conversations');
+  }
+
+  async getMessages(conversationId: string) {
+    return this.request<any[]>(`/messages/conversations/${conversationId}`);
+  }
+
+  async sendMessage(conversationId: string, content: string) {
+    return this.request<any>(`/messages/conversations/${conversationId}`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    });
+  }
+
+  async createConversation(participantIds: string[], initialMessage?: string) {
+    return this.request<any>('/messages/conversations', {
+      method: 'POST',
+      body: JSON.stringify({ participantIds, initialMessage }),
+    });
+  }
+
+  async markMessageAsRead(messageId: string) {
+    return this.request<any>(`/messages/${messageId}/read`, {
+      method: 'POST',
     });
   }
 
   // Notifications
-  async getNotifications(options?: { limit?: number; offset?: number; unreadOnly?: boolean }) {
+  async getNotifications(filters?: { read?: boolean }) {
     const params = new URLSearchParams();
-    if (options?.limit) params.append('limit', options.limit.toString());
-    if (options?.offset) params.append('offset', options.offset.toString());
-    if (options?.unreadOnly) params.append('unreadOnly', 'true');
+    if (filters?.read !== undefined) params.append('read', filters.read.toString());
     
     const query = params.toString();
-    return this.request<{ notifications: any[]; unreadCount: number }>(`/notifications${query ? `?${query}` : ''}`);
+    return this.request<any[]>(`/notifications${query ? `?${query}` : ''}`);
   }
 
-  async markNotificationRead(notificationId: string) {
+  async markNotificationAsRead(notificationId: string) {
     return this.request<any>(`/notifications/${notificationId}/read`, {
-      method: 'PUT',
+      method: 'POST',
     });
   }
 
-  async markAllNotificationsRead() {
+  async markAllNotificationsAsRead() {
     return this.request<any>('/notifications/read-all', {
-      method: 'PUT',
-    });
-  }
-
-  async deleteNotification(notificationId: string) {
-    return this.request<any>(`/notifications/${notificationId}`, {
-      method: 'DELETE',
-    });
-  }
-
-  // Notifications update and delete methods
-  async updateNotification(notificationId: string, data: any) {
-    return this.request<any>(`/notifications/${notificationId}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async getNotificationPreferences() {
-    return this.request<any>('/notifications/preferences');
-  }
-
-  // Users update and delete methods
-  async updateUser(userId: string, data: any) {
-    return this.request<any>(`/users/${userId}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async deleteUser(userId: string) {
-    return this.request<any>(`/users/${userId}`, {
-      method: 'DELETE',
-    });
-  }
-
-  async updateNotificationPreferences(data: {
-    email_enabled?: boolean;
-    sms_enabled?: boolean;
-    push_enabled?: boolean;
-    in_app_enabled?: boolean;
-    preferences?: any;
-  }) {
-    return this.request<any>('/notifications/preferences', {
-      method: 'PUT',
-      body: JSON.stringify(data),
+      method: 'POST',
     });
   }
 
   // Orders
-  async getOrders(options?: { status?: string; limit?: number; offset?: number }) {
+  async getOrders(filters?: { status?: string }) {
     const params = new URLSearchParams();
-    if (options?.status) params.append('status', options.status);
-    if (options?.limit) params.append('limit', options.limit.toString());
-    if (options?.offset) params.append('offset', options.offset.toString());
+    if (filters?.status) params.append('status', filters.status);
     
     const query = params.toString();
     return this.request<any[]>(`/orders${query ? `?${query}` : ''}`);
   }
 
-  async getOrderDetails(orderId: string) {
-    return this.request<any>(`/orders/${orderId}`);
+  async getOrder(id: string) {
+    return this.request<any>(`/orders/${id}`);
   }
 
-  async updateOrderStatus(orderId: string, data: {
-    status: string;
-    trackingNumber?: string;
-    shippingCarrier?: string;
-    estimatedDeliveryDate?: string;
-    notes?: string;
-  }) {
-    return this.request<any>(`/orders/${orderId}/status`, {
+  async updateOrderStatus(id: string, status: string) {
+    return this.request<any>(`/orders/${id}/status`, {
       method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  }
-
-  // Orders update and delete methods
-  async updateOrder(orderId: string, data: any) {
-    return this.request<any>(`/orders/${orderId}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async deleteOrder(orderId: string) {
-    return this.request<any>(`/orders/${orderId}`, {
-      method: 'DELETE',
-    });
-  }
-
-  async cancelOrder(orderId: string, reason?: string) {
-    return this.request<any>(`/orders/${orderId}/cancel`, {
-      method: 'POST',
-      body: JSON.stringify({ reason }),
-    });
-  }
-
-  async confirmDelivery(orderId: string) {
-    return this.request<any>(`/orders/${orderId}/confirm-delivery`, {
-      method: 'POST',
-    });
-  }
-
-  async getShippingAddresses() {
-    return this.request<any[]>('/orders/shipping-addresses');
-  }
-
-  async createShippingAddress(data: {
-    label?: string;
-    recipient_name: string;
-    phone: string;
-    street: string;
-    city: string;
-    region?: string;
-    postal_code?: string;
-    country?: string;
-    is_default?: boolean;
-  }) {
-    return this.request<any>('/orders/shipping-addresses', {
-      method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({ status }),
     });
   }
 
   // Refunds
-  async requestRefund(data: {
-    orderId: string;
-    reason: string;
-    amount?: number;
-    items?: Array<{ orderItemId: string; quantity: number }>;
-  }) {
-    return this.request<any>('/refunds/request', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async getMyRefunds() {
-    return this.request<any[]>('/refunds/my-refunds');
-  }
-
-  async getCreatorRefunds() {
-    return this.request<any[]>('/refunds/creator-refunds');
-  }
-
-  async approveRefund(refundId: string, notes?: string) {
-    return this.request<any>(`/refunds/${refundId}/approve`, {
-      method: 'POST',
-      body: JSON.stringify({ notes }),
-    });
-  }
-
-  async rejectRefund(refundId: string, reason: string) {
-    return this.request<any>(`/refunds/${refundId}/reject`, {
-      method: 'POST',
-      body: JSON.stringify({ reason }),
-    });
-  }
-
-  async getRefundPolicy(creatorId?: string) {
-    const params = creatorId ? `?creatorId=${creatorId}` : '';
-    return this.request<any>(`/refunds/policy${params}`);
-  }
-
-  // Refunds (Admin)
-  async getRefunds(options?: { status?: string; creatorId?: string }) {
+  async getRefunds(filters?: { status?: string }) {
     const params = new URLSearchParams();
-    if (options?.status) params.append('status', options.status);
-    if (options?.creatorId) params.append('creatorId', options.creatorId);
+    if (filters?.status) params.append('status', filters.status);
     
     const query = params.toString();
     return this.request<any[]>(`/refunds${query ? `?${query}` : ''}`);
   }
 
-  async processRefund(refundId: string, data: { notes?: string; paymentReference?: string }) {
-    return this.request<any>(`/refunds/${refundId}/process`, {
+  async getRefund(id: string) {
+    return this.request<any>(`/refunds/${id}`);
+  }
+
+  async requestRefund(data: { orderId: string; reason: string; amount?: number; notes?: string }) {
+    return this.request<any>('/refunds', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async completeRefund(refundId: string, data: { notes?: string; paymentReference?: string }) {
-    return this.request<any>(`/refunds/${refundId}/complete`, {
+  async approveRefund(id: string) {
+    return this.request<any>(`/refunds/${id}/approve`, {
       method: 'POST',
-      body: JSON.stringify(data),
+    });
+  }
+
+  async rejectRefund(id: string, reason: string) {
+    return this.request<any>(`/refunds/${id}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
     });
   }
 
   // Disputes
-  async createDispute(data: {
-    orderId?: string;
-    bookingId?: string;
-    paymentId?: string;
-    disputeType: string;
-    respondentId: string;
-    title: string;
-    description: string;
-  }) {
+  async getDisputes(filters?: { status?: string }) {
+    const params = new URLSearchParams();
+    if (filters?.status) params.append('status', filters.status);
+    
+    const query = params.toString();
+    return this.request<any[]>(`/disputes${query ? `?${query}` : ''}`);
+  }
+
+  async getDispute(id: string) {
+    return this.request<any>(`/disputes/${id}`);
+  }
+
+  async createDispute(data: { orderId: string; reason: string; description: string }) {
     return this.request<any>('/disputes', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async getMyDisputes(options?: { status?: string; type?: string }) {
+  async resolveDispute(id: string, resolution: string) {
+    return this.request<any>(`/disputes/${id}/resolve`, {
+      method: 'POST',
+      body: JSON.stringify({ resolution }),
+    });
+  }
+
+  // Social Feed
+  async getSocialFeed(filters?: { creatorId?: string }) {
     const params = new URLSearchParams();
-    if (options?.status) params.append('status', options.status);
-    if (options?.type) params.append('type', options.type);
+    if (filters?.creatorId) params.append('creatorId', filters.creatorId);
     
-    const query = params.toString();
-    return this.request<any[]>(`/disputes/my-disputes${query ? `?${query}` : ''}`);
-  }
-
-  async getDispute(disputeId: string) {
-    return this.request<any>(`/disputes/${disputeId}`);
-  }
-
-  async addDisputeEvidence(disputeId: string, data: {
-    fileUrl: string;
-    fileType?: string;
-    description?: string;
-  }) {
-    return this.request<any>(`/disputes/${disputeId}/evidence`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async addDisputeMessage(disputeId: string, data: {
-    message: string;
-    isInternal?: boolean;
-  }) {
-    return this.request<any>(`/disputes/${disputeId}/messages`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  // Social Features
-  async followUser(userId: string) {
-    return this.request<any>(`/social/follow/${userId}`, {
-      method: 'POST',
-    });
-  }
-
-  async unfollowUser(userId: string) {
-    return this.request<any>(`/social/unfollow/${userId}`, {
-      method: 'POST',
-    });
-  }
-
-  async getFollowers(userId: string, options?: { limit?: number; offset?: number }) {
-    const params = new URLSearchParams();
-    if (options?.limit) params.append('limit', options.limit.toString());
-    if (options?.offset) params.append('offset', options.offset.toString());
-    const query = params.toString();
-    return this.request<any[]>(`/social/followers/${userId}${query ? `?${query}` : ''}`);
-  }
-
-  async getFollowing(userId: string, options?: { limit?: number; offset?: number }) {
-    const params = new URLSearchParams();
-    if (options?.limit) params.append('limit', options.limit.toString());
-    if (options?.offset) params.append('offset', options.offset.toString());
-    const query = params.toString();
-    return this.request<any[]>(`/social/following/${userId}${query ? `?${query}` : ''}`);
-  }
-
-  async isFollowing(userId: string) {
-    return this.request<{ isFollowing: boolean }>(`/social/is-following/${userId}`);
-  }
-
-  async getSocialStats(userId: string) {
-    return this.request<{ followers: number; following: number }>(`/social/stats/${userId}`);
-  }
-
-  async createSocialPost(data: {
-    content: string;
-    mediaUrls?: string[];
-    postType?: string;
-    portfolioId?: string;
-  }) {
-    return this.request<any>('/social/posts', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async getSocialFeed(options?: { limit?: number; offset?: number }) {
-    const params = new URLSearchParams();
-    if (options?.limit) params.append('limit', options.limit.toString());
-    if (options?.offset) params.append('offset', options.offset.toString());
     const query = params.toString();
     return this.request<any[]>(`/social/feed${query ? `?${query}` : ''}`);
   }
 
-  async likePost(postId: string) {
-    return this.request<{ liked: boolean }>(`/social/posts/${postId}/like`, {
+  async createSocialPost(data: FormData) {
+    return this.request<any>('/social/posts', {
       method: 'POST',
+      body: data,
+      headers: {}, // Let browser set Content-Type with boundary
     });
   }
 
-  async commentOnPost(postId: string, data: {
-    content: string;
-    parentCommentId?: string;
-  }) {
-    return this.request<any>(`/social/posts/${postId}/comments`, {
-      method: 'POST',
-      body: JSON.stringify(data),
+  async getSocialPost(id: string) {
+    return this.request<any>(`/social/posts/${id}`);
+  }
+
+  async updateSocialPost(id: string, data: FormData) {
+    return this.request<any>(`/social/posts/${id}`, {
+      method: 'PUT',
+      body: data,
+      headers: {}, // Let browser set Content-Type with boundary
     });
   }
 
-  async getPostComments(postId: string, options?: { limit?: number; offset?: number }) {
-    const params = new URLSearchParams();
-    if (options?.limit) params.append('limit', options.limit.toString());
-    if (options?.offset) params.append('offset', options.offset.toString());
-    const query = params.toString();
-    return this.request<any[]>(`/social/posts/${postId}/comments${query ? `?${query}` : ''}`);
-  }
-
-  // Wishlist
-  async getWishlists() {
-    return this.request<any[]>('/wishlist');
-  }
-
-  async createWishlist(data: {
-    name: string;
-    isPublic?: boolean;
-  }) {
-    return this.request<any>('/wishlist', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async addWishlistItem(wishlistId: string, data: {
-    itemType: string;
-    itemId: string;
-    notes?: string;
-  }) {
-    return this.request<any>(`/wishlist/${wishlistId}/items`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async removeWishlistItem(wishlistId: string, itemId: string, options?: { itemType: string }) {
-    const params = new URLSearchParams();
-    if (options?.itemType) params.append('itemType', options.itemType);
-    const query = params.toString();
-    return this.request<any>(`/wishlist/${wishlistId}/items/${itemId}${query ? `?${query}` : ''}`, {
+  async deleteSocialPost(id: string) {
+    return this.request<any>(`/social/posts/${id}`, {
       method: 'DELETE',
     });
   }
 
-  async getWishlistItems(wishlistId: string) {
-    return this.request<any[]>(`/wishlist/${wishlistId}/items`);
-  }
-
-  async checkWishlist(itemType: string, itemId: string) {
-    return this.request<{ inWishlist: boolean; wishlist: any }>(`/wishlist/check/${itemType}/${itemId}`);
-  }
-
-  // 2FA
-  async get2FAStatus() {
-    return this.request<{ isEnabled: boolean }>('/2fa/status');
-  }
-
-  async setup2FA() {
-    return this.request<{ secret: string; qrCode: string; manualEntryKey: string }>('/2fa/setup', {
+  async likeSocialPost(postId: string) {
+    return this.request<any>(`/social/posts/${postId}/like`, {
       method: 'POST',
     });
   }
 
-  async verify2FA(token: string) {
-    return this.request<{ success: boolean; backupCodes?: string[] }>('/2fa/verify', {
+  async unlikeSocialPost(postId: string) {
+    return this.request<any>(`/social/posts/${postId}/unlike`, {
+      method: 'POST',
+    });
+  }
+
+  async getSocialComments(postId: string) {
+    return this.request<any[]>(`/social/posts/${postId}/comments`);
+  }
+
+  async createSocialComment(postId: string, content: string) {
+    return this.request<any>(`/social/posts/${postId}/comments`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    });
+  }
+
+  async deleteSocialComment(commentId: string) {
+    return this.request<any>(`/social/comments/${commentId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Wishlist
+  async getWishlist() {
+    return this.request<any[]>('/wishlist');
+  }
+
+  async addToWishlist(productId: string) {
+    return this.request<any>('/wishlist', {
+      method: 'POST',
+      body: JSON.stringify({ productId }),
+    });
+  }
+
+  async removeFromWishlist(productId: string) {
+    return this.request<any>(`/wishlist/${productId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Two-Factor Authentication
+  async enableTwoFactor() {
+    return this.request<any>('/2fa/enable', {
+      method: 'POST',
+    });
+  }
+
+  async disableTwoFactor() {
+    return this.request<any>('/2fa/disable', {
+      method: 'POST',
+    });
+  }
+
+  async verifyTwoFactorToken(token: string) {
+    return this.request<any>('/2fa/verify', {
       method: 'POST',
       body: JSON.stringify({ token }),
     });
   }
 
-  async getBackupCodes() {
-    return this.request<{ backupCodes: string[] }>('/2fa/backup-codes');
-  }
-
-  // 2FA methods
-  async disable2FA(password: string) {
-    return this.request<any>('/2fa/disable', {
+  async backupTwoFactorCodes() {
+    return this.request<any>('/2fa/backup-codes', {
       method: 'POST',
-      body: JSON.stringify({ password }),
-    });
-  }
-
-  async update2FA(data: any) {
-    return this.request<any>('/2fa/update', {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async delete2FA() {
-    return this.request<any>('/2fa/delete', {
-      method: 'DELETE',
     });
   }
 
@@ -1704,277 +1474,276 @@ class ApiClient {
     });
   }
 
-  // Artisan-specific endpoints
-  async getArtisanServices() {
-    return this.request<any[]>('/artisan/services');
-  }
-
-  async getArtisanBookings() {
-    return this.request<any[]>('/artisan/bookings');
-  }
-
-  async createArtisanService(data: any) {
-    return this.request<any>('/artisan/services', {
+  async createFreelancerInvoice(data: any) {
+    return this.request<any>('/freelancer/invoices', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async deleteArtisanService(id: string) {
-    return this.request<any>(`/artisan/services/${id}`, {
+  async updateFreelancerInvoice(id: string, data: any) {
+    return this.request<any>(`/freelancer/invoices/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteFreelancerInvoice(id: string) {
+    return this.request<any>(`/freelancer/invoices/${id}`, {
       method: 'DELETE',
     });
   }
 
-  async updateArtisanBookingStatus(bookingId: string, status: string) {
-    return this.request<any>(`/artisan/bookings/${bookingId}/status`, {
-      method: 'PUT',
-      body: JSON.stringify({ status }),
-    });
-  }
-
-  async updateArtisanService(id: string, data: any) {
-    return this.request<any>(`/artisan/services/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  }
-
-  // Artisan service booking - NEW
-  async createArtisanBooking(data: {
-    serviceId: string;
-    clientName: string;
-    clientEmail: string;
-    clientPhone: string;
-    bookingDate: string;
-    startTime: string;
-    endTime?: string;
-    notes?: string;
-  }) {
-    return this.request<any>('/artisan/bookings', {
+  async createFreelancerTimeEntry(data: any) {
+    return this.request<any>('/freelancer/time-entries', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  // Artisan service booking payment
-  async payArtisanBooking(bookingId: string, data: {
-    customerPhone: string;
-    customerEmail?: string;
-    customerName?: string;
-  }) {
-    return this.request<{ success: boolean; paymentId: string; checkoutUrl: string; message: string }>(`/artisan/bookings/${bookingId}/payment`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  // Educator-specific endpoints
-  async getCourses() {
-    return this.request<any[]>('/education/courses');
-  }
-
-  async getCourseEnrollments() {
-    return this.request<any[]>('/education/enrollments');
-  }
-
-  async getLessons(courseId?: string) {
-    const url = courseId ? `/education/lessons?courseId=${courseId}` : '/education/lessons';
-    return this.request<any[]>(url);
-  }
-
-  async createCourse(data: any) {
-    return this.request<any>('/education/courses', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async createLesson(data: any) {
-    return this.request<any>('/education/lessons', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async updateCourseEnrollmentStatus(enrollmentId: string, status: string) {
-    return this.request<any>(`/education/enrollments/${enrollmentId}/status`, {
-      method: 'PUT',
-      body: JSON.stringify({ status }),
-    });
-  }
-
-  // Educator update and delete methods
-  async updateCourse(id: string, data: any) {
-    return this.request<any>(`/education/courses/${id}`, {
+  async updateFreelancerTimeEntry(id: string, data: any) {
+    return this.request<any>(`/freelancer/time-entries/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
-  async deleteCourse(id: string) {
-    return this.request<any>(`/education/courses/${id}`, {
+  async deleteFreelancerTimeEntry(id: string) {
+    return this.request<any>(`/freelancer/time-entries/${id}`, {
       method: 'DELETE',
     });
   }
 
-  async updateLesson(id: string, data: any) {
-    return this.request<any>(`/education/lessons/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async deleteLesson(id: string) {
-    return this.request<any>(`/education/lessons/${id}`, {
-      method: 'DELETE',
-    });
-  }
-
-  // Event Organizer-specific endpoints
-  async getOrganizedEvents() {
-    return this.request<any[]>('/events/organized');
-  }
-
-  async getEventRegistrations() {
-    return this.request<any[]>('/events/registrations');
-  }
-
-  async createOrganizedEvent(data: any) {
-    return this.request<any>('/events/organized', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async deleteOrganizedEvent(id: string) {
-    return this.request<any>(`/events/organized/${id}`, {
-      method: 'DELETE',
-    });
-  }
-
-  async updateEventRegistrationStatus(registrationId: string, status: string) {
-    return this.request<any>(`/events/registrations/${registrationId}/status`, {
-      method: 'PUT',
-      body: JSON.stringify({ status }),
-    });
-  }
-
-  async updateOrganizedEventStatus(eventId: string, status: string) {
-    return this.request<any>(`/events/organized/${eventId}/status`, {
-      method: 'PUT',
-      body: JSON.stringify({ status }),
-    });
-  }
-
-  // Event registration - NEW
-  async registerForEvent(data: {
-    eventId: string;
-    attendeeName: string;
-    attendeeEmail: string;
-    attendeePhone: string;
-    numberOfTickets: number;
-    specialRequests?: string;
-  }) {
-    return this.request<any>('/events/registrations', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  // Event registration payment
-  async payEventRegistration(registrationId: string, data: {
-    customerPhone: string;
-    customerEmail?: string;
-    customerName?: string;
-  }) {
-    return this.request<{ success: boolean; paymentId: string; checkoutUrl: string; message: string }>(`/events/registrations/${registrationId}/payment`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  // Event organizer update method
-  async updateOrganizedEvent(id: string, data: any) {
-    return this.request<any>(`/events/organized/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  }
-
-  // Employer-specific endpoints
-  async getJobPostings() {
-    return this.request<any[]>('/jobs/postings');
-  }
-
-  async getJobApplications() {
-    return this.request<any[]>('/jobs/applications');
-  }
-
-  async createJobPosting(data: any) {
-    return this.request<any>('/jobs/postings', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async deleteJobPosting(id: string) {
-    return this.request<any>(`/jobs/postings/${id}`, {
-      method: 'DELETE',
-    });
-  }
-
-  async updateJobApplicationStatus(applicationId: string, status: string) {
-    return this.request<any>(`/jobs/applications/${applicationId}/status`, {
-      method: 'PUT',
-      body: JSON.stringify({ status }),
-    });
-  }
-
-  async updateJobPosting(id: string, data: any) {
-    return this.request<any>(`/jobs/postings/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  }
-
-  // News Articles (Admin)
-  async createNewsArticle(data: any) {
-    return this.request<any>('/news/articles', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async getNewsArticles(filters?: { category?: string; authorId?: string; startDate?: string; endDate?: string }) {
+  // Lodging Properties
+  async getLodgingProperties(filters?: { location?: string; propertyType?: string }) {
     const params = new URLSearchParams();
-    if (filters?.category) params.append('category', filters.category);
-    if (filters?.authorId) params.append('authorId', filters.authorId);
-    if (filters?.startDate) params.append('startDate', filters.startDate);
-    if (filters?.endDate) params.append('endDate', filters.endDate);
-
+    if (filters?.location) params.append('location', filters.location);
+    if (filters?.propertyType) params.append('propertyType', filters.propertyType);
+    
     const query = params.toString();
-    return this.request<any[]>(`/news/articles${query ? `?${query}` : ''}`);
+    return this.request<any[]>(`/lodging${query ? `?${query}` : ''}`);
   }
 
-  async getNewsArticle(id: string) {
-    return this.request<any>(`/news/articles/${id}`);
+  async getLodgingProperty(id: string) {
+    return this.request<any>(`/lodging/${id}`);
   }
 
-  async deleteNewsArticle(id: string) {
-    return this.request<any>(`/news/articles/${id}`, {
+  async createLodgingProperty(data: FormData) {
+    return this.request<any>('/lodging', {
+      method: 'POST',
+      body: data,
+      headers: {}, // Let browser set Content-Type with boundary
+    });
+  }
+
+  async updateLodgingProperty(id: string, data: FormData) {
+    return this.request<any>(`/lodging/${id}`, {
+      method: 'PUT',
+      body: data,
+      headers: {}, // Let browser set Content-Type with boundary
+    });
+  }
+
+  async deleteLodgingProperty(id: string) {
+    return this.request<any>(`/lodging/${id}`, {
       method: 'DELETE',
     });
   }
 
-  async updateNewsArticle(id: string, data: any) {
-    return this.request<any>(`/news/articles/${id}`, {
+  // Lodging Rooms
+  async getLodgingRooms(propertyId: string) {
+    return this.request<any[]>(`/lodging/${propertyId}/rooms`);
+  }
+
+  async getLodgingRoom(id: string) {
+    return this.request<any>(`/lodging/rooms/${id}`);
+  }
+
+  async createLodgingRoom(propertyId: string, data: FormData) {
+    return this.request<any>(`/lodging/${propertyId}/rooms`, {
+      method: 'POST',
+      body: data,
+      headers: {}, // Let browser set Content-Type with boundary
+    });
+  }
+
+  async updateLodgingRoom(id: string, data: FormData) {
+    return this.request<any>(`/lodging/rooms/${id}`, {
+      method: 'PUT',
+      body: data,
+      headers: {}, // Let browser set Content-Type with boundary
+    });
+  }
+
+  async deleteLodgingRoom(id: string) {
+    return this.request<any>(`/lodging/rooms/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Lodging Bookings
+  async getLodgingBookings(filters?: { propertyId?: string; roomId?: string; guestId?: string; status?: string }) {
+    const params = new URLSearchParams();
+    if (filters?.propertyId) params.append('propertyId', filters.propertyId);
+    if (filters?.roomId) params.append('roomId', filters.roomId);
+    if (filters?.guestId) params.append('guestId', filters.guestId);
+    if (filters?.status) params.append('status', filters.status);
+    
+    const query = params.toString();
+    return this.request<any[]>(`/lodging/bookings${query ? `?${query}` : ''}`);
+  }
+
+  async getLodgingBooking(id: string) {
+    return this.request<any>(`/lodging/bookings/${id}`);
+  }
+
+  async createLodgingBooking(data: { propertyId: string; roomId: string; checkInDate: string; checkOutDate: string }) {
+    return this.request<any>('/lodging/bookings', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateLodgingBooking(id: string, data: any) {
+    return this.request<any>(`/lodging/bookings/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
-  // Services
+  async deleteLodgingBooking(id: string) {
+    return this.request<any>(`/lodging/bookings/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async confirmLodgingBooking(id: string) {
+    return this.request<any>(`/lodging/bookings/${id}/confirm`, {
+      method: 'POST',
+    });
+  }
+
+  async cancelLodgingBooking(id: string) {
+    return this.request<any>(`/lodging/bookings/${id}/cancel`, {
+      method: 'POST',
+    });
+  }
+
+  // Restaurant Listings
+  async getRestaurants(filters?: { location?: string; cuisineType?: string }) {
+    const params = new URLSearchParams();
+    if (filters?.location) params.append('location', filters.location);
+    if (filters?.cuisineType) params.append('cuisineType', filters.cuisineType);
+    
+    const query = params.toString();
+    return this.request<any[]>(`/restaurants${query ? `?${query}` : ''}`);
+  }
+
+  async getRestaurant(id: string) {
+    return this.request<any>(`/restaurants/${id}`);
+  }
+
+  async createRestaurant(data: FormData) {
+    return this.request<any>('/restaurants', {
+      method: 'POST',
+      body: data,
+      headers: {}, // Let browser set Content-Type with boundary
+    });
+  }
+
+  async updateRestaurant(id: string, data: FormData) {
+    return this.request<any>(`/restaurants/${id}`, {
+      method: 'PUT',
+      body: data,
+      headers: {}, // Let browser set Content-Type with boundary
+    });
+  }
+
+  async deleteRestaurant(id: string) {
+    return this.request<any>(`/restaurants/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Menu Items
+  async getMenuItems(restaurantId: string) {
+    return this.request<any[]>(`/restaurants/${restaurantId}/menu-items`);
+  }
+
+  async getMenuItem(id: string) {
+    return this.request<any>(`/restaurants/menu-items/${id}`);
+  }
+
+  async createMenuItem(restaurantId: string, data: FormData) {
+    return this.request<any>(`/restaurants/${restaurantId}/menu-items`, {
+      method: 'POST',
+      body: data,
+      headers: {}, // Let browser set Content-Type with boundary
+    });
+  }
+
+  async updateMenuItem(id: string, data: FormData) {
+    return this.request<any>(`/restaurants/menu-items/${id}`, {
+      method: 'PUT',
+      body: data,
+      headers: {}, // Let browser set Content-Type with boundary
+    });
+  }
+
+  async deleteMenuItem(id: string) {
+    return this.request<any>(`/restaurants/menu-items/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Restaurant Reservations
+  async getRestaurantReservations(filters?: { restaurantId?: string; guestId?: string; status?: string }) {
+    const params = new URLSearchParams();
+    if (filters?.restaurantId) params.append('restaurantId', filters.restaurantId);
+    if (filters?.guestId) params.append('guestId', filters.guestId);
+    if (filters?.status) params.append('status', filters.status);
+    
+    const query = params.toString();
+    return this.request<any[]>(`/restaurants/reservations${query ? `?${query}` : ''}`);
+  }
+
+  async getRestaurantReservation(id: string) {
+    return this.request<any>(`/restaurants/reservations/${id}`);
+  }
+
+  async createRestaurantReservation(data: { restaurantId: string; reservationDate: string; partySize: number; notes?: string }) {
+    return this.request<any>('/restaurants/reservations', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateRestaurantReservation(id: string, data: any) {
+    return this.request<any>(`/restaurants/reservations/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteRestaurantReservation(id: string) {
+    return this.request<any>(`/restaurants/reservations/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async confirmRestaurantReservation(id: string) {
+    return this.request<any>(`/restaurants/reservations/${id}/confirm`, {
+      method: 'POST',
+    });
+  }
+
+  async cancelRestaurantReservation(id: string) {
+    return this.request<any>(`/restaurants/reservations/${id}/cancel`, {
+      method: 'POST',
+    });
+  }
+
+  // Services (generic services marketplace)
   async getServices(filters?: { category?: string; location?: string; serviceType?: string; search?: string }) {
     const params = new URLSearchParams();
     if (filters?.category) params.append('category', filters.category);
@@ -1995,7 +1764,50 @@ class ApiClient {
     const query = params.toString();
     return this.request<any>(`/revenue/summary${query ? `?${query}` : ''}`);
   }
+
+  // Music tracks
+  async getTracks(filters?: { genre?: string; search?: string }) {
+    const params = new URLSearchParams();
+    if (filters?.genre) params.append('genre', filters.genre);
+    if (filters?.search) params.append('search', filters.search);
+    
+    const query = params.toString();
+    return this.request<any[]>(`/music${query ? `?${query}` : ''}`);
+  }
+
+  async getTrack(id: string) {
+    return this.request<any>(`/music/${id}`);
+  }
+
+  async createTrack(data: FormData) {
+    return this.request<any>('/music', {
+      method: 'POST',
+      body: data,
+      headers: {}, // Let browser set Content-Type with boundary
+    });
+  }
+
+  async updateTrack(id: string, data: FormData) {
+    return this.request<any>(`/music/${id}`, {
+      method: 'PUT',
+      body: data,
+      headers: {}, // Let browser set Content-Type with boundary
+    });
+  }
+
+  async deleteTrack(id: string) {
+    return this.request<any>(`/music/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getMyTracks() {
+    return this.request<any[]>('/music/my/tracks');
+  }
+
+  async getMyTrackStats() {
+    return this.request<any>('/music/my/stats');
+  }
 }
 
 export const api = new ApiClient(API_BASE_URL);
-

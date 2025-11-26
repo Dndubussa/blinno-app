@@ -1,9 +1,10 @@
 import express from 'express';
-import { pool } from '../config/database.js';
+import { supabase } from '../config/supabase.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import ClickPesaService, { PaymentRequest } from '../services/clickpesa.js';
 import { platformFees } from '../services/platformFees.js';
 import dotenv from 'dotenv';
+import { userPreferences } from '../services/userPreferences.js';
 
 dotenv.config();
 
@@ -20,16 +21,26 @@ const clickPesa = new ClickPesaService({
  */
 router.get('/my-bookings', authenticate, async (req: AuthRequest, res) => {
   try {
-    const result = await pool.query(
-      `SELECT pb.*, p.display_name as client_name
-       FROM performance_bookings pb
-       JOIN profiles p ON pb.client_id = p.user_id
-       WHERE pb.performer_id = $1
-       ORDER BY pb.created_at DESC`,
-      [req.userId]
-    );
+    const { data: bookings, error } = await supabase
+      .from('performance_bookings')
+      .select(`
+        *,
+        client:profiles!performance_bookings_client_id_fkey(display_name)
+      `)
+      .eq('performer_id', req.userId)
+      .order('created_at', { ascending: false });
 
-    res.json(result.rows);
+    if (error) {
+      throw error;
+    }
+
+    // Transform to match expected format
+    const transformed = (bookings || []).map((pb: any) => ({
+      ...pb,
+      client_name: pb.client?.display_name,
+    }));
+
+    res.json(transformed);
   } catch (error: any) {
     console.error('Get performance bookings error:', error);
     res.status(500).json({ error: 'Failed to get bookings' });
@@ -41,16 +52,26 @@ router.get('/my-bookings', authenticate, async (req: AuthRequest, res) => {
  */
 router.get('/my-requests', authenticate, async (req: AuthRequest, res) => {
   try {
-    const result = await pool.query(
-      `SELECT pb.*, p.display_name as performer_name
-       FROM performance_bookings pb
-       JOIN profiles p ON pb.performer_id = p.user_id
-       WHERE pb.client_id = $1
-       ORDER BY pb.created_at DESC`,
-      [req.userId]
-    );
+    const { data: bookings, error } = await supabase
+      .from('performance_bookings')
+      .select(`
+        *,
+        performer:profiles!performance_bookings_performer_id_fkey(display_name)
+      `)
+      .eq('client_id', req.userId)
+      .order('created_at', { ascending: false });
 
-    res.json(result.rows);
+    if (error) {
+      throw error;
+    }
+
+    // Transform to match expected format
+    const transformed = (bookings || []).map((pb: any) => ({
+      ...pb,
+      performer_name: pb.performer?.display_name,
+    }));
+
+    res.json(transformed);
   } catch (error: any) {
     console.error('Get performance requests error:', error);
     res.status(500).json({ error: 'Failed to get requests' });
@@ -68,28 +89,30 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
       return res.status(400).json({ error: 'Performer ID, performance type, date, and fee are required' });
     }
 
-    const result = await pool.query(
-      `INSERT INTO performance_bookings (
-        performer_id, client_id, performance_type, event_name, venue, 
-        performance_date, duration_hours, fee, requirements, notes, status, payment_status
-      )
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pending', 'pending')
-       RETURNING *`,
-      [
-        performerId,
-        req.userId,
-        performanceType,
-        eventName || null,
-        venue || null,
-        performanceDate,
-        durationHours ? parseFloat(durationHours) : null,
-        parseFloat(fee),
-        requirements || null,
-        notes || null,
-      ]
-    );
+    const { data, error } = await supabase
+      .from('performance_bookings')
+      .insert({
+        performer_id: performerId,
+        client_id: req.userId,
+        performance_type: performanceType,
+        event_name: eventName || null,
+        venue: venue || null,
+        performance_date: performanceDate,
+        duration_hours: durationHours ? parseFloat(durationHours) : null,
+        fee: parseFloat(fee),
+        requirements: requirements || null,
+        notes: notes || null,
+        status: 'pending',
+        payment_status: 'pending',
+      })
+      .select()
+      .single();
 
-    res.status(201).json(result.rows[0]);
+    if (error) {
+      throw error;
+    }
+
+    res.status(201).json(data);
   } catch (error: any) {
     console.error('Create performance booking error:', error);
     res.status(500).json({ error: 'Failed to create booking' });
@@ -105,28 +128,35 @@ router.put('/:id/status', authenticate, async (req: AuthRequest, res) => {
     const { status } = req.body;
 
     // Verify performer owns this booking
-    const checkResult = await pool.query(
-      'SELECT performer_id FROM performance_bookings WHERE id = $1',
-      [id]
-    );
+    const { data: existing, error: checkError } = await supabase
+      .from('performance_bookings')
+      .select('performer_id')
+      .eq('id', id)
+      .single();
 
-    if (checkResult.rows.length === 0) {
+    if (checkError || !existing) {
       return res.status(404).json({ error: 'Booking not found' });
     }
 
-    if (checkResult.rows[0].performer_id !== req.userId) {
+    if (existing.performer_id !== req.userId) {
       return res.status(403).json({ error: 'Not authorized' });
     }
 
-    const result = await pool.query(
-      `UPDATE performance_bookings
-       SET status = $1, updated_at = now()
-       WHERE id = $2
-       RETURNING *`,
-      [status, id]
-    );
+    const { data, error } = await supabase
+      .from('performance_bookings')
+      .update({
+        status,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select()
+      .single();
 
-    res.json(result.rows[0]);
+    if (error) {
+      throw error;
+    }
+
+    res.json(data);
   } catch (error: any) {
     console.error('Update performance booking status error:', error);
     res.status(500).json({ error: 'Failed to update booking' });
@@ -145,21 +175,30 @@ router.post('/:id/payment', authenticate, async (req: AuthRequest, res) => {
       return res.status(400).json({ error: 'Customer phone number is required' });
     }
 
-    // Get booking details
-    const bookingResult = await pool.query(
-      `SELECT pb.*, u.email, p.display_name
-       FROM performance_bookings pb
-       JOIN users u ON pb.client_id = u.id
-       LEFT JOIN profiles p ON pb.client_id = p.user_id
-       WHERE pb.id = $1 AND pb.client_id = $2`,
-      [id, req.userId]
-    );
-
-    if (bookingResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Booking not found' });
+    // Check if user is authenticated
+    if (!req.userId) {
+      return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const booking = bookingResult.rows[0];
+    // Get user's preferred currency
+    const userPrefs = await userPreferences.getUserPreferences(req.userId);
+    const currency = userPrefs.currency || 'TZS';
+
+    // Get booking details
+    const { data: booking, error: bookingError } = await supabase
+      .from('performance_bookings')
+      .select(`
+        *,
+        client:users!performance_bookings_client_id_fkey(email),
+        client_profile:profiles!performance_bookings_client_id_fkey(display_name)
+      `)
+      .eq('id', id)
+      .eq('client_id', req.userId)
+      .single();
+
+    if (bookingError || !booking) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
 
     if (booking.status !== 'confirmed') {
       return res.status(400).json({ error: 'Booking must be confirmed before payment' });
@@ -169,52 +208,60 @@ router.post('/:id/payment', authenticate, async (req: AuthRequest, res) => {
       return res.status(400).json({ error: 'Booking already paid' });
     }
 
-    // Calculate fees (performance bookings have higher platform fee - 12%)
-    const feeCalculation = platformFees.calculateServiceBookingFee(parseFloat(booking.fee));
+    // Calculate fees with user's currency (performance bookings have higher platform fee - 12%)
+    const baseFee = platformFees.calculateServiceBookingFee(parseFloat(booking.fee.toString()), undefined, currency);
     // Override for performance bookings (12% instead of 10%)
-    const performanceFee = parseFloat(booking.fee) * 0.12;
-    const paymentProcessingFee = (parseFloat(booking.fee) * 0.025) + 500;
+    const performanceFee = parseFloat(booking.fee.toString()) * 0.12;
+    const fixedFee = platformFees['getFixedFeeForCurrency'] ? 
+      platformFees['getFixedFeeForCurrency'](currency) : 500;
+    const paymentProcessingFee = (parseFloat(booking.fee.toString()) * 0.025) + fixedFee;
     const totalFees = performanceFee + paymentProcessingFee;
-    const creatorPayout = parseFloat(booking.fee) - performanceFee;
-    const total = parseFloat(booking.fee) + paymentProcessingFee;
+    const creatorPayout = parseFloat(booking.fee.toString()) - performanceFee;
+    const total = parseFloat(booking.fee.toString()) + paymentProcessingFee;
 
-    // Create payment record
-    const paymentResult = await pool.query(
-      `INSERT INTO payments (order_id, user_id, amount, currency, status, payment_method, payment_type)
-       VALUES ($1, $2, $3, $4, 'pending', 'clickpesa', 'performance_booking')
-       RETURNING *`,
-      [`performance_booking_${id}`, req.userId, total, 'TZS']
-    );
+    // Create payment record with user's currency
+    const { data: payment, error: paymentError } = await supabase
+      .from('payments')
+      .insert({
+        order_id: `performance_booking_${id}`,
+        user_id: req.userId,
+        amount: total,
+        currency: currency,
+        status: 'pending',
+        payment_method: 'clickpesa',
+        payment_type: 'performance_booking',
+      })
+      .select()
+      .single();
 
-    const payment = paymentResult.rows[0];
+    if (paymentError || !payment) {
+      throw paymentError;
+    }
 
     // Record platform fee
-    await pool.query(
-      `INSERT INTO platform_fees (
-        transaction_id, transaction_type, user_id, buyer_id,
-        subtotal, platform_fee, payment_processing_fee, total_fees, creator_payout, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending')`,
-      [
-        `performance_booking_${id}`,
-        'event_booking',
-        booking.performer_id,
-        req.userId,
-        parseFloat(booking.fee),
-        performanceFee,
-        paymentProcessingFee,
-        totalFees,
-        creatorPayout,
-      ]
-    );
+    await supabase
+      .from('platform_fees')
+      .insert({
+        transaction_id: `performance_booking_${id}`,
+        transaction_type: 'event_booking',
+        user_id: booking.performer_id,
+        buyer_id: req.userId,
+        subtotal: parseFloat(booking.fee.toString()),
+        platform_fee: performanceFee,
+        payment_processing_fee: paymentProcessingFee,
+        total_fees: totalFees,
+        creator_payout: creatorPayout,
+        status: 'pending',
+      });
 
-    // Create Click Pesa payment request
+    // Create Click Pesa payment request with user's currency
     const paymentRequest: PaymentRequest = {
       amount: total,
-      currency: 'TZS',
+      currency: currency,
       orderId: `performance_booking_${id}`,
       customerPhone: customerPhone,
-      customerEmail: customerEmail || booking.email,
-      customerName: customerName || booking.display_name || 'Customer',
+      customerEmail: customerEmail || booking.client?.email || '',
+      customerName: customerName || booking.client_profile?.display_name || 'Customer',
       description: `Payment for performance booking: ${booking.event_name || booking.performance_type}`,
       callbackUrl: `${process.env.APP_URL || 'https://www.blinno.app'}/api/payments/webhook`,
     };
@@ -222,27 +269,29 @@ router.post('/:id/payment', authenticate, async (req: AuthRequest, res) => {
     const clickPesaResponse = await clickPesa.createPayment(paymentRequest);
 
     if (!clickPesaResponse.success) {
-      await pool.query(
-        `UPDATE payments SET status = 'failed', error_message = $1 WHERE id = $2`,
-        [clickPesaResponse.error || 'Payment creation failed', payment.id]
-      );
+      await supabase
+        .from('payments')
+        .update({
+          status: 'failed',
+          error_message: clickPesaResponse.error || 'Payment creation failed',
+        })
+        .eq('id', payment.id);
+
       return res.status(400).json({
         error: clickPesaResponse.error || 'Failed to create payment',
       });
     }
 
     // Update payment with Click Pesa details
-    await pool.query(
-      `UPDATE payments 
-       SET payment_id = $1, transaction_id = $2, checkout_url = $3, status = 'initiated'
-       WHERE id = $4`,
-      [
-        clickPesaResponse.paymentId,
-        clickPesaResponse.transactionId,
-        clickPesaResponse.checkoutUrl,
-        payment.id,
-      ]
-    );
+    await supabase
+      .from('payments')
+      .update({
+        payment_id: clickPesaResponse.paymentId,
+        transaction_id: clickPesaResponse.transactionId,
+        checkout_url: clickPesaResponse.checkoutUrl,
+        status: 'initiated',
+      })
+      .eq('id', payment.id);
 
     res.json({
       success: true,
@@ -257,4 +306,3 @@ router.post('/:id/payment', authenticate, async (req: AuthRequest, res) => {
 });
 
 export default router;
-

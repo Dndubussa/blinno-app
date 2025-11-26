@@ -21,20 +21,23 @@ const categories = [
   { id: "artisans", label: "Artisans" },
 ];
 
-export const CategoryFilterSidebar = () => {
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+interface CategoryFilterSidebarProps {
+  selectedCategories: string[];
+  onCategoryChange: (categories: string[]) => void;
+}
+
+export const CategoryFilterSidebar = ({ selectedCategories, onCategoryChange }: CategoryFilterSidebarProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const toggleCategory = (categoryId: string) => {
-    setSelectedCategories((prev) =>
-      prev.includes(categoryId)
-        ? prev.filter((id) => id !== categoryId)
-        : [...prev, categoryId]
-    );
+    const newSelected = selectedCategories.includes(categoryId)
+      ? selectedCategories.filter((id) => id !== categoryId)
+      : [...selectedCategories, categoryId];
+    onCategoryChange(newSelected);
   };
 
   const clearAll = () => {
-    setSelectedCategories([]);
+    onCategoryChange([]);
   };
 
   const FilterContent = () => (
@@ -112,7 +115,7 @@ export const CategoryFilterSidebar = () => {
               )}
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-80">
+          <SheetContent side="left" className="w-80 sm:w-96">
             <SheetHeader>
               <SheetTitle>Filter Options</SheetTitle>
             </SheetHeader>
@@ -124,7 +127,7 @@ export const CategoryFilterSidebar = () => {
       </div>
 
       {/* Desktop: Fixed Sidebar */}
-      <Card className="hidden lg:block w-80 p-6 h-fit sticky top-24 animate-fade-in">
+      <Card className="hidden lg:block w-full p-6 h-fit sticky top-24 animate-fade-in">
         <FilterContent />
       </Card>
     </>

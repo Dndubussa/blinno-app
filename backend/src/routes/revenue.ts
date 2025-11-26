@@ -1,5 +1,5 @@
 import express from 'express';
-import { pool } from '../config/database.js';
+import { supabase } from '../config/supabase.js';
 import { authenticate, AuthRequest, requireRole } from '../middleware/auth.js';
 import { financialTracking } from '../services/financialTracking.js';
 import ClickPesaService from '../services/clickpesa.js';
@@ -23,66 +23,94 @@ router.get('/summary', authenticate, requireRole('admin'), async (req: AuthReque
   try {
     const { startDate, endDate } = req.query;
 
-    let dateFilter = '';
-    const params: any[] = [];
-    if (startDate && endDate) {
-      dateFilter = 'WHERE created_at >= $1 AND created_at <= $2';
-      params.push(startDate, endDate);
+    // Total revenue - using RPC or manual aggregation
+    let revenueQuery = supabase
+      .from('platform_fees')
+      .select('subtotal, platform_fee, payment_processing_fee, creator_payout')
+      .eq('status', 'collected');
+
+    if (startDate) {
+      revenueQuery = revenueQuery.gte('created_at', startDate as string);
+    }
+    if (endDate) {
+      revenueQuery = revenueQuery.lte('created_at', endDate as string);
     }
 
-    // Total revenue
-    const revenueResult = await pool.query(
-      `SELECT 
-        SUM(subtotal) as total_revenue,
-        SUM(platform_fee) as total_platform_fees,
-        SUM(payment_processing_fee) as total_processing_fees,
-        SUM(creator_payout) as total_payouts,
-        COUNT(*) as transaction_count
-       FROM platform_fees
-       ${dateFilter}
-       ${dateFilter ? '' : 'WHERE status = $1'}
-       ${dateFilter ? 'AND status = $3' : ''}`,
-      dateFilter ? [...params, 'collected'] : ['collected']
-    );
+    const { data: revenueData, error: revenueError } = await revenueQuery;
+
+    if (revenueError) {
+      throw revenueError;
+    }
+
+    // Calculate aggregations manually
+    const summary = (revenueData || []).reduce((acc: any, fee: any) => {
+      acc.total_revenue = (acc.total_revenue || 0) + parseFloat(fee.subtotal || 0);
+      acc.total_platform_fees = (acc.total_platform_fees || 0) + parseFloat(fee.platform_fee || 0);
+      acc.total_processing_fees = (acc.total_processing_fees || 0) + parseFloat(fee.payment_processing_fee || 0);
+      acc.total_payouts = (acc.total_payouts || 0) + parseFloat(fee.creator_payout || 0);
+      acc.transaction_count = (acc.transaction_count || 0) + 1;
+      return acc;
+    }, {});
 
     // Revenue by transaction type
-    const byTypeResult = await pool.query(
-      `SELECT 
-        transaction_type,
-        COUNT(*) as count,
-        SUM(subtotal) as revenue,
-        SUM(platform_fee) as fees
-       FROM platform_fees
-       ${dateFilter}
-       ${dateFilter ? '' : 'WHERE status = $1'}
-       ${dateFilter ? 'AND status = $3' : ''}
-       GROUP BY transaction_type`,
-      dateFilter ? [...params, 'collected'] : ['collected']
-    );
+    const byTypeMap = new Map<string, { count: number; revenue: number; fees: number }>();
+    (revenueData || []).forEach((fee: any) => {
+      const type = fee.transaction_type || 'unknown';
+      const existing = byTypeMap.get(type) || { count: 0, revenue: 0, fees: 0 };
+      byTypeMap.set(type, {
+        count: existing.count + 1,
+        revenue: existing.revenue + parseFloat(fee.subtotal || 0),
+        fees: existing.fees + parseFloat(fee.platform_fee || 0),
+      });
+    });
+
+    const byType = Array.from(byTypeMap.entries()).map(([transaction_type, data]) => ({
+      transaction_type,
+      count: data.count,
+      revenue: data.revenue,
+      fees: data.fees,
+    }));
 
     // Subscription revenue
-    const subscriptionResult = await pool.query(
-      `SELECT 
-        COUNT(*) as active_subscriptions,
-        SUM(monthly_price) as monthly_recurring_revenue
-       FROM platform_subscriptions
-       WHERE status = 'active'`
-    );
+    const { data: subscriptionData, error: subscriptionError } = await supabase
+      .from('platform_subscriptions')
+      .select('monthly_price')
+      .eq('status', 'active');
+
+    if (subscriptionError) {
+      throw subscriptionError;
+    }
+
+    const subscriptions = {
+      active_subscriptions: subscriptionData?.length || 0,
+      monthly_recurring_revenue: (subscriptionData || []).reduce((sum: number, sub: any) => 
+        sum + (parseFloat(sub.monthly_price || 0)), 0
+      ),
+    };
 
     // Featured listings revenue
-    const featuredResult = await pool.query(
-      `SELECT 
-        COUNT(*) as active_listings,
-        SUM(price_paid) as total_revenue
-       FROM featured_listings
-       WHERE status = 'active' AND end_date > now()`
-    );
+    const { data: featuredData, error: featuredError } = await supabase
+      .from('featured_listings')
+      .select('price_paid')
+      .eq('status', 'active')
+      .gt('end_date', new Date().toISOString());
+
+    if (featuredError) {
+      throw featuredError;
+    }
+
+    const featuredListings = {
+      active_listings: featuredData?.length || 0,
+      total_revenue: (featuredData || []).reduce((sum: number, listing: any) => 
+        sum + (parseFloat(listing.price_paid || 0)), 0
+      ),
+    };
 
     res.json({
-      summary: revenueResult.rows[0],
-      byType: byTypeResult.rows,
-      subscriptions: subscriptionResult.rows[0],
-      featuredListings: featuredResult.rows[0],
+      summary,
+      byType,
+      subscriptions,
+      featuredListings,
     });
   } catch (error: any) {
     console.error('Get revenue summary error:', error);
@@ -97,29 +125,36 @@ router.get('/payouts', authenticate, requireRole('admin'), async (req: AuthReque
   try {
     const { status, creatorId } = req.query;
 
-    let query = `
-      SELECT cp.*, u.email, p.display_name
-      FROM creator_payouts cp
-      JOIN users u ON cp.creator_id = u.id
-      LEFT JOIN profiles p ON cp.creator_id = p.user_id
-      WHERE 1=1
-    `;
-    const params: any[] = [];
-    let paramCount = 1;
+    let query = supabase
+      .from('creator_payouts')
+      .select(`
+        *,
+        creator:users!creator_payouts_creator_id_fkey(email),
+        creator_profile:profiles!creator_payouts_creator_id_fkey(display_name)
+      `)
+      .order('created_at', { ascending: false });
 
     if (status) {
-      query += ` AND cp.status = $${paramCount++}`;
-      params.push(status);
+      query = query.eq('status', status as string);
     }
     if (creatorId) {
-      query += ` AND cp.creator_id = $${paramCount++}`;
-      params.push(creatorId);
+      query = query.eq('creator_id', creatorId as string);
     }
 
-    query += ` ORDER BY cp.created_at DESC`;
+    const { data, error } = await query;
 
-    const result = await pool.query(query, params);
-    res.json(result.rows);
+    if (error) {
+      throw error;
+    }
+
+    // Transform to match expected format
+    const transformed = (data || []).map((cp: any) => ({
+      ...cp,
+      email: cp.creator?.email,
+      display_name: cp.creator_profile?.display_name,
+    }));
+
+    res.json(transformed);
   } catch (error: any) {
     console.error('Get payouts error:', error);
     res.status(500).json({ error: 'Failed to get payouts' });
@@ -138,16 +173,23 @@ router.get('/pending/:creatorId', authenticate, async (req: AuthRequest, res) =>
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    const result = await pool.query(
-      `SELECT 
-        SUM(creator_payout) as total_pending,
-        COUNT(*) as transaction_count
-       FROM platform_fees
-       WHERE user_id = $1 AND payout_status = 'pending' AND status = 'collected'`,
-      [creatorId]
-    );
+    const { data, error } = await supabase
+      .from('platform_fees')
+      .select('creator_payout')
+      .eq('user_id', creatorId)
+      .eq('payout_status', 'pending')
+      .eq('status', 'collected');
 
-    res.json(result.rows[0] || { total_pending: 0, transaction_count: 0 });
+    if (error) {
+      throw error;
+    }
+
+    const total_pending = (data || []).reduce((sum: number, fee: any) => 
+      sum + (parseFloat(fee.creator_payout || 0)), 0
+    );
+    const transaction_count = data?.length || 0;
+
+    res.json({ total_pending, transaction_count });
   } catch (error: any) {
     console.error('Get pending fees error:', error);
     res.status(500).json({ error: 'Failed to get pending fees' });
@@ -160,65 +202,102 @@ router.get('/pending/:creatorId', authenticate, async (req: AuthRequest, res) =>
 router.get('/earnings', authenticate, async (req: AuthRequest, res) => {
   try {
     // Get total earnings (all collected fees)
-    const totalEarningsResult = await pool.query(
-      `SELECT 
-        SUM(creator_payout) as total_earnings,
-        COUNT(*) as transaction_count
-       FROM platform_fees
-       WHERE user_id = $1 AND status = 'collected'`,
-      [req.userId]
+    const { data: totalEarningsData, error: totalError } = await supabase
+      .from('platform_fees')
+      .select('creator_payout')
+      .eq('user_id', req.userId)
+      .eq('status', 'collected');
+
+    if (totalError) {
+      throw totalError;
+    }
+
+    const totalEarnings = (totalEarningsData || []).reduce((sum: number, fee: any) => 
+      sum + (parseFloat(fee.creator_payout || 0)), 0
     );
+    const totalTransactions = totalEarningsData?.length || 0;
 
     // Get pending earnings (not yet paid out)
-    const pendingEarningsResult = await pool.query(
-      `SELECT 
-        SUM(creator_payout) as pending_earnings,
-        COUNT(*) as pending_count
-       FROM platform_fees
-       WHERE user_id = $1 AND payout_status = 'pending' AND status = 'collected'`,
-      [req.userId]
+    const { data: pendingEarningsData, error: pendingError } = await supabase
+      .from('platform_fees')
+      .select('creator_payout')
+      .eq('user_id', req.userId)
+      .eq('payout_status', 'pending')
+      .eq('status', 'collected');
+
+    if (pendingError) {
+      throw pendingError;
+    }
+
+    const pendingEarnings = (pendingEarningsData || []).reduce((sum: number, fee: any) => 
+      sum + (parseFloat(fee.creator_payout || 0)), 0
     );
+    const pendingCount = pendingEarningsData?.length || 0;
 
     // Get paid out earnings
-    const paidOutResult = await pool.query(
-      `SELECT 
-        SUM(creator_payout) as paid_out,
-        COUNT(*) as paid_count
-       FROM platform_fees
-       WHERE user_id = $1 AND payout_status = 'paid'`,
-      [req.userId]
+    const { data: paidOutData, error: paidOutError } = await supabase
+      .from('platform_fees')
+      .select('creator_payout')
+      .eq('user_id', req.userId)
+      .eq('payout_status', 'paid');
+
+    if (paidOutError) {
+      throw paidOutError;
+    }
+
+    const paidOut = (paidOutData || []).reduce((sum: number, fee: any) => 
+      sum + (parseFloat(fee.creator_payout || 0)), 0
     );
+    const paidCount = paidOutData?.length || 0;
 
     // Get earnings by transaction type
-    const byTypeResult = await pool.query(
-      `SELECT 
-        transaction_type,
-        SUM(creator_payout) as earnings,
-        COUNT(*) as count
-       FROM platform_fees
-       WHERE user_id = $1 AND status = 'collected'
-       GROUP BY transaction_type`,
-      [req.userId]
-    );
+    const { data: byTypeData, error: byTypeError } = await supabase
+      .from('platform_fees')
+      .select('transaction_type, creator_payout')
+      .eq('user_id', req.userId)
+      .eq('status', 'collected');
+
+    if (byTypeError) {
+      throw byTypeError;
+    }
+
+    const byTypeMap = new Map<string, { earnings: number; count: number }>();
+    (byTypeData || []).forEach((fee: any) => {
+      const type = fee.transaction_type || 'unknown';
+      const existing = byTypeMap.get(type) || { earnings: 0, count: 0 };
+      byTypeMap.set(type, {
+        earnings: existing.earnings + parseFloat(fee.creator_payout || 0),
+        count: existing.count + 1,
+      });
+    });
+
+    const byType = Array.from(byTypeMap.entries()).map(([transaction_type, data]) => ({
+      transaction_type,
+      earnings: data.earnings,
+      count: data.count,
+    }));
 
     // Get payout history
-    const payoutHistoryResult = await pool.query(
-      `SELECT * FROM creator_payouts
-       WHERE creator_id = $1
-       ORDER BY created_at DESC
-       LIMIT 10`,
-      [req.userId]
-    );
+    const { data: payoutHistory, error: payoutHistoryError } = await supabase
+      .from('creator_payouts')
+      .select('*')
+      .eq('creator_id', req.userId)
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    if (payoutHistoryError) {
+      throw payoutHistoryError;
+    }
 
     res.json({
-      totalEarnings: parseFloat(totalEarningsResult.rows[0]?.total_earnings || 0),
-      totalTransactions: parseInt(totalEarningsResult.rows[0]?.transaction_count || 0),
-      pendingEarnings: parseFloat(pendingEarningsResult.rows[0]?.pending_earnings || 0),
-      pendingCount: parseInt(pendingEarningsResult.rows[0]?.pending_count || 0),
-      paidOut: parseFloat(paidOutResult.rows[0]?.paid_out || 0),
-      paidCount: parseInt(paidOutResult.rows[0]?.paid_count || 0),
-      byType: byTypeResult.rows,
-      payoutHistory: payoutHistoryResult.rows,
+      totalEarnings,
+      totalTransactions,
+      pendingEarnings,
+      pendingCount,
+      paidOut,
+      paidCount,
+      byType,
+      payoutHistory: payoutHistory || [],
     });
   } catch (error: any) {
     console.error('Get earnings error:', error);
@@ -231,14 +310,18 @@ router.get('/earnings', authenticate, async (req: AuthRequest, res) => {
  */
 router.get('/payout-methods', authenticate, async (req: AuthRequest, res) => {
   try {
-    const result = await pool.query(
-      `SELECT * FROM user_payout_methods
-       WHERE user_id = $1
-       ORDER BY is_default DESC, created_at DESC`,
-      [req.userId]
-    );
+    const { data, error } = await supabase
+      .from('user_payout_methods')
+      .select('*')
+      .eq('user_id', req.userId)
+      .order('is_default', { ascending: false })
+      .order('created_at', { ascending: false });
 
-    res.json(result.rows);
+    if (error) {
+      throw error;
+    }
+
+    res.json(data || []);
   } catch (error: any) {
     console.error('Get payout methods error:', error);
     res.status(500).json({ error: 'Failed to get payout methods' });
@@ -280,45 +363,41 @@ router.post('/payout-methods', authenticate, async (req: AuthRequest, res) => {
 
     // If setting as default, unset existing default
     if (isDefault) {
-      await pool.query(
-        `UPDATE user_payout_methods
-         SET is_default = false
-         WHERE user_id = $1`,
-        [req.userId]
-      );
+      await supabase
+        .from('user_payout_methods')
+        .update({ is_default: false })
+        .eq('user_id', req.userId);
     }
 
     // Insert new payout method
-    const result = await pool.query(
-      `INSERT INTO user_payout_methods (
-        user_id, method_type, is_default,
-        mobile_operator, mobile_number,
-        bank_name, bank_address, account_name, account_number, swift_code
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-      RETURNING *`,
-      [
-        req.userId,
-        methodType,
-        isDefault || false,
-        methodDetails.mobileOperator || null,
-        methodDetails.mobileNumber || null,
-        methodDetails.bankName || null,
-        methodDetails.bankAddress || null,
-        methodDetails.accountName || null,
-        methodDetails.accountNumber || null,
-        methodDetails.swiftCode || null,
-      ]
-    );
+    const { data, error } = await supabase
+      .from('user_payout_methods')
+      .insert({
+        user_id: req.userId,
+        method_type: methodType,
+        is_default: isDefault || false,
+        mobile_operator: methodDetails.mobileOperator || null,
+        mobile_number: methodDetails.mobileNumber || null,
+        bank_name: methodDetails.bankName || null,
+        bank_address: methodDetails.bankAddress || null,
+        account_name: methodDetails.accountName || null,
+        account_number: methodDetails.accountNumber || null,
+        swift_code: methodDetails.swiftCode || null,
+      })
+      .select()
+      .single();
 
-    res.status(201).json(result.rows[0]);
+    if (error) {
+      // Handle unique constraint violation
+      if (error.code === '23505') {
+        return res.status(400).json({ error: 'This payout method already exists' });
+      }
+      throw error;
+    }
+
+    res.status(201).json(data);
   } catch (error: any) {
     console.error('Add payout method error:', error);
-    
-    // Handle unique constraint violation
-    if (error.code === '23505') {
-      return res.status(400).json({ error: 'This payout method already exists' });
-    }
-    
     res.status(500).json({ error: 'Failed to add payout method' });
   }
 });
@@ -332,55 +411,52 @@ router.put('/payout-methods/:methodId', authenticate, async (req: AuthRequest, r
     const { isDefault, ...methodDetails } = req.body;
 
     // Verify the method belongs to the user
-    const existingResult = await pool.query(
-      'SELECT * FROM user_payout_methods WHERE id = $1 AND user_id = $2',
-      [methodId, req.userId]
-    );
+    const { data: existing, error: existingError } = await supabase
+      .from('user_payout_methods')
+      .select('*')
+      .eq('id', methodId)
+      .eq('user_id', req.userId)
+      .single();
 
-    if (existingResult.rows.length === 0) {
+    if (existingError || !existing) {
       return res.status(404).json({ error: 'Payout method not found' });
     }
 
-    const existingMethod = existingResult.rows[0];
-
     // If setting as default, unset existing default
     if (isDefault) {
-      await pool.query(
-        `UPDATE user_payout_methods
-         SET is_default = false
-         WHERE user_id = $1 AND id != $2`,
-        [req.userId, methodId]
-      );
+      await supabase
+        .from('user_payout_methods')
+        .update({ is_default: false })
+        .eq('user_id', req.userId)
+        .neq('id', methodId);
     }
 
     // Update the payout method
-    const result = await pool.query(
-      `UPDATE user_payout_methods
-       SET is_default = COALESCE($1, is_default),
-           mobile_operator = COALESCE($2, mobile_operator),
-           mobile_number = COALESCE($3, mobile_number),
-           bank_name = COALESCE($4, bank_name),
-           bank_address = COALESCE($5, bank_address),
-           account_name = COALESCE($6, account_name),
-           account_number = COALESCE($7, account_number),
-           swift_code = COALESCE($8, swift_code),
-           updated_at = now()
-       WHERE id = $9
-       RETURNING *`,
-      [
-        isDefault,
-        methodDetails.mobileOperator || existingMethod.mobile_operator,
-        methodDetails.mobileNumber || existingMethod.mobile_number,
-        methodDetails.bankName || existingMethod.bank_name,
-        methodDetails.bankAddress || existingMethod.bank_address,
-        methodDetails.accountName || existingMethod.account_name,
-        methodDetails.accountNumber || existingMethod.account_number,
-        methodDetails.swiftCode || existingMethod.swift_code,
-        methodId,
-      ]
-    );
+    const updates: any = {
+      updated_at: new Date().toISOString(),
+    };
 
-    res.json(result.rows[0]);
+    if (isDefault !== undefined) updates.is_default = isDefault;
+    if (methodDetails.mobileOperator !== undefined) updates.mobile_operator = methodDetails.mobileOperator;
+    if (methodDetails.mobileNumber !== undefined) updates.mobile_number = methodDetails.mobileNumber;
+    if (methodDetails.bankName !== undefined) updates.bank_name = methodDetails.bankName;
+    if (methodDetails.bankAddress !== undefined) updates.bank_address = methodDetails.bankAddress;
+    if (methodDetails.accountName !== undefined) updates.account_name = methodDetails.accountName;
+    if (methodDetails.accountNumber !== undefined) updates.account_number = methodDetails.accountNumber;
+    if (methodDetails.swiftCode !== undefined) updates.swift_code = methodDetails.swiftCode;
+
+    const { data, error } = await supabase
+      .from('user_payout_methods')
+      .update(updates)
+      .eq('id', methodId)
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    res.json(data);
   } catch (error: any) {
     console.error('Update payout method error:', error);
     res.status(500).json({ error: 'Failed to update payout method' });
@@ -395,20 +471,26 @@ router.delete('/payout-methods/:methodId', authenticate, async (req: AuthRequest
     const { methodId } = req.params;
 
     // Verify the method belongs to the user
-    const existingResult = await pool.query(
-      'SELECT * FROM user_payout_methods WHERE id = $1 AND user_id = $2',
-      [methodId, req.userId]
-    );
+    const { data: existing, error: existingError } = await supabase
+      .from('user_payout_methods')
+      .select('*')
+      .eq('id', methodId)
+      .eq('user_id', req.userId)
+      .single();
 
-    if (existingResult.rows.length === 0) {
+    if (existingError || !existing) {
       return res.status(404).json({ error: 'Payout method not found' });
     }
 
     // Delete the payout method
-    await pool.query(
-      'DELETE FROM user_payout_methods WHERE id = $1',
-      [methodId]
-    );
+    const { error } = await supabase
+      .from('user_payout_methods')
+      .delete()
+      .eq('id', methodId);
+
+    if (error) {
+      throw error;
+    }
 
     res.json({ message: 'Payout method deleted successfully' });
   } catch (error: any) {
@@ -425,34 +507,39 @@ router.post('/payout-methods/:methodId/default', authenticate, async (req: AuthR
     const { methodId } = req.params;
 
     // Verify the method belongs to the user
-    const existingResult = await pool.query(
-      'SELECT * FROM user_payout_methods WHERE id = $1 AND user_id = $2',
-      [methodId, req.userId]
-    );
+    const { data: existing, error: existingError } = await supabase
+      .from('user_payout_methods')
+      .select('*')
+      .eq('id', methodId)
+      .eq('user_id', req.userId)
+      .single();
 
-    if (existingResult.rows.length === 0) {
+    if (existingError || !existing) {
       return res.status(404).json({ error: 'Payout method not found' });
     }
 
     // Unset existing default
-    await pool.query(
-      `UPDATE user_payout_methods
-       SET is_default = false
-       WHERE user_id = $1`,
-      [req.userId]
-    );
+    await supabase
+      .from('user_payout_methods')
+      .update({ is_default: false })
+      .eq('user_id', req.userId);
 
     // Set this method as default
-    const result = await pool.query(
-      `UPDATE user_payout_methods
-       SET is_default = true,
-           updated_at = now()
-       WHERE id = $1
-       RETURNING *`,
-      [methodId]
-    );
+    const { data, error } = await supabase
+      .from('user_payout_methods')
+      .update({
+        is_default: true,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', methodId)
+      .select()
+      .single();
 
-    res.json(result.rows[0]);
+    if (error) {
+      throw error;
+    }
+
+    res.json(data);
   } catch (error: any) {
     console.error('Set default payout method error:', error);
     res.status(500).json({ error: 'Failed to set default payout method' });
@@ -475,29 +562,33 @@ router.post('/request-payout', authenticate, async (req: AuthRequest, res) => {
     }
 
     // Verify the payment method belongs to the user
-    const methodResult = await pool.query(
-      'SELECT * FROM user_payout_methods WHERE id = $1 AND user_id = $2',
-      [paymentMethodId, req.userId]
-    );
+    const { data: paymentMethod, error: methodError } = await supabase
+      .from('user_payout_methods')
+      .select('*')
+      .eq('id', paymentMethodId)
+      .eq('user_id', req.userId)
+      .single();
 
-    if (methodResult.rows.length === 0) {
+    if (methodError || !paymentMethod) {
       return res.status(400).json({ error: 'Invalid payment method' });
     }
 
-    const paymentMethod = methodResult.rows[0];
-
     // Get available pending earnings
-    const pendingResult = await pool.query(
-      `SELECT 
-        SUM(creator_payout) as available,
-        array_agg(id) as fee_ids
-       FROM platform_fees
-       WHERE user_id = $1 AND payout_status = 'pending' AND status = 'collected'`,
-      [req.userId]
-    );
+    const { data: pendingData, error: pendingError } = await supabase
+      .from('platform_fees')
+      .select('id, creator_payout')
+      .eq('user_id', req.userId)
+      .eq('payout_status', 'pending')
+      .eq('status', 'collected');
 
-    const available = parseFloat(pendingResult.rows[0]?.available || 0);
-    const feeIds = pendingResult.rows[0]?.fee_ids || [];
+    if (pendingError) {
+      throw pendingError;
+    }
+
+    const available = (pendingData || []).reduce((sum: number, fee: any) => 
+      sum + (parseFloat(fee.creator_payout || 0)), 0
+    );
+    const feeIds = (pendingData || []).map((fee: any) => fee.id);
 
     if (amount > available) {
       return res.status(400).json({ 
@@ -514,17 +605,15 @@ router.post('/request-payout', authenticate, async (req: AuthRequest, res) => {
     }
 
     // Create payout request
-    const payoutResult = await pool.query(
-      `INSERT INTO creator_payouts (
-        creator_id, amount, currency, status, payment_method, payment_reference, fee_ids
-      ) VALUES ($1, $2, $3, 'pending', $4, $5, $6)
-      RETURNING *`,
-      [
-        req.userId,
+    const { data: payout, error: payoutError } = await supabase
+      .from('creator_payouts')
+      .insert({
+        creator_id: req.userId,
         amount,
-        'TZS',
-        paymentMethod.method_type,
-        JSON.stringify({
+        currency: 'TZS',
+        status: 'pending',
+        payment_method: paymentMethod.method_type,
+        payment_reference: JSON.stringify({
           methodId: paymentMethod.id,
           methodType: paymentMethod.method_type,
           mobileOperator: paymentMethod.mobile_operator,
@@ -533,15 +622,14 @@ router.post('/request-payout', authenticate, async (req: AuthRequest, res) => {
           accountName: paymentMethod.account_name,
           accountNumber: paymentMethod.account_number,
         }),
-        feeIds,
-      ]
-    );
+        fee_ids: feeIds,
+      })
+      .select()
+      .single();
 
-    const payout = payoutResult.rows[0];
-
-    // Mark fees as processing (they'll be marked as paid when payout is processed)
-    // For now, we'll mark them when the payout is approved
-    // This prevents double-payouts
+    if (payoutError) {
+      throw payoutError;
+    }
 
     res.status(201).json({
       message: 'Payout request submitted successfully',
@@ -563,13 +651,17 @@ router.get('/my-payouts', authenticate, async (req: AuthRequest, res) => {
     }
     
     try {
-      const result = await pool.query(
-        `SELECT * FROM creator_payouts
-         WHERE creator_id = $1
-         ORDER BY created_at DESC`,
-        [req.userId]
-      );
-      res.json(result.rows);
+      const { data, error } = await supabase
+        .from('creator_payouts')
+        .select('*')
+        .eq('creator_id', req.userId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      res.json(data || []);
     } catch (dbError: any) {
       console.error('Database error in get my payouts:', dbError);
       // Return empty array if table doesn't exist yet
@@ -590,41 +682,40 @@ router.post('/payouts/:payoutId/process', authenticate, requireRole('admin'), as
     const { notes } = req.body;
 
     // Get payout details
-    const payoutResult = await pool.query(
-      'SELECT * FROM creator_payouts WHERE id = $1',
-      [payoutId]
-    );
+    const { data: payout, error: payoutError } = await supabase
+      .from('creator_payouts')
+      .select('*')
+      .eq('id', payoutId)
+      .single();
 
-    if (payoutResult.rows.length === 0) {
+    if (payoutError || !payout) {
       return res.status(404).json({ error: 'Payout not found' });
     }
-
-    const payout = payoutResult.rows[0];
 
     if (payout.status !== 'pending') {
       return res.status(400).json({ error: `Payout is already ${payout.status}` });
     }
 
     // Update payout status to processing
-    await pool.query(
-      `UPDATE creator_payouts
-       SET status = 'processing',
-           notes = $1,
-           updated_at = now()
-       WHERE id = $2`,
-      [notes || null, payoutId]
-    );
+    await supabase
+      .from('creator_payouts')
+      .update({
+        status: 'processing',
+        notes: notes || payout.notes,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', payoutId);
 
     // Mark associated fees as processing
     if (payout.fee_ids && payout.fee_ids.length > 0) {
-      await pool.query(
-        `UPDATE platform_fees
-         SET payout_status = 'processing',
-             payout_date = now(),
-             updated_at = now()
-         WHERE id = ANY($1::uuid[])`,
-        [payout.fee_ids]
-      );
+      await supabase
+        .from('platform_fees')
+        .update({
+          payout_status: 'processing',
+          payout_date: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .in('id', payout.fee_ids);
     }
 
     res.json({ 
@@ -646,16 +737,15 @@ router.post('/payouts/:payoutId/complete', authenticate, requireRole('admin'), a
     const { notes } = req.body;
 
     // Get payout details
-    const payoutResult = await pool.query(
-      'SELECT * FROM creator_payouts WHERE id = $1',
-      [payoutId]
-    );
+    const { data: payout, error: payoutError } = await supabase
+      .from('creator_payouts')
+      .select('*')
+      .eq('id', payoutId)
+      .single();
 
-    if (payoutResult.rows.length === 0) {
+    if (payoutError || !payout) {
       return res.status(404).json({ error: 'Payout not found' });
     }
-
-    const payout = payoutResult.rows[0];
 
     if (payout.status !== 'processing') {
       return res.status(400).json({ error: `Payout must be in processing status. Current: ${payout.status}` });
@@ -664,7 +754,9 @@ router.post('/payouts/:payoutId/complete', authenticate, requireRole('admin'), a
     // Get payment method details
     let paymentMethodDetails: any = {};
     try {
-      paymentMethodDetails = JSON.parse(payout.payment_reference);
+      paymentMethodDetails = typeof payout.payment_reference === 'string' 
+        ? JSON.parse(payout.payment_reference) 
+        : payout.payment_reference;
     } catch (e) {
       console.error('Error parsing payment reference:', e);
     }
@@ -676,7 +768,7 @@ router.post('/payouts/:payoutId/complete', authenticate, requireRole('admin'), a
     if (payout.payment_method === 'mobile_money' && paymentMethodDetails.mobileNumber) {
       // Process mobile money disbursement
       disbursementResponse = await clickPesa.createDisbursement({
-        amount: parseFloat(payout.amount),
+        amount: parseFloat(payout.amount.toString()),
         currency: 'TZS',
         recipientPhone: paymentMethodDetails.mobileNumber,
         recipientName: paymentMethodDetails.accountName || 'Creator',
@@ -698,25 +790,25 @@ router.post('/payouts/:payoutId/complete', authenticate, requireRole('admin'), a
     // Check if disbursement was successful
     if (disbursementResponse && !disbursementResponse.success) {
       // Update payout status to failed
-      await pool.query(
-        `UPDATE creator_payouts
-         SET status = 'failed',
-             notes = COALESCE($1, notes),
-             updated_at = now()
-         WHERE id = $2`,
-        [disbursementResponse.error || 'Disbursement failed', payoutId]
-      );
+      await supabase
+        .from('creator_payouts')
+        .update({
+          status: 'failed',
+          notes: disbursementResponse.error || payout.notes || 'Disbursement failed',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', payoutId);
 
       // Mark associated fees back to pending
       if (payout.fee_ids && payout.fee_ids.length > 0) {
-        await pool.query(
-          `UPDATE platform_fees
-           SET payout_status = 'pending',
-               payout_date = NULL,
-               updated_at = now()
-           WHERE id = ANY($1::uuid[])`,
-          [payout.fee_ids]
-        );
+        await supabase
+          .from('platform_fees')
+          .update({
+            payout_status: 'pending',
+            payout_date: null,
+            updated_at: new Date().toISOString(),
+          })
+          .in('id', payout.fee_ids);
       }
 
       return res.status(400).json({ 
@@ -731,7 +823,7 @@ router.post('/payouts/:payoutId/complete', authenticate, requireRole('admin'), a
     // Record payout transaction
     const transactionId = await financialTracking.recordPayout(
       payout.creator_id,
-      parseFloat(payout.amount),
+      parseFloat(payout.amount.toString()),
       payoutId,
       `Payout via ${payout.payment_method}`
     );
@@ -741,38 +833,31 @@ router.post('/payouts/:payoutId/complete', authenticate, requireRole('admin'), a
     const balanceAfterAmount = balanceAfter?.available_balance || 0;
 
     // Update payout status to paid
-    await pool.query(
-      `UPDATE creator_payouts
-       SET status = 'paid',
-           payment_reference = $1,
-           notes = COALESCE($2, notes),
-           transaction_id = $3,
-           balance_before = $4,
-           balance_after = $5,
-           processed_at = now(),
-           payout_date = now(),
-           updated_at = now()
-       WHERE id = $6`,
-      [
-        paymentReference,
-        notes || null,
-        transactionId,
-        balanceBeforeAmount,
-        balanceAfterAmount,
-        payoutId,
-      ]
-    );
+    await supabase
+      .from('creator_payouts')
+      .update({
+        status: 'paid',
+        payment_reference: paymentReference,
+        notes: notes || payout.notes,
+        transaction_id: transactionId,
+        balance_before: balanceBeforeAmount,
+        balance_after: balanceAfterAmount,
+        processed_at: new Date().toISOString(),
+        payout_date: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', payoutId);
 
     // Mark associated fees as paid
     if (payout.fee_ids && payout.fee_ids.length > 0) {
-      await pool.query(
-        `UPDATE platform_fees
-         SET payout_status = 'paid',
-             payout_date = now(),
-             updated_at = now()
-         WHERE id = ANY($1::uuid[])`,
-        [payout.fee_ids]
-      );
+      await supabase
+        .from('platform_fees')
+        .update({
+          payout_status: 'paid',
+          payout_date: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .in('id', payout.fee_ids);
     }
 
     res.json({ 
@@ -794,41 +879,40 @@ router.post('/payouts/:payoutId/cancel', authenticate, requireRole('admin'), asy
     const { notes } = req.body;
 
     // Get payout details
-    const payoutResult = await pool.query(
-      'SELECT * FROM creator_payouts WHERE id = $1',
-      [payoutId]
-    );
+    const { data: payout, error: payoutError } = await supabase
+      .from('creator_payouts')
+      .select('*')
+      .eq('id', payoutId)
+      .single();
 
-    if (payoutResult.rows.length === 0) {
+    if (payoutError || !payout) {
       return res.status(404).json({ error: 'Payout not found' });
     }
-
-    const payout = payoutResult.rows[0];
 
     if (payout.status === 'paid') {
       return res.status(400).json({ error: 'Cannot cancel a paid payout' });
     }
 
     // Update payout status to cancelled
-    await pool.query(
-      `UPDATE creator_payouts
-       SET status = 'cancelled',
-           notes = COALESCE($1, notes),
-           updated_at = now()
-       WHERE id = $2`,
-      [notes || null, payoutId]
-    );
+    await supabase
+      .from('creator_payouts')
+      .update({
+        status: 'cancelled',
+        notes: notes || payout.notes,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', payoutId);
 
     // Mark associated fees back to pending
     if (payout.fee_ids && payout.fee_ids.length > 0) {
-      await pool.query(
-        `UPDATE platform_fees
-         SET payout_status = 'pending',
-             payout_date = NULL,
-             updated_at = now()
-         WHERE id = ANY($1::uuid[])`,
-        [payout.fee_ids]
-      );
+      await supabase
+        .from('platform_fees')
+        .update({
+          payout_status: 'pending',
+          payout_date: null,
+          updated_at: new Date().toISOString(),
+        })
+        .in('id', payout.fee_ids);
     }
 
     res.json({ 

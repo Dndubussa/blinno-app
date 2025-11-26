@@ -1,9 +1,10 @@
 import express from 'express';
-import { pool } from '../config/database.js';
+import { supabase } from '../config/supabase.js';
 import { authenticate, AuthRequest, requireRole } from '../middleware/auth.js';
 import { platformFees } from '../services/platformFees.js';
 import ClickPesaService, { PaymentRequest } from '../services/clickpesa.js';
 import dotenv from 'dotenv';
+import { userPreferences } from '../services/userPreferences.js';
 
 dotenv.config();
 
@@ -73,6 +74,54 @@ const SUBSCRIPTION_TIERS = {
   },
 };
 
+// Percentage-based pricing tiers
+const PERCENTAGE_TIERS = {
+  basic: {
+    name: 'Basic',
+    feeRate: 0.08, // 8%
+    features: [
+      'Basic profile',
+      '5 product listings',
+      'Standard support',
+      '8% marketplace fees',
+      '6% digital product fees',
+      '10% service booking fees',
+      '12% commission work fees'
+    ],
+    limits: { products: 5, portfolios: 3 },
+  },
+  premium: {
+    name: 'Premium',
+    feeRate: 0.05, // 5%
+    features: [
+      'Unlimited listings',
+      'Advanced analytics',
+      'Priority support',
+      'Featured listings',
+      'Reduced 5% marketplace fees',
+      '6% digital product fees',
+      '8% service booking fees',
+      '10% commission work fees'
+    ],
+    limits: { products: -1, portfolios: -1 },
+  },
+  pro: {
+    name: 'Professional',
+    feeRate: 0.03, // 3%
+    features: [
+      'All Premium features',
+      'Marketing tools',
+      'API access',
+      'Custom branding',
+      'Reduced 3% marketplace fees',
+      '4% digital product fees',
+      '6% service booking fees',
+      '8% commission work fees'
+    ],
+    limits: { products: -1, portfolios: -1 },
+  },
+};
+
 /**
  * Get current subscription
  */
@@ -82,41 +131,33 @@ router.get('/me', authenticate, async (req: AuthRequest, res) => {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    // Check if table exists, if not return free tier
-    try {
-      const result = await pool.query(
-        `SELECT * FROM platform_subscriptions WHERE user_id = $1`,
-        [req.userId]
-      );
+    const { data: subscription, error } = await supabase
+      .from('platform_subscriptions')
+      .select('*')
+      .eq('user_id', req.userId)
+      .single();
 
-      if (result.rows.length === 0) {
-        // Return free tier as default
-        return res.json({
-          tier: 'free',
-          ...SUBSCRIPTION_TIERS.free,
-          status: 'active',
-        });
-      }
-
-      const subscription = result.rows[0];
-      const tierKey = subscription.tier as keyof typeof SUBSCRIPTION_TIERS;
-      const tierInfo = SUBSCRIPTION_TIERS[tierKey] || SUBSCRIPTION_TIERS.free;
-
-      res.json({
-        ...subscription,
-        ...tierInfo,
+    if (error && error.code === 'PGRST116') {
+      // Return free tier as default
+      return res.json({
+        tier: 'free',
+        pricing_model: 'subscription',
+        ...SUBSCRIPTION_TIERS.free,
+        status: 'active',
       });
-    } catch (dbError: any) {
-      // If table doesn't exist, return free tier
-      if (dbError.message && dbError.message.includes('does not exist')) {
-        return res.json({
-          tier: 'free',
-          ...SUBSCRIPTION_TIERS.free,
-          status: 'active',
-        });
-      }
-      throw dbError;
     }
+
+    if (error) {
+      throw error;
+    }
+
+    const tierKey = subscription.tier as keyof typeof SUBSCRIPTION_TIERS;
+    const tierInfo = SUBSCRIPTION_TIERS[tierKey] || SUBSCRIPTION_TIERS.free;
+
+    res.json({
+      ...subscription,
+      ...tierInfo,
+    });
   } catch (error: any) {
     console.error('Get subscription error:', error);
     res.status(500).json({ error: 'Failed to get subscription', details: error.message });
@@ -130,6 +171,47 @@ router.post('/subscribe', authenticate, async (req: AuthRequest, res) => {
   try {
     const { tier } = req.body;
 
+    // Handle percentage-based tiers
+    if (tier && tier.startsWith('percentage-')) {
+      const percentageTierKey = tier.replace('percentage-', '') as keyof typeof PERCENTAGE_TIERS;
+      
+      if (!PERCENTAGE_TIERS[percentageTierKey]) {
+        return res.status(400).json({ error: 'Invalid percentage tier' });
+      }
+
+      const tierInfo = PERCENTAGE_TIERS[percentageTierKey];
+
+      // For percentage-based tiers, we just update the user's subscription record
+      const { data, error } = await supabase
+        .from('platform_subscriptions')
+        .upsert({
+          user_id: req.userId,
+          tier: 'percentage',
+          pricing_model: 'percentage',
+          percentage_tier: percentageTierKey,
+          monthly_price: 0,
+          current_period_start: new Date().toISOString(),
+          current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          status: 'active',
+          payment_status: 'paid',
+        }, { onConflict: 'user_id' })
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return res.json({ 
+        message: 'Subscribed to percentage-based tier', 
+        tier: 'percentage', 
+        percentage_tier: percentageTierKey,
+        pricing_model: 'percentage',
+        requiresPayment: false 
+      });
+    }
+
+    // Handle subscription-based tiers
     if (!tier || !SUBSCRIPTION_TIERS[tier as keyof typeof SUBSCRIPTION_TIERS]) {
       return res.status(400).json({ error: 'Invalid subscription tier' });
     }
@@ -138,16 +220,31 @@ router.post('/subscribe', authenticate, async (req: AuthRequest, res) => {
 
     if (tier === 'free') {
       // Free tier - just update or create
-      await pool.query(
-        `INSERT INTO platform_subscriptions (user_id, tier, monthly_price, current_period_start, current_period_end, status, payment_status)
-         VALUES ($1, $2, $3, now(), now() + interval '1 month', 'active', 'paid')
-         ON CONFLICT (user_id) DO UPDATE
-         SET tier = $2, monthly_price = $3, current_period_start = now(), 
-             current_period_end = now() + interval '1 month', status = 'active', payment_status = 'paid', updated_at = now()`,
-        [req.userId, tier, tierInfo.monthlyPrice]
-      );
+      const { data, error } = await supabase
+        .from('platform_subscriptions')
+        .upsert({
+          user_id: req.userId,
+          tier: tier,
+          pricing_model: 'subscription',
+          monthly_price: tierInfo.monthlyPrice,
+          current_period_start: new Date().toISOString(),
+          current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          status: 'active',
+          payment_status: 'paid',
+        }, { onConflict: 'user_id' })
+        .select()
+        .single();
 
-      return res.json({ message: 'Subscribed to free tier', tier, requiresPayment: false });
+      if (error) {
+        throw error;
+      }
+
+      return res.json({ 
+        message: 'Subscribed to free tier', 
+        tier, 
+        pricing_model: 'subscription',
+        requiresPayment: false 
+      });
     }
 
     // Paid tiers require payment
@@ -160,49 +257,62 @@ router.post('/subscribe', authenticate, async (req: AuthRequest, res) => {
     const transactionId = `subscription_${req.userId}_${Date.now()}`;
 
     // Create subscription record (pending payment)
-    const subscriptionResult = await pool.query(
-      `INSERT INTO platform_subscriptions (user_id, tier, monthly_price, current_period_start, current_period_end, status, payment_status)
-       VALUES ($1, $2, $3, $4, $5, 'pending', 'pending')
-       ON CONFLICT (user_id) DO UPDATE
-       SET tier = $2, monthly_price = $3, current_period_start = $4, 
-           current_period_end = $5, status = 'pending', payment_status = 'pending', updated_at = now()
-       RETURNING *`,
-      [req.userId, tier, tierInfo.monthlyPrice, now, periodEnd]
-    );
+    const { data: subscription, error: subError } = await supabase
+      .from('platform_subscriptions')
+      .upsert({
+        user_id: req.userId,
+        tier: tier,
+        pricing_model: 'subscription',
+        monthly_price: tierInfo.monthlyPrice,
+        current_period_start: now.toISOString(),
+        current_period_end: periodEnd.toISOString(),
+        status: 'pending',
+        payment_status: 'pending',
+      }, { onConflict: 'user_id' })
+      .select()
+      .single();
 
-    const subscription = subscriptionResult.rows[0];
+    if (subError || !subscription) {
+      throw subError;
+    }
 
     // Record platform fee for subscription
-    await pool.query(
-      `INSERT INTO platform_fees (
-        transaction_id, transaction_type, user_id,
-        subtotal, platform_fee, payment_processing_fee, total_fees, creator_payout, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending')`,
-      [
-        transactionId,
-        'subscription',
-        req.userId,
-        tierInfo.monthlyPrice,
-        feeCalculation.platformFee,
-        feeCalculation.paymentProcessingFee,
-        feeCalculation.totalFees,
-        feeCalculation.creatorPayout,
-      ]
-    );
+    await supabase
+      .from('platform_fees')
+      .insert({
+        transaction_id: transactionId,
+        transaction_type: 'subscription',
+        user_id: req.userId,
+        subtotal: tierInfo.monthlyPrice,
+        platform_fee: feeCalculation.platformFee,
+        payment_processing_fee: feeCalculation.paymentProcessingFee,
+        total_fees: feeCalculation.totalFees,
+        creator_payout: feeCalculation.creatorPayout,
+        status: 'pending',
+      });
 
     // Create payment record
-    const paymentResult = await pool.query(
-      `INSERT INTO payments (order_id, user_id, amount, currency, status, payment_method)
-       VALUES ($1, $2, $3, $4, 'pending', 'clickpesa')
-       RETURNING *`,
-      [transactionId, req.userId, feeCalculation.total, 'TZS']
-    );
+    const { data: payment, error: paymentError } = await supabase
+      .from('payments')
+      .insert({
+        order_id: transactionId,
+        user_id: req.userId,
+        amount: feeCalculation.total,
+        currency: 'TZS',
+        status: 'pending',
+        payment_method: 'clickpesa',
+      })
+      .select()
+      .single();
 
-    const payment = paymentResult.rows[0];
+    if (paymentError || !payment) {
+      throw paymentError;
+    }
 
     res.json({
       message: 'Subscription created, payment required',
       tier,
+      pricing_model: 'subscription',
       monthlyPrice: tierInfo.monthlyPrice,
       totalAmount: feeCalculation.total,
       feeBreakdown: feeCalculation,
@@ -227,46 +337,64 @@ router.post('/payment', authenticate, async (req: AuthRequest, res) => {
       return res.status(400).json({ error: 'Payment ID and customer phone are required' });
     }
 
-    // Get payment details
-    const paymentResult = await pool.query(
-      `SELECT p.*, ps.tier, u.email, pr.display_name, pr.phone
-       FROM payments p
-       JOIN platform_subscriptions ps ON p.order_id LIKE 'subscription_' || ps.user_id || '%'
-       JOIN users u ON p.user_id = u.id
-       LEFT JOIN profiles pr ON p.user_id = pr.user_id
-       WHERE p.id = $1 AND p.user_id = $2`,
-      [paymentId, req.userId]
-    );
-
-    if (paymentResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Payment not found' });
+    // Check if user is authenticated
+    if (!req.userId) {
+      return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const payment = paymentResult.rows[0];
+    // Get user's preferred currency
+    const userPrefs = await userPreferences.getUserPreferences(req.userId);
+    const currency = userPrefs.currency || 'TZS';
+
+    // Get payment details
+    const { data: payment, error: paymentError } = await supabase
+      .from('payments')
+      .select(`
+        *,
+        platform_subscriptions!inner(tier)
+      `)
+      .eq('id', paymentId)
+      .eq('user_id', req.userId)
+      .single();
+
+    if (paymentError || !payment) {
+      return res.status(404).json({ error: 'Payment not found' });
+    }
 
     if (payment.status !== 'pending') {
       return res.status(400).json({ error: 'Payment is not in pending status' });
     }
 
-    // Create Click Pesa payment request
+    // Get user email
+    const { data: authUser } = await supabase.auth.admin.getUserById(req.userId);
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('display_name')
+      .eq('user_id', req.userId)
+      .single();
+
+    // Create Click Pesa payment request with user's currency
     const paymentRequest: PaymentRequest = {
-      amount: parseFloat(payment.amount),
-      currency: 'TZS',
+      amount: parseFloat(payment.amount.toString()),
+      currency: currency,
       orderId: payment.order_id,
       customerPhone: customerPhone,
-      customerEmail: customerEmail || payment.email,
-      customerName: customerName || payment.display_name || 'Customer',
-      description: `Subscription payment for ${payment.tier} tier`,
+      customerEmail: customerEmail || authUser?.user?.email || '',
+      customerName: customerName || profile?.display_name || 'Customer',
+      description: `Subscription payment for ${(payment as any).platform_subscriptions?.tier || 'tier'}`,
       callbackUrl: `${process.env.APP_URL || 'https://www.blinno.app'}/api/payments/webhook`,
     };
 
     const clickPesaResponse = await clickPesa.createPayment(paymentRequest);
 
     if (!clickPesaResponse.success) {
-      await pool.query(
-        `UPDATE payments SET status = 'failed', error_message = $1 WHERE id = $2`,
-        [clickPesaResponse.error || 'Payment creation failed', payment.id]
-      );
+      await supabase
+        .from('payments')
+        .update({
+          status: 'failed',
+          error_message: clickPesaResponse.error || 'Payment creation failed',
+        })
+        .eq('id', payment.id);
 
       return res.status(400).json({
         error: clickPesaResponse.error || 'Failed to create payment',
@@ -274,17 +402,15 @@ router.post('/payment', authenticate, async (req: AuthRequest, res) => {
     }
 
     // Update payment with Click Pesa details
-    await pool.query(
-      `UPDATE payments 
-       SET payment_id = $1, transaction_id = $2, checkout_url = $3, status = 'initiated'
-       WHERE id = $4`,
-      [
-        clickPesaResponse.paymentId,
-        clickPesaResponse.transactionId,
-        clickPesaResponse.checkoutUrl,
-        payment.id,
-      ]
-    );
+    await supabase
+      .from('payments')
+      .update({
+        payment_id: clickPesaResponse.paymentId,
+        transaction_id: clickPesaResponse.transactionId,
+        checkout_url: clickPesaResponse.checkoutUrl,
+        status: 'initiated',
+      })
+      .eq('id', payment.id);
 
     res.json({
       success: true,
@@ -303,12 +429,17 @@ router.post('/payment', authenticate, async (req: AuthRequest, res) => {
  */
 router.post('/cancel', authenticate, async (req: AuthRequest, res) => {
   try {
-    await pool.query(
-      `UPDATE platform_subscriptions
-       SET cancel_at_period_end = true, updated_at = now()
-       WHERE user_id = $1`,
-      [req.userId]
-    );
+    const { error } = await supabase
+      .from('platform_subscriptions')
+      .update({
+        cancel_at_period_end: true,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('user_id', req.userId);
+
+    if (error) {
+      throw error;
+    }
 
     res.json({ message: 'Subscription will be cancelled at end of period' });
   } catch (error: any) {
@@ -322,7 +453,10 @@ router.post('/cancel', authenticate, async (req: AuthRequest, res) => {
  */
 router.get('/tiers', async (req, res) => {
   try {
-    res.json(SUBSCRIPTION_TIERS);
+    res.json({
+      subscription: SUBSCRIPTION_TIERS,
+      percentage: PERCENTAGE_TIERS
+    });
   } catch (error: any) {
     console.error('Get tiers error:', error);
     res.status(500).json({ error: 'Failed to get tiers' });
@@ -334,15 +468,27 @@ router.get('/tiers', async (req, res) => {
  */
 router.get('/all', authenticate, requireRole('admin'), async (req: AuthRequest, res) => {
   try {
-    const result = await pool.query(
-      `SELECT ps.*, u.email, p.display_name
-       FROM platform_subscriptions ps
-       JOIN users u ON ps.user_id = u.id
-       LEFT JOIN profiles p ON ps.user_id = p.user_id
-       ORDER BY ps.created_at DESC`
-    );
+    const { data, error } = await supabase
+      .from('platform_subscriptions')
+      .select(`
+        *,
+        users!platform_subscriptions_user_id_fkey(email),
+        profiles!platform_subscriptions_user_id_fkey(display_name)
+      `)
+      .order('created_at', { ascending: false });
 
-    res.json(result.rows);
+    if (error) {
+      throw error;
+    }
+
+    // Transform to match expected format
+    const transformed = (data || []).map((sub: any) => ({
+      ...sub,
+      email: sub.users?.email,
+      display_name: sub.profiles?.display_name,
+    }));
+
+    res.json(transformed);
   } catch (error: any) {
     console.error('Get all subscriptions error:', error);
     res.status(500).json({ error: 'Failed to get subscriptions' });

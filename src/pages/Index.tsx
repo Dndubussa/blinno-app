@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { getDashboardRoute } from "@/lib/dashboardRoutes";
@@ -21,6 +21,7 @@ import { QuickActions } from "@/components/QuickActions";
 const Index = () => {
   const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
   useEffect(() => {
     // If user is authenticated and not loading, redirect to their dashboard
@@ -50,13 +51,14 @@ const Index = () => {
       <Header />
       <Hero />
       
-      <AnimatedSection>
-        <div className="py-8 bg-background/95 backdrop-blur sticky top-16 z-40 border-b">
-          <div className="container mx-auto px-4">
+      {/* Improved search bar section */}
+      <div className="py-8 bg-background/95 backdrop-blur sticky top-16 z-40 border-b border-border">
+        <div className="container mx-auto px-4">
+          <div className="w-full max-w-3xl mx-auto">
             <SearchBar />
           </div>
         </div>
-      </AnimatedSection>
+      </div>
 
       <AnimatedSection delay={100}>
         <DiasporaBanner />
@@ -66,12 +68,22 @@ const Index = () => {
         <FeaturedCreators />
       </AnimatedSection>
 
+      {/* Improved category section with better layout */}
       <div className="container mx-auto px-4 py-12">
-        <div className="flex gap-8">
-          <CategoryFilterSidebar />
+        <div className="flex flex-col lg:flex-row gap-8">
+          <div className="lg:w-80 lg:shrink-0">
+            <CategoryFilterSidebar 
+              selectedCategories={selectedCategories}
+              onCategoryChange={setSelectedCategories}
+            />
+          </div>
           <div className="flex-1">
+            <div className="mb-6">
+              <h2 className="text-3xl font-bold text-foreground mb-2">Explore Categories</h2>
+              <p className="text-muted-foreground">Discover all the amazing things BLINNO has to offer</p>
+            </div>
             <AnimatedSection delay={300}>
-              <CategoriesGrid />
+              <CategoriesGrid selectedCategories={selectedCategories} />
             </AnimatedSection>
           </div>
         </div>

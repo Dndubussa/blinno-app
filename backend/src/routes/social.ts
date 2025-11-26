@@ -1,5 +1,5 @@
 import express from 'express';
-import { pool } from '../config/database.js';
+import { supabase } from '../config/supabase.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { notificationService } from '../services/notifications.js';
 
@@ -17,20 +17,24 @@ router.post('/follow/:userId', authenticate, async (req: AuthRequest, res) => {
     }
 
     // Check if already following
-    const existingResult = await pool.query(
-      'SELECT * FROM user_follows WHERE follower_id = $1 AND following_id = $2',
-      [req.userId, userId]
-    );
+    const { data: existing } = await supabase
+      .from('user_follows')
+      .select('*')
+      .eq('follower_id', req.userId)
+      .eq('following_id', userId)
+      .single();
 
-    if (existingResult.rows.length > 0) {
+    if (existing) {
       return res.status(400).json({ error: 'Already following this user' });
     }
 
     // Create follow relationship
-    await pool.query(
-      'INSERT INTO user_follows (follower_id, following_id) VALUES ($1, $2)',
-      [req.userId, userId]
-    );
+    await supabase
+      .from('user_follows')
+      .insert({
+        follower_id: req.userId,
+        following_id: userId,
+      });
 
     // Notify user
     await notificationService.createNotification(
@@ -55,10 +59,11 @@ router.post('/unfollow/:userId', authenticate, async (req: AuthRequest, res) => 
   try {
     const { userId } = req.params;
 
-    await pool.query(
-      'DELETE FROM user_follows WHERE follower_id = $1 AND following_id = $2',
-      [req.userId, userId]
-    );
+    await supabase
+      .from('user_follows')
+      .delete()
+      .eq('follower_id', req.userId)
+      .eq('following_id', userId);
 
     res.json({ message: 'Successfully unfollowed user' });
   } catch (error: any) {
@@ -75,21 +80,29 @@ router.get('/followers/:userId', async (req, res) => {
     const { userId } = req.params;
     const { limit = 50, offset = 0 } = req.query;
 
-    const result = await pool.query(
-      `SELECT 
-        uf.*,
-        p.display_name,
-        p.avatar_url,
-        p.bio
-       FROM user_follows uf
-       JOIN profiles p ON uf.follower_id = p.user_id
-       WHERE uf.following_id = $1
-       ORDER BY uf.created_at DESC
-       LIMIT $2 OFFSET $3`,
-      [userId, parseInt(limit as string), parseInt(offset as string)]
-    );
+    const { data, error } = await supabase
+      .from('user_follows')
+      .select(`
+        *,
+        follower:profiles!user_follows_follower_id_fkey(display_name, avatar_url, bio)
+      `)
+      .eq('following_id', userId)
+      .order('created_at', { ascending: false })
+      .range(parseInt(offset as string), parseInt(offset as string) + parseInt(limit as string) - 1);
 
-    res.json(result.rows);
+    if (error) {
+      throw error;
+    }
+
+    // Transform to match expected format
+    const transformed = (data || []).map((uf: any) => ({
+      ...uf,
+      display_name: uf.follower?.display_name,
+      avatar_url: uf.follower?.avatar_url,
+      bio: uf.follower?.bio,
+    }));
+
+    res.json(transformed);
   } catch (error: any) {
     console.error('Get followers error:', error);
     res.status(500).json({ error: 'Failed to get followers' });
@@ -104,21 +117,29 @@ router.get('/following/:userId', async (req, res) => {
     const { userId } = req.params;
     const { limit = 50, offset = 0 } = req.query;
 
-    const result = await pool.query(
-      `SELECT 
-        uf.*,
-        p.display_name,
-        p.avatar_url,
-        p.bio
-       FROM user_follows uf
-       JOIN profiles p ON uf.following_id = p.user_id
-       WHERE uf.follower_id = $1
-       ORDER BY uf.created_at DESC
-       LIMIT $2 OFFSET $3`,
-      [userId, parseInt(limit as string), parseInt(offset as string)]
-    );
+    const { data, error } = await supabase
+      .from('user_follows')
+      .select(`
+        *,
+        following:profiles!user_follows_following_id_fkey(display_name, avatar_url, bio)
+      `)
+      .eq('follower_id', userId)
+      .order('created_at', { ascending: false })
+      .range(parseInt(offset as string), parseInt(offset as string) + parseInt(limit as string) - 1);
 
-    res.json(result.rows);
+    if (error) {
+      throw error;
+    }
+
+    // Transform to match expected format
+    const transformed = (data || []).map((uf: any) => ({
+      ...uf,
+      display_name: uf.following?.display_name,
+      avatar_url: uf.following?.avatar_url,
+      bio: uf.following?.bio,
+    }));
+
+    res.json(transformed);
   } catch (error: any) {
     console.error('Get following error:', error);
     res.status(500).json({ error: 'Failed to get following' });
@@ -132,12 +153,18 @@ router.get('/is-following/:userId', authenticate, async (req: AuthRequest, res) 
   try {
     const { userId } = req.params;
 
-    const result = await pool.query(
-      'SELECT * FROM user_follows WHERE follower_id = $1 AND following_id = $2',
-      [req.userId, userId]
-    );
+    const { data, error } = await supabase
+      .from('user_follows')
+      .select('*')
+      .eq('follower_id', req.userId)
+      .eq('following_id', userId)
+      .single();
 
-    res.json({ isFollowing: result.rows.length > 0 });
+    if (error && error.code !== 'PGRST116') {
+      throw error;
+    }
+
+    res.json({ isFollowing: !!data });
   } catch (error: any) {
     console.error('Check following error:', error);
     res.status(500).json({ error: 'Failed to check following status' });
@@ -151,19 +178,14 @@ router.get('/stats/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
 
-    const followersResult = await pool.query(
-      'SELECT COUNT(*) as count FROM user_follows WHERE following_id = $1',
-      [userId]
-    );
-
-    const followingResult = await pool.query(
-      'SELECT COUNT(*) as count FROM user_follows WHERE follower_id = $1',
-      [userId]
-    );
+    const [followersCount, followingCount] = await Promise.all([
+      supabase.from('user_follows').select('*', { count: 'exact', head: true }).eq('following_id', userId),
+      supabase.from('user_follows').select('*', { count: 'exact', head: true }).eq('follower_id', userId),
+    ]);
 
     res.json({
-      followers: parseInt(followersResult.rows[0].count || 0),
-      following: parseInt(followingResult.rows[0].count || 0),
+      followers: followersCount.count || 0,
+      following: followingCount.count || 0,
     });
   } catch (error: any) {
     console.error('Get stats error:', error);
@@ -182,20 +204,23 @@ router.post('/posts', authenticate, async (req: AuthRequest, res) => {
       return res.status(400).json({ error: 'Content is required' });
     }
 
-    const result = await pool.query(
-      `INSERT INTO social_posts (user_id, content, media_urls, post_type, portfolio_id)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING *`,
-      [
-        req.userId,
+    const { data, error } = await supabase
+      .from('social_posts')
+      .insert({
+        user_id: req.userId,
         content,
-        mediaUrls || null,
-        postType || 'text',
-        portfolioId || null,
-      ]
-    );
+        media_urls: mediaUrls || null,
+        post_type: postType || 'text',
+        portfolio_id: portfolioId || null,
+      })
+      .select()
+      .single();
 
-    res.status(201).json(result.rows[0]);
+    if (error) {
+      throw error;
+    }
+
+    res.status(201).json(data);
   } catch (error: any) {
     console.error('Create post error:', error);
     res.status(500).json({ error: 'Failed to create post' });
@@ -209,23 +234,48 @@ router.get('/feed', authenticate, async (req: AuthRequest, res) => {
   try {
     const { limit = 20, offset = 0 } = req.query;
 
-    const result = await pool.query(
-      `SELECT 
-        sp.*,
-        p.display_name,
-        p.avatar_url,
-        (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = sp.id AND pl.user_id = $1) > 0 as is_liked
-       FROM social_posts sp
-       JOIN profiles p ON sp.user_id = p.user_id
-       WHERE sp.user_id IN (
-         SELECT following_id FROM user_follows WHERE follower_id = $1
-       ) OR sp.user_id = $1
-       ORDER BY sp.created_at DESC
-       LIMIT $2 OFFSET $3`,
-      [req.userId, parseInt(limit as string), parseInt(offset as string)]
-    );
+    // Get list of followed user IDs
+    const { data: following } = await supabase
+      .from('user_follows')
+      .select('following_id')
+      .eq('follower_id', req.userId);
 
-    res.json(result.rows);
+    const followingIds = (following || []).map((f: any) => f.following_id);
+    followingIds.push(req.userId); // Include own posts
+
+    const { data: posts, error } = await supabase
+      .from('social_posts')
+      .select(`
+        *,
+        author:profiles!social_posts_user_id_fkey(display_name, avatar_url)
+      `)
+      .in('user_id', followingIds)
+      .order('created_at', { ascending: false })
+      .range(parseInt(offset as string), parseInt(offset as string) + parseInt(limit as string) - 1);
+
+    if (error) {
+      throw error;
+    }
+
+    // Check if user liked each post
+    const postIds = (posts || []).map((p: any) => p.id);
+    const { data: likes } = await supabase
+      .from('post_likes')
+      .select('post_id')
+      .eq('user_id', req.userId)
+      .in('post_id', postIds);
+
+    const likedPostIds = new Set((likes || []).map((l: any) => l.post_id));
+
+    // Transform to match expected format
+    const transformed = (posts || []).map((sp: any) => ({
+      ...sp,
+      display_name: sp.author?.display_name,
+      avatar_url: sp.author?.avatar_url,
+      is_liked: likedPostIds.has(sp.id),
+    }));
+
+    res.json(transformed);
   } catch (error: any) {
     console.error('Get feed error:', error);
     res.status(500).json({ error: 'Failed to get feed' });
@@ -240,25 +290,30 @@ router.post('/posts/:postId/like', authenticate, async (req: AuthRequest, res) =
     const { postId } = req.params;
 
     // Check if already liked
-    const existingResult = await pool.query(
-      'SELECT * FROM post_likes WHERE post_id = $1 AND user_id = $2',
-      [postId, req.userId]
-    );
+    const { data: existing } = await supabase
+      .from('post_likes')
+      .select('*')
+      .eq('post_id', postId)
+      .eq('user_id', req.userId)
+      .single();
 
-    if (existingResult.rows.length > 0) {
+    if (existing) {
       // Unlike
-      await pool.query(
-        'DELETE FROM post_likes WHERE post_id = $1 AND user_id = $2',
-        [postId, req.userId]
-      );
+      await supabase
+        .from('post_likes')
+        .delete()
+        .eq('post_id', postId)
+        .eq('user_id', req.userId);
       return res.json({ liked: false });
     }
 
     // Like
-    await pool.query(
-      'INSERT INTO post_likes (post_id, user_id) VALUES ($1, $2)',
-      [postId, req.userId]
-    );
+    await supabase
+      .from('post_likes')
+      .insert({
+        post_id: postId,
+        user_id: req.userId,
+      });
 
     res.json({ liked: true });
   } catch (error: any) {
@@ -279,14 +334,22 @@ router.post('/posts/:postId/comments', authenticate, async (req: AuthRequest, re
       return res.status(400).json({ error: 'Content is required' });
     }
 
-    const result = await pool.query(
-      `INSERT INTO post_comments (post_id, user_id, content, parent_comment_id)
-       VALUES ($1, $2, $3, $4)
-       RETURNING *`,
-      [postId, req.userId, content, parentCommentId || null]
-    );
+    const { data, error } = await supabase
+      .from('post_comments')
+      .insert({
+        post_id: postId,
+        user_id: req.userId,
+        content,
+        parent_comment_id: parentCommentId || null,
+      })
+      .select()
+      .single();
 
-    res.status(201).json(result.rows[0]);
+    if (error) {
+      throw error;
+    }
+
+    res.status(201).json(data);
   } catch (error: any) {
     console.error('Comment post error:', error);
     res.status(500).json({ error: 'Failed to comment on post' });
@@ -301,20 +364,29 @@ router.get('/posts/:postId/comments', async (req, res) => {
     const { postId } = req.params;
     const { limit = 50, offset = 0 } = req.query;
 
-    const result = await pool.query(
-      `SELECT 
-        pc.*,
-        p.display_name,
-        p.avatar_url
-       FROM post_comments pc
-       JOIN profiles p ON pc.user_id = p.user_id
-       WHERE pc.post_id = $1 AND pc.parent_comment_id IS NULL
-       ORDER BY pc.created_at DESC
-       LIMIT $2 OFFSET $3`,
-      [postId, parseInt(limit as string), parseInt(offset as string)]
-    );
+    const { data, error } = await supabase
+      .from('post_comments')
+      .select(`
+        *,
+        author:profiles!post_comments_user_id_fkey(display_name, avatar_url)
+      `)
+      .eq('post_id', postId)
+      .is('parent_comment_id', null)
+      .order('created_at', { ascending: false })
+      .range(parseInt(offset as string), parseInt(offset as string) + parseInt(limit as string) - 1);
 
-    res.json(result.rows);
+    if (error) {
+      throw error;
+    }
+
+    // Transform to match expected format
+    const transformed = (data || []).map((pc: any) => ({
+      ...pc,
+      display_name: pc.author?.display_name,
+      avatar_url: pc.author?.avatar_url,
+    }));
+
+    res.json(transformed);
   } catch (error: any) {
     console.error('Get comments error:', error);
     res.status(500).json({ error: 'Failed to get comments' });
@@ -322,4 +394,3 @@ router.get('/posts/:postId/comments', async (req, res) => {
 });
 
 export default router;
-

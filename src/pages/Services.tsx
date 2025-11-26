@@ -1,16 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
+import { useNavigate } from "react-router-dom";
+import { AuthContext } from "@/contexts/AuthContext";
+import { api } from "@/lib/api";
+import { formatPrice as formatCurrency, formatPricePerUnit as formatCurrencyPerUnit } from "@/lib/currency";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { Search, MapPin, Filter, Star, Loader2, X, Calendar, Clock, User, Briefcase } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, MapPin, Filter, Star, Loader2, X } from "lucide-react";
-import { api } from "@/lib/api";
-import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
+import { AnimatedSection } from "@/components/AnimatedSection";
 
 type Service = {
   id: string;
@@ -31,7 +33,7 @@ type Service = {
 };
 
 const Services = () => {
-  const { user } = useAuth();
+  const { user } = useContext(AuthContext);
   const { toast } = useToast();
   const navigate = useNavigate();
   const [services, setServices] = useState<Service[]>([]);
@@ -85,17 +87,13 @@ const Services = () => {
   const formatPrice = (price: number | null, pricingType: string) => {
     if (!price) return "Price on request";
     
-    const formattedPrice = new Intl.NumberFormat("en-TZ", {
-      style: "currency",
-      currency: "TZS",
-      minimumFractionDigits: 0,
-    }).format(price);
+    const formattedPrice = formatCurrency(price, 'TZS'); // Default to TZS, but could be dynamic
     
     switch (pricingType) {
       case 'hourly':
-        return `${formattedPrice}/hour`;
+        return formatCurrencyPerUnit(price, 'TZS', 'hour');
       case 'daily':
-        return `${formattedPrice}/day`;
+        return formatCurrencyPerUnit(price, 'TZS', 'day');
       default:
         return formattedPrice;
     }

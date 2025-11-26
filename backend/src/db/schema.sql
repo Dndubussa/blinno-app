@@ -8,7 +8,7 @@
 CREATE TYPE app_role AS ENUM (
   'admin', 'user', 'creator', 'freelancer', 'seller', 
   'lodging', 'restaurant', 'educator', 'journalist', 
-  'artisan', 'employer', 'event_organizer', 'moderator'
+  'artisan', 'employer', 'event_organizer', 'moderator', 'musician'
 );
 
 -- Users table (replaces auth.users)
@@ -607,6 +607,42 @@ CREATE TABLE digital_product_purchases (
   UNIQUE(product_id, buyer_id)
 );
 
+-- Music tables
+CREATE TABLE music_tracks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  musician_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT,
+  genre TEXT NOT NULL,
+  duration INTERVAL,
+  image_url TEXT,
+  audio_url TEXT NOT NULL,
+  price DECIMAL(10, 2) DEFAULT 0.00,
+  currency TEXT DEFAULT 'TSh',
+  plays_count INTEGER DEFAULT 0,
+  likes_count INTEGER DEFAULT 0,
+  is_published BOOLEAN DEFAULT false,
+  tags TEXT[] DEFAULT ARRAY[]::TEXT[],
+  created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT now() NOT NULL
+);
+
+CREATE TABLE music_likes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  track_id UUID REFERENCES music_tracks(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
+  UNIQUE(track_id, user_id)
+);
+
+CREATE TABLE music_plays (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  track_id UUID REFERENCES music_tracks(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  ip_address INET,
+  created_at TIMESTAMPTZ DEFAULT now() NOT NULL
+);
+
 -- Create indexes for better performance
 CREATE INDEX idx_profiles_user_id ON profiles(user_id);
 CREATE INDEX idx_user_roles_user_id ON user_roles(user_id);
@@ -621,6 +657,12 @@ CREATE INDEX idx_products_category ON products(category);
 CREATE INDEX idx_products_is_active ON products(is_active);
 CREATE INDEX idx_cart_items_user_id ON cart_items(user_id);
 CREATE INDEX idx_orders_user_id ON orders(user_id);
+CREATE INDEX idx_music_tracks_musician_id ON music_tracks(musician_id);
+CREATE INDEX idx_music_tracks_genre ON music_tracks(genre);
+CREATE INDEX idx_music_tracks_is_published ON music_tracks(is_published);
+CREATE INDEX idx_music_likes_track_id ON music_likes(track_id);
+CREATE INDEX idx_music_likes_user_id ON music_likes(user_id);
+CREATE INDEX idx_music_plays_track_id ON music_plays(track_id);
 
 -- Create function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -639,4 +681,4 @@ CREATE TRIGGER update_bookings_updated_at BEFORE UPDATE ON bookings FOR EACH ROW
 CREATE TRIGGER update_products_updated_at BEFORE UPDATE ON products FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_cart_items_updated_at BEFORE UPDATE ON cart_items FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_orders_updated_at BEFORE UPDATE ON orders FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
+CREATE TRIGGER update_music_tracks_updated_at BEFORE UPDATE ON music_tracks FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

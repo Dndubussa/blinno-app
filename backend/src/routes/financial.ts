@@ -1,5 +1,5 @@
 import express from 'express';
-import { pool } from '../config/database.js';
+import { supabase } from '../config/supabase.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { financialTracking } from '../services/financialTracking.js';
 
@@ -140,20 +140,51 @@ router.get('/report', authenticate, async (req: AuthRequest, res) => {
     );
 
     // Get daily breakdown
-    const dailyResult = await pool.query(
-      `SELECT 
-        DATE(created_at) as date,
+    const { data: transactions, error: transactionsError } = await supabase
+      .from('financial_transactions')
+      .select('created_at, transaction_type, amount')
+      .eq('user_id', req.userId)
+      .gte('created_at', periodStart)
+      .lte('created_at', periodEnd)
+      .order('created_at', { ascending: false });
+
+    if (transactionsError) {
+      throw transactionsError;
+    }
+
+    // Group by date and transaction type
+    const dailyMap = new Map<string, Map<string, { count: number; total: number }>>();
+    
+    (transactions || []).forEach((tx: any) => {
+      const date = new Date(tx.created_at).toISOString().split('T')[0];
+      const type = tx.transaction_type || 'unknown';
+      
+      if (!dailyMap.has(date)) {
+        dailyMap.set(date, new Map());
+      }
+      
+      const typeMap = dailyMap.get(date)!;
+      if (!typeMap.has(type)) {
+        typeMap.set(type, { count: 0, total: 0 });
+      }
+      
+      const typeData = typeMap.get(type)!;
+      typeData.count += 1;
+      typeData.total += parseFloat(tx.amount || 0);
+    });
+
+    // Transform to expected format
+    const dailyBreakdown = Array.from(dailyMap.entries()).map(([date, typeMap]) => {
+      return Array.from(typeMap.entries()).map(([transaction_type, data]) => ({
+        date,
         transaction_type,
-        COUNT(*) as count,
-        SUM(amount) as total
-       FROM financial_transactions
-       WHERE user_id = $1 
-         AND created_at >= $2 
-         AND created_at <= $3
-       GROUP BY DATE(created_at), transaction_type
-       ORDER BY date DESC`,
-      [req.userId, periodStart, periodEnd]
-    );
+        count: data.count,
+        total: data.total,
+      }));
+    }).flat().sort((a, b) => {
+      // Sort by date descending
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    });
 
     res.json({
       ...summary,
@@ -161,7 +192,7 @@ router.get('/report', authenticate, async (req: AuthRequest, res) => {
         start: periodStart,
         end: periodEnd,
       },
-      dailyBreakdown: dailyResult.rows,
+      dailyBreakdown,
     });
   } catch (error: any) {
     console.error('Get financial report error:', error);
@@ -176,40 +207,28 @@ router.get('/transactions/export', authenticate, async (req: AuthRequest, res) =
   try {
     const { startDate, endDate } = req.query;
 
-    let query = `
-      SELECT 
-        created_at,
-        transaction_type,
-        amount,
-        currency,
-        balance_before,
-        balance_after,
-        status,
-        description,
-        reference_id,
-        reference_type
-      FROM financial_transactions
-      WHERE user_id = $1
-    `;
-    const params: any[] = [req.userId];
-    let paramCount = 2;
+    let query = supabase
+      .from('financial_transactions')
+      .select('created_at, transaction_type, amount, currency, balance_before, balance_after, status, description, reference_id, reference_type')
+      .eq('user_id', req.userId)
+      .order('created_at', { ascending: false });
 
     if (startDate) {
-      query += ` AND created_at >= $${paramCount++}`;
-      params.push(startDate);
+      query = query.gte('created_at', startDate as string);
     }
     if (endDate) {
-      query += ` AND created_at <= $${paramCount++}`;
-      params.push(endDate);
+      query = query.lte('created_at', endDate as string);
     }
 
-    query += ` ORDER BY created_at DESC`;
+    const { data, error } = await query;
 
-    const result = await pool.query(query, params);
+    if (error) {
+      throw error;
+    }
 
     // Convert to CSV
     const csvHeader = 'Date,Type,Amount,Currency,Balance Before,Balance After,Status,Description,Reference ID,Reference Type\n';
-    const csvRows = result.rows.map((row) => {
+    const csvRows = (data || []).map((row: any) => {
       return [
         row.created_at,
         row.transaction_type,
@@ -236,4 +255,3 @@ router.get('/transactions/export', authenticate, async (req: AuthRequest, res) =
 });
 
 export default router;
-

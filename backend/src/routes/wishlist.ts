@@ -1,5 +1,5 @@
 import express from 'express';
-import { pool } from '../config/database.js';
+import { supabase } from '../config/supabase.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -9,17 +9,26 @@ const router = express.Router();
  */
 router.get('/', authenticate, async (req: AuthRequest, res) => {
   try {
-    const result = await pool.query(
-      `SELECT w.*, COUNT(wi.id) as item_count
-       FROM wishlists w
-       LEFT JOIN wishlist_items wi ON w.id = wi.wishlist_id
-       WHERE w.user_id = $1
-       GROUP BY w.id
-       ORDER BY w.created_at DESC`,
-      [req.userId]
-    );
+    const { data: wishlists, error } = await supabase
+      .from('wishlists')
+      .select(`
+        *,
+        wishlist_items(count)
+      `)
+      .eq('user_id', req.userId)
+      .order('created_at', { ascending: false });
 
-    res.json(result.rows);
+    if (error) {
+      throw error;
+    }
+
+    // Transform to include item_count
+    const transformed = (wishlists || []).map((w: any) => ({
+      ...w,
+      item_count: w.wishlist_items?.[0]?.count || 0,
+    }));
+
+    res.json(transformed);
   } catch (error: any) {
     console.error('Get wishlists error:', error);
     res.status(500).json({ error: 'Failed to get wishlists' });
@@ -33,14 +42,21 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
   try {
     const { name, isPublic } = req.body;
 
-    const result = await pool.query(
-      `INSERT INTO wishlists (user_id, name, is_public)
-       VALUES ($1, $2, $3)
-       RETURNING *`,
-      [req.userId, name || 'My Wishlist', isPublic || false]
-    );
+    const { data, error } = await supabase
+      .from('wishlists')
+      .insert({
+        user_id: req.userId,
+        name: name || 'My Wishlist',
+        is_public: isPublic || false,
+      })
+      .select()
+      .single();
 
-    res.status(201).json(result.rows[0]);
+    if (error) {
+      throw error;
+    }
+
+    res.status(201).json(data);
   } catch (error: any) {
     console.error('Create wishlist error:', error);
     res.status(500).json({ error: 'Failed to create wishlist' });
@@ -60,28 +76,36 @@ router.post('/:wishlistId/items', authenticate, async (req: AuthRequest, res) =>
     }
 
     // Verify wishlist ownership
-    const wishlistResult = await pool.query(
-      'SELECT * FROM wishlists WHERE id = $1 AND user_id = $2',
-      [wishlistId, req.userId]
-    );
+    const { data: wishlist, error: wishlistError } = await supabase
+      .from('wishlists')
+      .select('*')
+      .eq('id', wishlistId)
+      .eq('user_id', req.userId)
+      .single();
 
-    if (wishlistResult.rows.length === 0) {
+    if (wishlistError || !wishlist) {
       return res.status(404).json({ error: 'Wishlist not found' });
     }
 
-    const result = await pool.query(
-      `INSERT INTO wishlist_items (wishlist_id, item_type, item_id, notes)
-       VALUES ($1, $2, $3, $4)
-       ON CONFLICT (wishlist_id, item_type, item_id) DO NOTHING
-       RETURNING *`,
-      [wishlistId, itemType, itemId, notes || null]
-    );
+    const { data, error } = await supabase
+      .from('wishlist_items')
+      .insert({
+        wishlist_id: wishlistId,
+        item_type: itemType,
+        item_id: itemId,
+        notes: notes || null,
+      })
+      .select()
+      .single();
 
-    if (result.rows.length === 0) {
-      return res.status(400).json({ error: 'Item already in wishlist' });
+    if (error) {
+      if (error.code === '23505') { // Unique constraint violation
+        return res.status(400).json({ error: 'Item already in wishlist' });
+      }
+      throw error;
     }
 
-    res.status(201).json(result.rows[0]);
+    res.status(201).json(data);
   } catch (error: any) {
     console.error('Add item error:', error);
     res.status(500).json({ error: 'Failed to add item' });
@@ -101,19 +125,27 @@ router.delete('/:wishlistId/items/:itemId', authenticate, async (req: AuthReques
     }
 
     // Verify wishlist ownership
-    const wishlistResult = await pool.query(
-      'SELECT * FROM wishlists WHERE id = $1 AND user_id = $2',
-      [wishlistId, req.userId]
-    );
+    const { data: wishlist, error: wishlistError } = await supabase
+      .from('wishlists')
+      .select('*')
+      .eq('id', wishlistId)
+      .eq('user_id', req.userId)
+      .single();
 
-    if (wishlistResult.rows.length === 0) {
+    if (wishlistError || !wishlist) {
       return res.status(404).json({ error: 'Wishlist not found' });
     }
 
-    await pool.query(
-      'DELETE FROM wishlist_items WHERE wishlist_id = $1 AND item_type = $2 AND item_id = $3',
-      [wishlistId, itemType, itemId]
-    );
+    const { error } = await supabase
+      .from('wishlist_items')
+      .delete()
+      .eq('wishlist_id', wishlistId)
+      .eq('item_type', itemType)
+      .eq('item_id', itemId);
+
+    if (error) {
+      throw error;
+    }
 
     res.json({ message: 'Item removed from wishlist' });
   } catch (error: any) {
@@ -130,37 +162,66 @@ router.get('/:wishlistId/items', authenticate, async (req: AuthRequest, res) => 
     const { wishlistId } = req.params;
 
     // Verify wishlist ownership or public access
-    const wishlistResult = await pool.query(
-      'SELECT * FROM wishlists WHERE id = $1 AND (user_id = $2 OR is_public = true)',
-      [wishlistId, req.userId]
-    );
+    const { data: wishlist, error: wishlistError } = await supabase
+      .from('wishlists')
+      .select('*')
+      .eq('id', wishlistId)
+      .or(`user_id.eq.${req.userId},is_public.eq.true`)
+      .single();
 
-    if (wishlistResult.rows.length === 0) {
+    if (wishlistError || !wishlist) {
       return res.status(404).json({ error: 'Wishlist not found' });
     }
 
-    const result = await pool.query(
-      `SELECT 
-        wi.*,
-        CASE 
-          WHEN wi.item_type = 'product' THEN (SELECT title FROM products WHERE id = wi.item_id)
-          WHEN wi.item_type = 'portfolio' THEN (SELECT title FROM portfolios WHERE id = wi.item_id)
-          WHEN wi.item_type = 'creator' THEN (SELECT display_name FROM profiles WHERE user_id = wi.item_id)
-          ELSE NULL
-        END as item_title,
-        CASE 
-          WHEN wi.item_type = 'product' THEN (SELECT image_url FROM products WHERE id = wi.item_id)
-          WHEN wi.item_type = 'portfolio' THEN (SELECT image_url FROM portfolios WHERE id = wi.item_id)
-          WHEN wi.item_type = 'creator' THEN (SELECT avatar_url FROM profiles WHERE user_id = wi.item_id)
-          ELSE NULL
-        END as item_image
-       FROM wishlist_items wi
-       WHERE wi.wishlist_id = $1
-       ORDER BY wi.created_at DESC`,
-      [wishlistId]
-    );
+    const { data: items, error } = await supabase
+      .from('wishlist_items')
+      .select('*')
+      .eq('wishlist_id', wishlistId)
+      .order('created_at', { ascending: false });
 
-    res.json(result.rows);
+    if (error) {
+      throw error;
+    }
+
+    // Fetch item details based on type
+    const enrichedItems = await Promise.all((items || []).map(async (item: any) => {
+      let itemTitle = null;
+      let itemImage = null;
+
+      if (item.item_type === 'product') {
+        const { data: product } = await supabase
+          .from('products')
+          .select('title, image_url')
+          .eq('id', item.item_id)
+          .single();
+        itemTitle = product?.title;
+        itemImage = product?.image_url;
+      } else if (item.item_type === 'portfolio') {
+        const { data: portfolio } = await supabase
+          .from('portfolios')
+          .select('title, image_url')
+          .eq('id', item.item_id)
+          .single();
+        itemTitle = portfolio?.title;
+        itemImage = portfolio?.image_url;
+      } else if (item.item_type === 'creator') {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('display_name, avatar_url')
+          .eq('user_id', item.item_id)
+          .single();
+        itemTitle = profile?.display_name;
+        itemImage = profile?.avatar_url;
+      }
+
+      return {
+        ...item,
+        item_title: itemTitle,
+        item_image: itemImage,
+      };
+    }));
+
+    res.json(enrichedItems);
   } catch (error: any) {
     console.error('Get wishlist items error:', error);
     res.status(500).json({ error: 'Failed to get wishlist items' });
@@ -174,16 +235,28 @@ router.get('/check/:itemType/:itemId', authenticate, async (req: AuthRequest, re
   try {
     const { itemType, itemId } = req.params;
 
-    const result = await pool.query(
-      `SELECT w.id, w.name
-       FROM wishlists w
-       JOIN wishlist_items wi ON w.id = wi.wishlist_id
-       WHERE w.user_id = $1 AND wi.item_type = $2 AND wi.item_id = $3
-       LIMIT 1`,
-      [req.userId, itemType, itemId]
-    );
+    const { data: wishlistItems, error } = await supabase
+      .from('wishlist_items')
+      .select(`
+        wishlist_id,
+        wishlists!inner(id, name, user_id)
+      `)
+      .eq('wishlists.user_id', req.userId)
+      .eq('item_type', itemType)
+      .eq('item_id', itemId)
+      .limit(1);
 
-    res.json({ inWishlist: result.rows.length > 0, wishlist: result.rows[0] || null });
+    if (error) {
+      throw error;
+    }
+
+    const inWishlist = (wishlistItems?.length || 0) > 0;
+    const wishlist = inWishlist ? {
+      id: wishlistItems[0].wishlists.id,
+      name: wishlistItems[0].wishlists.name,
+    } : null;
+
+    res.json({ inWishlist, wishlist });
   } catch (error: any) {
     console.error('Check wishlist error:', error);
     res.status(500).json({ error: 'Failed to check wishlist' });
@@ -191,4 +264,3 @@ router.get('/check/:itemType/:itemId', authenticate, async (req: AuthRequest, re
 });
 
 export default router;
-

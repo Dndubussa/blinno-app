@@ -33,3 +33,9 @@ export function getPrimaryRole(profile: any): string {
   return profile.role || 'user';
 }
 
+/**
+ * Check if user is a musician
+ */
+export async function isMusician(): Promise<boolean> {
+  return hasRole('musician');
+}

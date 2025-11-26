@@ -1,5 +1,5 @@
 import express from 'express';
-import { pool } from '../config/database.js';
+import { supabase } from '../config/supabase.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -11,31 +11,33 @@ router.get('/', authenticate, async (req: AuthRequest, res) => {
   try {
     const { limit = 50, offset = 0, unreadOnly = false } = req.query;
 
-    let query = `
-      SELECT * FROM notifications
-      WHERE user_id = $1
-    `;
-    const params: any[] = [req.userId];
-    let paramCount = 2;
+    let query = supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', req.userId)
+      .order('created_at', { ascending: false })
+      .range(parseInt(offset as string), parseInt(offset as string) + parseInt(limit as string) - 1);
 
     if (unreadOnly === 'true') {
-      query += ` AND is_read = false`;
+      query = query.eq('is_read', false);
     }
 
-    query += ` ORDER BY created_at DESC LIMIT $${paramCount++} OFFSET $${paramCount++}`;
-    params.push(parseInt(limit as string), parseInt(offset as string));
+    const { data: notifications, error } = await query;
 
-    const result = await pool.query(query, params);
+    if (error) {
+      throw error;
+    }
 
     // Get unread count
-    const unreadCountResult = await pool.query(
-      'SELECT COUNT(*) as count FROM notifications WHERE user_id = $1 AND is_read = false',
-      [req.userId]
-    );
+    const { count, error: countError } = await supabase
+      .from('notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', req.userId)
+      .eq('is_read', false);
 
     res.json({
-      notifications: result.rows,
-      unreadCount: parseInt(unreadCountResult.rows[0].count || 0),
+      notifications: notifications || [],
+      unreadCount: count || 0,
     });
   } catch (error: any) {
     console.error('Get notifications error:', error);
@@ -50,19 +52,22 @@ router.put('/:id/read', authenticate, async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
 
-    const result = await pool.query(
-      `UPDATE notifications
-       SET is_read = true, read_at = now()
-       WHERE id = $1 AND user_id = $2
-       RETURNING *`,
-      [id, req.userId]
-    );
+    const { data, error } = await supabase
+      .from('notifications')
+      .update({
+        is_read: true,
+        read_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .eq('user_id', req.userId)
+      .select()
+      .single();
 
-    if (result.rows.length === 0) {
+    if (error || !data) {
       return res.status(404).json({ error: 'Notification not found' });
     }
 
-    res.json(result.rows[0]);
+    res.json(data);
   } catch (error: any) {
     console.error('Mark notification read error:', error);
     res.status(500).json({ error: 'Failed to mark notification as read' });
@@ -74,12 +79,18 @@ router.put('/:id/read', authenticate, async (req: AuthRequest, res) => {
  */
 router.put('/read-all', authenticate, async (req: AuthRequest, res) => {
   try {
-    await pool.query(
-      `UPDATE notifications
-       SET is_read = true, read_at = now()
-       WHERE user_id = $1 AND is_read = false`,
-      [req.userId]
-    );
+    const { error } = await supabase
+      .from('notifications')
+      .update({
+        is_read: true,
+        read_at: new Date().toISOString(),
+      })
+      .eq('user_id', req.userId)
+      .eq('is_read', false);
+
+    if (error) {
+      throw error;
+    }
 
     res.json({ message: 'All notifications marked as read' });
   } catch (error: any) {
@@ -95,10 +106,15 @@ router.delete('/:id', authenticate, async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
 
-    await pool.query(
-      'DELETE FROM notifications WHERE id = $1 AND user_id = $2',
-      [id, req.userId]
-    );
+    const { error } = await supabase
+      .from('notifications')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', req.userId);
+
+    if (error) {
+      throw error;
+    }
 
     res.json({ message: 'Notification deleted' });
   } catch (error: any) {
@@ -112,23 +128,32 @@ router.delete('/:id', authenticate, async (req: AuthRequest, res) => {
  */
 router.get('/preferences', authenticate, async (req: AuthRequest, res) => {
   try {
-    const result = await pool.query(
-      `SELECT * FROM notification_preferences WHERE user_id = $1`,
-      [req.userId]
-    );
+    const { data, error } = await supabase
+      .from('notification_preferences')
+      .select('*')
+      .eq('user_id', req.userId)
+      .single();
 
-    if (result.rows.length === 0) {
+    if (error && error.code === 'PGRST116') {
       // Create default preferences
-      const insertResult = await pool.query(
-        `INSERT INTO notification_preferences (user_id)
-         VALUES ($1)
-         RETURNING *`,
-        [req.userId]
-      );
-      return res.json(insertResult.rows[0]);
+      const { data: newPrefs, error: insertError } = await supabase
+        .from('notification_preferences')
+        .insert({ user_id: req.userId })
+        .select()
+        .single();
+
+      if (insertError) {
+        throw insertError;
+      }
+
+      return res.json(newPrefs);
     }
 
-    res.json(result.rows[0]);
+    if (error) {
+      throw error;
+    }
+
+    res.json(data);
   } catch (error: any) {
     console.error('Get preferences error:', error);
     res.status(500).json({ error: 'Failed to get preferences' });
@@ -142,46 +167,50 @@ router.put('/preferences', authenticate, async (req: AuthRequest, res) => {
   try {
     const { email_enabled, sms_enabled, push_enabled, in_app_enabled, preferences } = req.body;
 
-    const result = await pool.query(
-      `UPDATE notification_preferences
-       SET email_enabled = COALESCE($1, email_enabled),
-           sms_enabled = COALESCE($2, sms_enabled),
-           push_enabled = COALESCE($3, push_enabled),
-           in_app_enabled = COALESCE($4, in_app_enabled),
-           preferences = COALESCE($5, preferences),
-           updated_at = now()
-       WHERE user_id = $6
-       RETURNING *`,
-      [
-        email_enabled,
-        sms_enabled,
-        push_enabled,
-        in_app_enabled,
-        preferences ? JSON.stringify(preferences) : null,
-        req.userId,
-      ]
-    );
+    const updates: any = {
+      updated_at: new Date().toISOString(),
+    };
 
-    if (result.rows.length === 0) {
+    if (email_enabled !== undefined) updates.email_enabled = email_enabled;
+    if (sms_enabled !== undefined) updates.sms_enabled = sms_enabled;
+    if (push_enabled !== undefined) updates.push_enabled = push_enabled;
+    if (in_app_enabled !== undefined) updates.in_app_enabled = in_app_enabled;
+    if (preferences !== undefined) updates.preferences = typeof preferences === 'string' ? preferences : JSON.stringify(preferences);
+
+    const { data, error } = await supabase
+      .from('notification_preferences')
+      .update(updates)
+      .eq('user_id', req.userId)
+      .select()
+      .single();
+
+    if (error && error.code === 'PGRST116') {
       // Create if doesn't exist
-      const insertResult = await pool.query(
-        `INSERT INTO notification_preferences (
-          user_id, email_enabled, sms_enabled, push_enabled, in_app_enabled, preferences
-        ) VALUES ($1, $2, $3, $4, $5, $6)
-        RETURNING *`,
-        [
-          req.userId,
-          email_enabled ?? true,
-          sms_enabled ?? false,
-          push_enabled ?? true,
-          in_app_enabled ?? true,
-          preferences ? JSON.stringify(preferences) : '{}',
-        ]
-      );
-      return res.json(insertResult.rows[0]);
+      const { data: newPrefs, error: insertError } = await supabase
+        .from('notification_preferences')
+        .insert({
+          user_id: req.userId,
+          email_enabled: email_enabled ?? true,
+          sms_enabled: sms_enabled ?? false,
+          push_enabled: push_enabled ?? true,
+          in_app_enabled: in_app_enabled ?? true,
+          preferences: preferences ? (typeof preferences === 'string' ? preferences : JSON.stringify(preferences)) : '{}',
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        throw insertError;
+      }
+
+      return res.json(newPrefs);
     }
 
-    res.json(result.rows[0]);
+    if (error) {
+      throw error;
+    }
+
+    res.json(data);
   } catch (error: any) {
     console.error('Update preferences error:', error);
     res.status(500).json({ error: 'Failed to update preferences' });
@@ -189,4 +218,3 @@ router.put('/preferences', authenticate, async (req: AuthRequest, res) => {
 });
 
 export default router;
-

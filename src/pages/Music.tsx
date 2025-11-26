@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Play, Heart, Share2, Filter, Music as MusicIcon } from "lucide-react";
+import { Search, Play, Pause, Heart, Share2, Filter, Music as MusicIcon, Volume2 } from "lucide-react";
+import { MediaPlayer } from "@/components/MediaPlayer";
 
 const tracks = [
   {
@@ -18,7 +19,8 @@ const tracks = [
     plays: "15M",
     likes: "2.5M",
     image: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&h=600&fit=crop",
-    badge: "🔥 Trending"
+    badge: "🔥 Trending",
+    audioUrl: "https://sample-videos.com/audio/mp3/crowd-cheering.mp3" // Sample audio URL
   },
   {
     id: 2,
@@ -29,7 +31,8 @@ const tracks = [
     plays: "8M",
     likes: "1.2M",
     image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=600&fit=crop",
-    badge: "⭐ Featured"
+    badge: "⭐ Featured",
+    audioUrl: "https://sample-videos.com/audio/mp3/crowd-cheering.mp3" // Sample audio URL
   },
   {
     id: 3,
@@ -40,7 +43,8 @@ const tracks = [
     plays: "12M",
     likes: "1.8M",
     image: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&h=600&fit=crop",
-    badge: "🎵 Top Chart"
+    badge: "🎵 Top Chart",
+    audioUrl: "https://sample-videos.com/audio/mp3/crowd-cheering.mp3" // Sample audio URL
   },
   {
     id: 4,
@@ -51,7 +55,8 @@ const tracks = [
     plays: "10M",
     likes: "1.5M",
     image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&h=600&fit=crop",
-    badge: "🔥 Trending"
+    badge: "🔥 Trending",
+    audioUrl: "https://sample-videos.com/audio/mp3/crowd-cheering.mp3" // Sample audio URL
   },
   {
     id: 5,
@@ -62,7 +67,8 @@ const tracks = [
     plays: "7M",
     likes: "980K",
     image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800&h=600&fit=crop",
-    badge: "💫 Rising"
+    badge: "💫 Rising",
+    audioUrl: "https://sample-videos.com/audio/mp3/crowd-cheering.mp3" // Sample audio URL
   },
   {
     id: 6,
@@ -73,13 +79,15 @@ const tracks = [
     plays: "6M",
     likes: "850K",
     image: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=800&h=600&fit=crop",
-    badge: "🎤 Classic"
+    badge: "🎤 Classic",
+    audioUrl: "https://sample-videos.com/audio/mp3/crowd-cheering.mp3" // Sample audio URL
   }
 ];
 
 const Music = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [genreFilter, setGenreFilter] = useState("all");
+  const [currentlyPlaying, setCurrentlyPlaying] = useState<number | null>(null);
 
   const filteredTracks = tracks.filter(track => {
     const matchesSearch = track.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -88,6 +96,14 @@ const Music = () => {
     
     return matchesSearch && matchesGenre;
   });
+
+  const togglePlayback = (trackId: number) => {
+    if (currentlyPlaying === trackId) {
+      setCurrentlyPlaying(null);
+    } else {
+      setCurrentlyPlaying(trackId);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -133,6 +149,20 @@ const Music = () => {
             </CardContent>
           </Card>
 
+          {/* Currently Playing Track */}
+          {currentlyPlaying && (
+            <Card className="mb-8">
+              <CardContent className="p-6">
+                <h2 className="text-xl font-bold mb-4">Now Playing</h2>
+                <MediaPlayer 
+                  url={tracks.find(t => t.id === currentlyPlaying)?.audioUrl || ""}
+                  type="audio"
+                  title={tracks.find(t => t.id === currentlyPlaying)?.title || "Unknown Track"}
+                />
+              </CardContent>
+            </Card>
+          )}
+
           {/* Tracks Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredTracks.map((track) => (
@@ -144,8 +174,16 @@ const Music = () => {
                     className="w-full h-64 object-cover"
                   />
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <Button size="lg" className="rounded-full h-16 w-16 p-0">
-                      <Play className="h-8 w-8" />
+                    <Button 
+                      size="lg" 
+                      className="rounded-full h-16 w-16 p-0"
+                      onClick={() => togglePlayback(track.id)}
+                    >
+                      {currentlyPlaying === track.id ? (
+                        <Pause className="h-8 w-8" />
+                      ) : (
+                        <Play className="h-8 w-8" />
+                      )}
                     </Button>
                   </div>
                   <div className="absolute top-4 right-4">
@@ -176,6 +214,17 @@ const Music = () => {
                       <div className="text-xs text-muted-foreground">Likes</div>
                       <div className="text-sm font-semibold text-foreground">{track.likes}</div>
                     </div>
+                    <Button 
+                      size="icon" 
+                      variant="ghost"
+                      onClick={() => togglePlayback(track.id)}
+                    >
+                      {currentlyPlaying === track.id ? (
+                        <Pause className="h-4 w-4" />
+                      ) : (
+                        <Play className="h-4 w-4" />
+                      )}
+                    </Button>
                     <Button size="icon" variant="ghost">
                       <Heart className="h-4 w-4" />
                     </Button>

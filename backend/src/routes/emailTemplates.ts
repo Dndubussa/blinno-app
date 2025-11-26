@@ -1,5 +1,5 @@
 import express from 'express';
-import { pool } from '../config/database.js';
+import { supabase } from '../config/supabase.js';
 import { authenticate, AuthRequest, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -11,20 +11,24 @@ router.get('/', authenticate, requireRole('admin'), async (req: AuthRequest, res
   try {
     const { category } = req.query;
 
-    let query = 'SELECT * FROM email_templates WHERE is_active = true';
-    const params: any[] = [];
-    let paramCount = 1;
+    let query = supabase
+      .from('email_templates')
+      .select('*')
+      .eq('is_active', true)
+      .order('category', { ascending: true })
+      .order('name', { ascending: true });
 
     if (category) {
-      query += ` AND category = $${paramCount++}`;
-      params.push(category);
+      query = query.eq('category', category as string);
     }
 
-    query += ' ORDER BY category, name';
+    const { data, error } = await query;
 
-    const result = await pool.query(query, params);
+    if (error) {
+      throw error;
+    }
 
-    res.json(result.rows);
+    res.json(data || []);
   } catch (error: any) {
     console.error('Get templates error:', error);
     res.status(500).json({ error: 'Failed to get templates' });
@@ -38,16 +42,18 @@ router.get('/:name', async (req, res) => {
   try {
     const { name } = req.params;
 
-    const result = await pool.query(
-      'SELECT * FROM email_templates WHERE name = $1 AND is_active = true',
-      [name]
-    );
+    const { data, error } = await supabase
+      .from('email_templates')
+      .select('*')
+      .eq('name', name)
+      .eq('is_active', true)
+      .single();
 
-    if (result.rows.length === 0) {
+    if (error || !data) {
       return res.status(404).json({ error: 'Template not found' });
     }
 
-    res.json(result.rows[0]);
+    res.json(data);
   } catch (error: any) {
     console.error('Get template error:', error);
     res.status(500).json({ error: 'Failed to get template' });
@@ -65,14 +71,24 @@ router.post('/', authenticate, requireRole('admin'), async (req: AuthRequest, re
       return res.status(400).json({ error: 'Name, subject, and body HTML are required' });
     }
 
-    const result = await pool.query(
-      `INSERT INTO email_templates (name, subject, body_html, body_text, category, variables)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING *`,
-      [name, subject, bodyHtml, bodyText || null, category || null, variables ? JSON.stringify(variables) : null]
-    );
+    const { data, error } = await supabase
+      .from('email_templates')
+      .insert({
+        name,
+        subject,
+        body_html: bodyHtml,
+        body_text: bodyText || null,
+        category: category || null,
+        variables: variables ? JSON.stringify(variables) : null,
+      })
+      .select()
+      .single();
 
-    res.status(201).json(result.rows[0]);
+    if (error) {
+      throw error;
+    }
+
+    res.status(201).json(data);
   } catch (error: any) {
     console.error('Create template error:', error);
     res.status(500).json({ error: 'Failed to create template' });
@@ -87,33 +103,29 @@ router.put('/:id', authenticate, requireRole('admin'), async (req: AuthRequest, 
     const { id } = req.params;
     const { subject, bodyHtml, bodyText, category, variables, isActive } = req.body;
 
-    const result = await pool.query(
-      `UPDATE email_templates
-       SET subject = COALESCE($1, subject),
-           body_html = COALESCE($2, body_html),
-           body_text = COALESCE($3, body_text),
-           category = COALESCE($4, category),
-           variables = COALESCE($5, variables),
-           is_active = COALESCE($6, is_active),
-           updated_at = now()
-       WHERE id = $7
-       RETURNING *`,
-      [
-        subject || null,
-        bodyHtml || null,
-        bodyText || null,
-        category || null,
-        variables ? JSON.stringify(variables) : null,
-        isActive !== undefined ? isActive : null,
-        id,
-      ]
-    );
+    const updates: any = {
+      updated_at: new Date().toISOString(),
+    };
 
-    if (result.rows.length === 0) {
+    if (subject !== undefined) updates.subject = subject;
+    if (bodyHtml !== undefined) updates.body_html = bodyHtml;
+    if (bodyText !== undefined) updates.body_text = bodyText;
+    if (category !== undefined) updates.category = category;
+    if (variables !== undefined) updates.variables = JSON.stringify(variables);
+    if (isActive !== undefined) updates.is_active = isActive;
+
+    const { data, error } = await supabase
+      .from('email_templates')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error || !data) {
       return res.status(404).json({ error: 'Template not found' });
     }
 
-    res.json(result.rows[0]);
+    res.json(data);
   } catch (error: any) {
     console.error('Update template error:', error);
     res.status(500).json({ error: 'Failed to update template' });
@@ -128,16 +140,16 @@ router.post('/:name/render', async (req, res) => {
     const { name } = req.params;
     const { variables } = req.body;
 
-    const result = await pool.query(
-      'SELECT * FROM email_templates WHERE name = $1 AND is_active = true',
-      [name]
-    );
+    const { data: template, error } = await supabase
+      .from('email_templates')
+      .select('*')
+      .eq('name', name)
+      .eq('is_active', true)
+      .single();
 
-    if (result.rows.length === 0) {
+    if (error || !template) {
       return res.status(404).json({ error: 'Template not found' });
     }
-
-    const template = result.rows[0];
 
     // Replace variables in subject and body
     let subject = template.subject;
@@ -167,4 +179,3 @@ router.post('/:name/render', async (req, res) => {
 });
 
 export default router;
-

@@ -14,11 +14,11 @@ export const DiasporaBanner = () => {
           <div className="flex items-center gap-3 mb-2">
             <h3 className="text-xl font-semibold text-foreground">Welcome from Abroad!</h3>
             <Badge className="bg-accent text-accent-foreground">
-              🌍 Diaspora
+              🌍 Worldwide Access
             </Badge>
           </div>
           <p className="text-muted-foreground">
-            Connect with home. Support Tanzanian creators, discover events, and shop authentic products from anywhere in the world.
+            Connect with home from anywhere in the world. Support Tanzanian creators, discover events, and shop authentic products through our worldwide platform - proudly Tanzanian owned.
           </p>
         </div>
       </div>

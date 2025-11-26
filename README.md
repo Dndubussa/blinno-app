@@ -1,8 +1,12 @@
-# Welcome to your Lovable project
+# BLINNO Platform
 
-## Project info
+A multi-sided marketplace SaaS platform for Tanzanian creators, businesses, and service providers.
 
-**URL**: https://lovable.dev/projects/2f23d4cb-dd66-40a7-8ab9-f3e67ad5dfa5
+## Production Website
+
+**Official Website**: https://www.blinno.app
+
+## Project Information
 
 ## How can I edit this code?
 

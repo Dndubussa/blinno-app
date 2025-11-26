@@ -1,4 +1,4 @@
-import { MapPin, Clock, User, LogOut, LayoutDashboard, ShoppingCart, Home, Store, Calendar, Music, Search, Briefcase } from "lucide-react";
+import { MapPin, Clock, User, LogOut, LayoutDashboard, ShoppingCart, Home, Store, Calendar, Music, Search, Briefcase, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
@@ -92,12 +92,12 @@ export const Header = () => {
 
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" className="hidden md:flex items-center gap-2">
-            <MapPin className="h-4 w-4" />
-            <span>Tanzania</span>
+            <Globe className="h-4 w-4" />
+            <span>Worldwide</span>
           </Button>
           <Button variant="ghost" size="sm" className="hidden md:flex items-center gap-2">
-            <Clock className="h-4 w-4" />
-            <span>Airtime</span>
+            <MapPin className="h-4 w-4" />
+            <span>Tanzania</span>
           </Button>
           
           {user ? (

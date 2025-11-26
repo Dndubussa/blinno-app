@@ -1,16 +1,19 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { AuthContext } from "@/contexts/AuthContext";
+import { api } from "@/lib/api";
+import { formatPrice as formatCurrency } from "@/lib/currency";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { Search, ShoppingCart, Filter, Star, MapPin, Heart, Plus, Loader2, X, BookOpen } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, MapPin, Filter, Star, ShoppingCart, Loader2, X } from "lucide-react";
-import { api } from "@/lib/api";
-import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
+import { CategoriesGrid } from "@/components/CategoriesGrid";
+import { AnimatedSection } from "@/components/AnimatedSection";
 
 type Product = {
   id: string;
@@ -29,13 +32,28 @@ type Product = {
   updated_at: string;
   display_name?: string;
   avatar_url?: string;
+  type?: "product" | "course";
+};
+
+type Course = {
+  id: string;
+  creator_id: string;
+  title: string;
+  description: string | null;
+  price: number;
+  category: string;
+  is_published: boolean;
+  created_at: string;
+  updated_at: string;
+  type: "course";
 };
 
 const Marketplace = () => {
-  const { user } = useAuth();
-  const { toast } = useToast();
+  const { user } = useContext(AuthContext);
+  const location = useLocation();
   const navigate = useNavigate();
-  const [products, setProducts] = useState<Product[]>([]);
+  const { toast } = useToast();
+  const [products, setProducts] = useState<(Product | Course)[]>([]);
   const [loading, setLoading] = useState(true);
   const [addingToCart, setAddingToCart] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -48,13 +66,23 @@ const Marketplace = () => {
 
   const fetchProducts = async () => {
     try {
+      // Fetch products
       const productsData = await api.getProducts({
         category: categoryFilter !== 'all' ? categoryFilter : undefined,
         location: locationFilter !== 'all' ? locationFilter : undefined,
         search: searchQuery || undefined,
       });
 
-      setProducts(productsData || []);
+      // Fetch courses
+      const coursesData = await api.getCourses();
+      
+      // Combine products and courses
+      const allItems = [
+        ...productsData.map((p: any) => ({ ...p, type: "product" as const })),
+        ...coursesData.map((c: any) => ({ ...c, type: "course" as const }))
+      ];
+
+      setProducts(allItems || []);
     } catch (error: any) {
       console.error("Error fetching products:", error);
       const isSchemaCacheError = 
@@ -122,11 +150,7 @@ const Marketplace = () => {
   };
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("en-TZ", {
-      style: "currency",
-      currency: "TZS",
-      minimumFractionDigits: 0,
-    }).format(price);
+    return formatCurrency(price, 'TZS'); // Default to TZS, but could be dynamic
   };
 
   const getUniqueCategories = () => {
@@ -171,7 +195,7 @@ const Marketplace = () => {
         <div className="container mx-auto px-4">
           <div className="mb-8">
             <h1 className="text-4xl font-bold text-foreground mb-2">Marketplace</h1>
-            <p className="text-muted-foreground">Shop authentic Tanzanian products from local sellers</p>
+            <p className="text-muted-foreground">Shop authentic Tanzanian products and courses from local sellers</p>
           </div>
 
           {/* Search and Filters */}
@@ -237,7 +261,7 @@ const Marketplace = () => {
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                     <Input
-                      placeholder="Search products..."
+                      placeholder="Search products and courses..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="pl-10 h-10"
@@ -295,7 +319,7 @@ const Marketplace = () => {
           {/* Results Count */}
           {(categoryFilter !== "all" || locationFilter !== "all" || searchQuery) && (
             <div className="mb-4 text-sm text-muted-foreground">
-              Showing {filteredProducts.length} of {products.length} products
+              Showing {filteredProducts.length} of {products.length} items
             </div>
           )}
 
@@ -303,7 +327,7 @@ const Marketplace = () => {
           {filteredProducts.length === 0 ? (
             <Card>
               <CardContent className="p-12 text-center">
-                <p className="text-muted-foreground mb-2">No products found.</p>
+                <p className="text-muted-foreground mb-2">No products or courses found.</p>
                 {(categoryFilter !== "all" || locationFilter !== "all" || searchQuery) && (
                   <Button
                     variant="outline"
@@ -322,20 +346,31 @@ const Marketplace = () => {
             </Card>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredProducts.map((product) => (
-                <Card key={product.id} className="overflow-hidden hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 flex flex-col">
+              {filteredProducts.map((item) => (
+                <Card 
+                  key={item.id} 
+                  className="overflow-hidden hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 flex flex-col"
+                >
                   <div className="relative">
                     <img 
-                      src={product.image_url || "https://via.placeholder.com/400x300?text=No+Image"} 
-                      alt={product.title}
+                      src={item.image_url || "https://via.placeholder.com/400x300?text=No+Image"} 
+                      alt={item.title}
                       className="w-full h-64 object-cover"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = "https://via.placeholder.com/400x300?text=No+Image";
                       }}
                     />
-                    {product.stock_quantity === 0 && (
+                    {"stock_quantity" in item && item.stock_quantity === 0 && (
                       <div className="absolute top-4 left-4">
                         <Badge variant="destructive">Out of Stock</Badge>
+                      </div>
+                    )}
+                    {"type" in item && item.type === "course" && (
+                      <div className="absolute top-4 right-4">
+                        <Badge variant="default" className="flex items-center gap-1">
+                          <BookOpen className="h-3 w-3" />
+                          Course
+                        </Badge>
                       </div>
                     )}
                   </div>
@@ -343,20 +378,20 @@ const Marketplace = () => {
                   <CardContent className="p-6 flex flex-col h-full">
                     <div className="flex-1">
                       <h3 className="text-xl font-bold text-foreground mb-2 line-clamp-2 min-h-[3.5rem]">
-                        {product.title}
+                        {item.title}
                       </h3>
                       
-                      {product.rating && product.rating > 0 && (
+                      {item.rating && item.rating > 0 && (
                         <div className="flex items-center gap-2 mb-3">
                           <div className="flex items-center gap-1">
                             <Star className="h-4 w-4 fill-amber-500 text-amber-500 flex-shrink-0" />
                             <span className="text-sm font-medium text-foreground">
-                              {product.rating.toFixed(1)}
+                              {item.rating.toFixed(1)}
                             </span>
                           </div>
-                          {product.reviews_count && product.reviews_count > 0 && (
+                          {item.reviews_count && item.reviews_count > 0 && (
                             <span className="text-sm text-muted-foreground">
-                              ({product.reviews_count} reviews)
+                              ({item.reviews_count} reviews)
                             </span>
                           )}
                         </div>
@@ -364,19 +399,19 @@ const Marketplace = () => {
 
                       <div className="space-y-2 mb-4">
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <span className="truncate">By {product.display_name || "Unknown Seller"}</span>
+                          <span className="truncate">By {item.display_name || "Unknown Seller"}</span>
                         </div>
                         
-                        {product.location && (
+                        {item.location && (
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <MapPin className="h-4 w-4 flex-shrink-0" />
-                            <span className="truncate">{product.location}</span>
+                            <span className="truncate">{item.location}</span>
                           </div>
                         )}
 
-                        {product.stock_quantity !== null && product.stock_quantity > 0 && (
+                        {"stock_quantity" in item && item.stock_quantity !== null && item.stock_quantity > 0 && (
                           <div className="text-sm text-muted-foreground">
-                            {product.stock_quantity} in stock
+                            {item.stock_quantity} in stock
                           </div>
                         )}
                       </div>
@@ -384,26 +419,38 @@ const Marketplace = () => {
 
                     <div className="flex items-center justify-between pt-4 mt-auto border-t border-border gap-3">
                       <span className="text-xl font-bold text-primary whitespace-nowrap">
-                        {formatPrice(product.price)}
+                        {formatPrice(item.price)}
                       </span>
-                      <Button 
-                        size="sm" 
-                        className="gap-2 flex-shrink-0"
-                        onClick={() => addToCart(product.id)}
-                        disabled={addingToCart === product.id || product.stock_quantity === 0}
-                      >
-                        {addingToCart === product.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <ShoppingCart className="h-4 w-4" />
-                        )}
-                        <span className="hidden sm:inline">
-                          {product.stock_quantity === 0 ? "Out of Stock" : "Add to Cart"}
-                        </span>
-                        <span className="sm:hidden">
-                          {product.stock_quantity === 0 ? "Out" : "Add"}
-                        </span>
-                      </Button>
+                      {"type" in item && item.type === "course" ? (
+                        <Button 
+                          size="sm" 
+                          className="gap-2 flex-shrink-0"
+                          onClick={() => navigate(`/course/${item.id}`)}
+                        >
+                          <BookOpen className="h-4 w-4" />
+                          <span className="hidden sm:inline">View Course</span>
+                          <span className="sm:hidden">View</span>
+                        </Button>
+                      ) : (
+                        <Button 
+                          size="sm" 
+                          className="gap-2 flex-shrink-0"
+                          onClick={() => addToCart(item.id)}
+                          disabled={addingToCart === item.id || ("stock_quantity" in item && item.stock_quantity === 0)}
+                        >
+                          {addingToCart === item.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <ShoppingCart className="h-4 w-4" />
+                          )}
+                          <span className="hidden sm:inline">
+                            {("stock_quantity" in item && item.stock_quantity === 0) ? "Out of Stock" : "Add to Cart"}
+                          </span>
+                          <span className="sm:hidden">
+                            {("stock_quantity" in item && item.stock_quantity === 0) ? "Out" : "Add"}
+                          </span>
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

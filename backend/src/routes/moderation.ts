@@ -1,5 +1,5 @@
 import express from 'express';
-import { pool } from '../config/database.js';
+import { supabase } from '../config/supabase.js';
 import { authenticate, AuthRequest, requireRole } from '../middleware/auth.js';
 import { notificationService } from '../services/notifications.js';
 
@@ -16,30 +16,42 @@ router.post('/report', authenticate, async (req: AuthRequest, res) => {
       return res.status(400).json({ error: 'Content type, ID, and reason are required' });
     }
 
-    const result = await pool.query(
-      `INSERT INTO moderation_reports (
-        reporter_id, content_type, content_id, reason, description, status
-      ) VALUES ($1, $2, $3, $4, $5, 'pending')
-      RETURNING *`,
-      [req.userId, contentType, contentId, reason, description || null]
-    );
+    const { data, error } = await supabase
+      .from('moderation_reports')
+      .insert({
+        reporter_id: req.userId,
+        content_type: contentType,
+        content_id: contentId,
+        reason,
+        description: description || null,
+        status: 'pending',
+      })
+      .select()
+      .single();
 
-    // Notify admins
-    const adminResult = await pool.query(
-      `SELECT user_id FROM user_roles WHERE role = 'admin'`
-    );
-
-    for (const admin of adminResult.rows) {
-      await notificationService.createNotification(
-        admin.user_id,
-        'content_reported',
-        'New Content Report',
-        `A ${contentType} has been reported: ${reason}`,
-        { report_id: result.rows[0].id, content_type: contentType, content_id: contentId }
-      );
+    if (error) {
+      throw error;
     }
 
-    res.status(201).json(result.rows[0]);
+    // Notify admins
+    const { data: admins } = await supabase
+      .from('user_roles')
+      .select('user_id')
+      .eq('role', 'admin');
+
+    if (admins) {
+      for (const admin of admins) {
+        await notificationService.createNotification(
+          admin.user_id,
+          'content_reported',
+          'New Content Report',
+          `A ${contentType} has been reported: ${reason}`,
+          { report_id: data.id, content_type: contentType, content_id: contentId }
+        );
+      }
+    }
+
+    res.status(201).json(data);
   } catch (error: any) {
     console.error('Report content error:', error);
     res.status(500).json({ error: 'Failed to report content' });
@@ -53,35 +65,37 @@ router.get('/', authenticate, requireRole('admin'), async (req: AuthRequest, res
   try {
     const { status, contentType, limit = 50, offset = 0 } = req.query;
 
-    let query = `
-      SELECT 
-        mr.*,
-        p1.display_name as reporter_name,
-        p2.display_name as moderator_name
-      FROM moderation_reports mr
-      LEFT JOIN profiles p1 ON mr.reporter_id = p1.user_id
-      LEFT JOIN profiles p2 ON mr.moderator_id = p2.user_id
-      WHERE 1=1
-    `;
-    const params: any[] = [];
-    let paramCount = 1;
+    let query = supabase
+      .from('moderation_reports')
+      .select(`
+        *,
+        reporter:profiles!moderation_reports_reporter_id_fkey(display_name),
+        moderator:profiles!moderation_reports_moderator_id_fkey(display_name)
+      `)
+      .order('created_at', { ascending: false })
+      .range(parseInt(offset as string), parseInt(offset as string) + parseInt(limit as string) - 1);
 
     if (status) {
-      query += ` AND mr.status = $${paramCount++}`;
-      params.push(status);
+      query = query.eq('status', status as string);
     }
-
     if (contentType) {
-      query += ` AND mr.content_type = $${paramCount++}`;
-      params.push(contentType);
+      query = query.eq('content_type', contentType as string);
     }
 
-    query += ` ORDER BY mr.created_at DESC LIMIT $${paramCount++} OFFSET $${paramCount++}`;
-    params.push(parseInt(limit as string), parseInt(offset as string));
+    const { data, error } = await query;
 
-    const result = await pool.query(query, params);
+    if (error) {
+      throw error;
+    }
 
-    res.json(result.rows);
+    // Transform to match expected format
+    const transformed = (data || []).map((mr: any) => ({
+      ...mr,
+      reporter_name: mr.reporter?.display_name,
+      moderator_name: mr.moderator?.display_name,
+    }));
+
+    res.json(transformed);
   } catch (error: any) {
     console.error('Get reports error:', error);
     res.status(500).json({ error: 'Failed to get reports' });
@@ -101,61 +115,72 @@ router.post('/:reportId/action', authenticate, requireRole('admin'), async (req:
     }
 
     // Get report
-    const reportResult = await pool.query(
-      'SELECT * FROM moderation_reports WHERE id = $1',
-      [reportId]
-    );
+    const { data: report, error: reportError } = await supabase
+      .from('moderation_reports')
+      .select('*')
+      .eq('id', reportId)
+      .single();
 
-    if (reportResult.rows.length === 0) {
+    if (reportError || !report) {
       return res.status(404).json({ error: 'Report not found' });
     }
 
-    const report = reportResult.rows[0];
-
     // Create moderation action
-    const actionResult = await pool.query(
-      `INSERT INTO moderation_actions (
-        report_id, moderator_id, action_type, content_type, content_id, reason, duration_days
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING *`,
-      [
-        reportId,
-        req.userId,
-        actionType,
-        report.content_type,
-        report.content_id,
+    const { data: action, error: actionError } = await supabase
+      .from('moderation_actions')
+      .insert({
+        report_id: reportId,
+        moderator_id: req.userId,
+        action_type: actionType,
+        content_type: report.content_type,
+        content_id: report.content_id,
         reason,
-        durationDays ? parseInt(durationDays) : null,
-      ]
-    );
+        duration_days: durationDays ? parseInt(durationDays) : null,
+      })
+      .select()
+      .single();
+
+    if (actionError || !action) {
+      throw actionError;
+    }
 
     // Update report status
-    await pool.query(
-      `UPDATE moderation_reports
-       SET status = 'resolved',
-           moderator_id = $1,
-           moderator_notes = $2,
-           action_taken = $3,
-           updated_at = now()
-       WHERE id = $4`,
-      [req.userId, notes || null, actionType, reportId]
-    );
+    await supabase
+      .from('moderation_reports')
+      .update({
+        status: 'resolved',
+        moderator_id: req.userId,
+        moderator_notes: notes || null,
+        action_taken: actionType,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', reportId);
 
     // Apply action based on type
     if (actionType === 'delete') {
       // Delete content based on type
       if (report.content_type === 'product') {
-        await pool.query('UPDATE products SET is_active = false WHERE id = $1', [report.content_id]);
+        await supabase
+          .from('products')
+          .update({ is_active: false })
+          .eq('id', report.content_id);
       } else if (report.content_type === 'post') {
-        await pool.query('DELETE FROM social_posts WHERE id = $1', [report.content_id]);
+        await supabase
+          .from('social_posts')
+          .delete()
+          .eq('id', report.content_id);
       }
       // Add more content types as needed
     } else if (actionType === 'suspend_user' || actionType === 'ban_user') {
       // Get content owner
       let ownerId = null;
       if (report.content_type === 'product') {
-        const productResult = await pool.query('SELECT creator_id FROM products WHERE id = $1', [report.content_id]);
-        ownerId = productResult.rows[0]?.creator_id;
+        const { data: product } = await supabase
+          .from('products')
+          .select('creator_id')
+          .eq('id', report.content_id)
+          .single();
+        ownerId = product?.creator_id;
       }
 
       if (ownerId) {
@@ -171,7 +196,7 @@ router.post('/:reportId/action', authenticate, requireRole('admin'), async (req:
       }
     }
 
-    res.json(actionResult.rows[0]);
+    res.json(action);
   } catch (error: any) {
     console.error('Take action error:', error);
     res.status(500).json({ error: 'Failed to take action' });
@@ -183,11 +208,17 @@ router.post('/:reportId/action', authenticate, requireRole('admin'), async (req:
  */
 router.get('/rules', authenticate, requireRole('admin'), async (req: AuthRequest, res) => {
   try {
-    const result = await pool.query(
-      'SELECT * FROM moderation_rules WHERE is_active = true ORDER BY created_at DESC'
-    );
+    const { data, error } = await supabase
+      .from('moderation_rules')
+      .select('*')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false });
 
-    res.json(result.rows);
+    if (error) {
+      throw error;
+    }
+
+    res.json(data || []);
   } catch (error: any) {
     console.error('Get rules error:', error);
     res.status(500).json({ error: 'Failed to get rules' });
@@ -205,14 +236,22 @@ router.post('/rules', authenticate, requireRole('admin'), async (req: AuthReques
       return res.status(400).json({ error: 'Rule type, pattern, and action are required' });
     }
 
-    const result = await pool.query(
-      `INSERT INTO moderation_rules (rule_type, pattern, action, severity)
-       VALUES ($1, $2, $3, $4)
-       RETURNING *`,
-      [ruleType, pattern, action, severity || 'medium']
-    );
+    const { data, error } = await supabase
+      .from('moderation_rules')
+      .insert({
+        rule_type: ruleType,
+        pattern,
+        action,
+        severity: severity || 'medium',
+      })
+      .select()
+      .single();
 
-    res.status(201).json(result.rows[0]);
+    if (error) {
+      throw error;
+    }
+
+    res.status(201).json(data);
   } catch (error: any) {
     console.error('Create rule error:', error);
     res.status(500).json({ error: 'Failed to create rule' });
@@ -220,4 +259,3 @@ router.post('/rules', authenticate, requireRole('admin'), async (req: AuthReques
 });
 
 export default router;
-

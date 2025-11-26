@@ -1,93 +1,53 @@
-import { useState, useEffect } from "react";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { LoadingScreen } from "@/components/LoadingScreen";
 import { AuthProvider } from "@/contexts/AuthContext";
-import Index from "./pages/Index";
-import Events from "./pages/Events";
-import Marketplace from "./pages/Marketplace";
-import Services from "./pages/Services";
-import Music from "./pages/Music";
-import Auth from "./pages/Auth";
-import Dashboard from "./pages/Dashboard";
-import FreelancerDashboard from "./pages/FreelancerDashboard";
-import LodgingDashboard from "./pages/LodgingDashboard";
-import RestaurantDashboard from "./pages/RestaurantDashboard";
-import EducatorDashboard from "./pages/EducatorDashboard";
-import JournalistDashboard from "./pages/JournalistDashboard";
-import ArtisanDashboard from "./pages/ArtisanDashboard";
-import EmployerDashboard from "./pages/EmployerDashboard";
-import EventOrganizerDashboard from "./pages/EventOrganizerDashboard";
-import CreatorProfile from "./pages/CreatorProfile";
-import Messages from "./pages/Messages";
-import Booking from "./pages/Booking";
-import Admin from "./pages/Admin";
-import Cart from "./pages/Cart";
-import ManageProducts from "./pages/ManageProducts";
-import TermsOfService from "./pages/TermsOfService";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import CookiePolicy from "./pages/CookiePolicy";
-import About from "./pages/About";
-import HowItWorks from "./pages/HowItWorks";
-import FeaturedCreators from "./pages/FeaturedCreators";
-import SuccessStories from "./pages/SuccessStories";
-import Blog from "./pages/Blog";
-import Jobs from "./pages/Jobs";
-import Education from "./pages/Education";
-import Orders from "./pages/Orders";
-import Refunds from "./pages/Refunds";
-import Disputes from "./pages/Disputes";
-import Notifications from "./pages/Notifications";
-import SocialFeed from "./pages/SocialFeed";
-import Wishlist from "./pages/Wishlist";
-import Analytics from "./pages/Analytics";
-import AdvancedSearch from "./pages/AdvancedSearch";
-import TwoFactorAuth from "./pages/TwoFactorAuth";
-import ContentModeration from "./pages/ContentModeration";
-import NotFound from "./pages/NotFound";
-import Earnings from "./pages/Earnings";
-import { api } from "@/lib/api";
+import Index from "@/pages/Index";
+import Events from "@/pages/Events";
+import Marketplace from "@/pages/Marketplace";
+import Services from "@/pages/Services";
+import Music from "@/pages/Music";
+import Auth from "@/pages/Auth";
+import Dashboard from "@/pages/Dashboard";
+import FreelancerDashboard from "@/pages/FreelancerDashboard";
+import LodgingDashboard from "@/pages/LodgingDashboard";
+import RestaurantDashboard from "@/pages/RestaurantDashboard";
+import EducatorDashboard from "@/pages/EducatorDashboard";
+import JournalistDashboard from "@/pages/JournalistDashboard";
+import ArtisanDashboard from "@/pages/ArtisanDashboard";
+import EmployerDashboard from "@/pages/EmployerDashboard";
+import EventOrganizerDashboard from "@/pages/EventOrganizerDashboard";
+import CreatorProfile from "@/pages/CreatorProfile";
+import Cart from "@/pages/Cart";
+import Booking from "@/pages/Booking";
+import Restaurants from "@/pages/Restaurants";
+import Lodging from "@/pages/Lodging";
+import ArtisanServices from "@/pages/ArtisanServices";
+import Blog from "@/pages/Blog";
+import Messages from "@/pages/Messages";
+import AdvancedSearch from "@/pages/AdvancedSearch";
+import TermsOfService from "@/pages/TermsOfService";
+import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import CookiePolicy from "@/pages/CookiePolicy";
+import Analytics from "@/pages/Analytics";
+import TwoFactorAuth from "@/pages/TwoFactorAuth";
+import About from "@/pages/About";
+import HowItWorks from "@/pages/HowItWorks";
+import Earnings from "@/pages/Earnings";
+import NotFound from "@/pages/NotFound";
+import CourseViewer from "@/pages/CourseViewer";
+import MediaTest from "@/pages/MediaTest";
+import MusicianDashboard from "@/pages/MusicianDashboard";
+import MusicTest from "@/pages/MusicTest";
 
-// Missing imports that were referenced in routes
-import Restaurants from "./pages/Restaurants";
-import Lodging from "./pages/Lodging";
-import ArtisanServices from "./pages/ArtisanServices";
-
-const queryClient = new QueryClient();
-
-const App = () => {
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const initAuth = async () => {
-      try {
-        const currentUser = await api.getCurrentUser();
-        setUser(currentUser);
-      } catch (error) {
-        console.error('Auth initialization error:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    initAuth();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse text-2xl font-bold">Loading BLINNO...</div>
-      </div>
-    );
-  }
-
+function App() {
   return (
-    <AuthProvider>
-      <Router>
+    <Router
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}
+    >
+      <AuthProvider>
         <div className="min-h-screen bg-background">
           <Routes>
             <Route path="/" element={<Index />} />
@@ -97,7 +57,17 @@ const App = () => {
             <Route path="/music" element={<Music />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard/*" element={<Dashboard />} />
+            <Route path="/freelancer-dashboard/*" element={<FreelancerDashboard />} />
+            <Route path="/lodging-dashboard/*" element={<LodgingDashboard />} />
+            <Route path="/restaurant-dashboard/*" element={<RestaurantDashboard />} />
+            <Route path="/educator-dashboard/*" element={<EducatorDashboard />} />
+            <Route path="/journalist-dashboard/*" element={<JournalistDashboard />} />
+            <Route path="/artisan-dashboard/*" element={<ArtisanDashboard />} />
+            <Route path="/employer-dashboard/*" element={<EmployerDashboard />} />
+            <Route path="/event-organizer-dashboard/*" element={<EventOrganizerDashboard />} />
+            <Route path="/musician-dashboard/*" element={<MusicianDashboard />} />
             <Route path="/profile/:userId" element={<CreatorProfile />} />
+            <Route path="/creator/:id" element={<CreatorProfile />} />
             <Route path="/portfolios" element={<Marketplace />} />
             <Route path="/portfolio/:id" element={<CreatorProfile />} />
             <Route path="/products" element={<Marketplace />} />
@@ -120,16 +90,22 @@ const App = () => {
             <Route path="/search" element={<AdvancedSearch />} />
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/cookies" element={<CookiePolicy />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/2fa" element={<TwoFactorAuth />} />
             <Route path="/contact" element={<About />} />
             <Route path="/about" element={<About />} />
             <Route path="/help" element={<HowItWorks />} />
             <Route path="/settings" element={<Dashboard />} />
             <Route path="/earnings" element={<Earnings />} />
+            <Route path="/course/:courseId" element={<CourseViewer />} />
+            <Route path="/media-test" element={<MediaTest />} />
+            <Route path="/music-test" element={<MusicTest />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </div>
-      </Router>
-    </AuthProvider>
+      </AuthProvider>
+    </Router>
   );
 };
 

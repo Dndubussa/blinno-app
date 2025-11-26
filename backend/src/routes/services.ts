@@ -1,5 +1,5 @@
 import express from 'express';
-import { pool } from '../config/database.js';
+import { supabase } from '../config/supabase.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -9,175 +9,255 @@ router.get('/', async (req, res) => {
   try {
     const { category, location, serviceType, search } = req.query;
 
-    // Build query for freelancer services
-    let freelancerQuery = `
-      SELECT 
-        fs.id,
-        fs.user_id as creator_id,
-        fs.title,
-        fs.description,
-        fs.category,
-        fs.location,
-        fs.hourly_rate as price,
-        'hourly' as pricing_type,
-        0 as rating,
-        0 as reviews_count,
-        fs.created_at,
-        fs.updated_at,
-        p.display_name,
-        p.avatar_url,
-        'freelancer' as service_type
-      FROM freelancer_services fs
-      LEFT JOIN profiles p ON fs.user_id = p.user_id
-      WHERE fs.is_active = true
-    `;
+    // Fetch from each service type separately
+    const promises: Promise<any>[] = [];
 
-    // Build query for artisan services
-    let artisanQuery = `
-      SELECT 
-        asv.id,
-        asv.user_id as creator_id,
-        asv.title,
-        asv.description,
-        asv.category,
-        asv.location,
-        asv.hourly_rate as price,
-        'hourly' as pricing_type,
-        0 as rating,
-        0 as reviews_count,
-        asv.created_at,
-        asv.updated_at,
-        p.display_name,
-        p.avatar_url,
-        'artisan' as service_type
-      FROM artisan_services asv
-      LEFT JOIN profiles p ON asv.user_id = p.user_id
-      WHERE asv.status = 'active'
-    `;
+    // Freelancer services
+    if (!serviceType || serviceType === 'freelancer' || serviceType === 'all') {
+      let query = supabase
+        .from('freelancer_services')
+        .select(`
+          id,
+          user_id,
+          title,
+          description,
+          category,
+          location,
+          hourly_rate,
+          created_at,
+          updated_at,
+          profiles!freelancer_services_user_id_fkey(display_name, avatar_url)
+        `)
+        .eq('is_active', true);
 
-    // Build query for restaurant services (menu items)
-    let restaurantQuery = `
-      SELECT 
-        mi.id,
-        r.owner_id as creator_id,
-        mi.name as title,
-        mi.description,
-        'Food & Dining' as category,
-        r.city as location,
-        mi.price,
-        'fixed' as pricing_type,
-        0 as rating,
-        0 as reviews_count,
-        mi.created_at,
-        mi.updated_at,
-        r.name as display_name,
-        null as avatar_url,
-        'restaurant' as service_type
-      FROM menu_items mi
-      JOIN restaurants r ON mi.restaurant_id = r.id
-      WHERE mi.is_available = true
-    `;
+      if (category && category !== 'all') {
+        query = query.eq('category', category as string);
+      }
+      if (location && location !== 'all') {
+        query = query.eq('location', location as string);
+      }
+      if (search) {
+        query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`);
+      }
 
-    // Build query for event services
-    let eventQuery = `
-      SELECT 
-        e.id,
-        e.organizer_id as creator_id,
-        e.title,
-        e.description,
-        'Events' as category,
-        e.location,
-        e.ticket_price as price,
-        'fixed' as pricing_type,
-        0 as rating,
-        0 as reviews_count,
-        e.created_at,
-        e.updated_at,
-        p.display_name,
-        p.avatar_url,
-        'event' as service_type
-      FROM events e
-      LEFT JOIN profiles p ON e.organizer_id = p.user_id
-      WHERE e.status = 'published'
-    `;
-
-    // Build query for lodging services (rooms)
-    let lodgingQuery = `
-      SELECT 
-        lr.id,
-        lp.owner_id as creator_id,
-        CONCAT(lp.name, ' - ', lr.room_type) as title,
-        lr.description,
-        'Lodging' as category,
-        lp.location,
-        lr.price_per_night as price,
-        'daily' as pricing_type,
-        0 as rating,
-        0 as reviews_count,
-        lr.created_at,
-        lr.updated_at,
-        lp.name as display_name,
-        null as avatar_url,
-        'lodging' as service_type
-      FROM lodging_rooms lr
-      JOIN lodging_properties lp ON lr.property_id = lp.id
-      WHERE lr.availability_status = 'available'
-    `;
-
-    // Add filters to all queries
-    const filters = [];
-    const params: any[] = [];
-    let paramIndex = 1;
-
-    if (category && category !== 'all') {
-      filters.push(`category = $${paramIndex}`);
-      params.push(category);
-      paramIndex++;
+      promises.push(
+        query.then(({ data }) => (data || []).map((fs: any) => ({
+          id: fs.id,
+          creator_id: fs.user_id,
+          title: fs.title,
+          description: fs.description,
+          category: fs.category,
+          location: fs.location,
+          price: fs.hourly_rate,
+          pricing_type: 'hourly',
+          rating: 0,
+          reviews_count: 0,
+          created_at: fs.created_at,
+          updated_at: fs.updated_at,
+          display_name: fs.profiles?.display_name,
+          avatar_url: fs.profiles?.avatar_url,
+          service_type: 'freelancer',
+        })))
+      );
     }
 
-    if (location && location !== 'all') {
-      filters.push(`location = $${paramIndex}`);
-      params.push(location);
-      paramIndex++;
+    // Artisan services
+    if (!serviceType || serviceType === 'artisan' || serviceType === 'all') {
+      let query = supabase
+        .from('artisan_services')
+        .select(`
+          id,
+          user_id,
+          title,
+          description,
+          category,
+          location,
+          hourly_rate,
+          created_at,
+          updated_at,
+          profiles!artisan_services_user_id_fkey(display_name, avatar_url)
+        `)
+        .eq('status', 'active');
+
+      if (category && category !== 'all') {
+        query = query.eq('category', category as string);
+      }
+      if (location && location !== 'all') {
+        query = query.eq('location', location as string);
+      }
+      if (search) {
+        query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`);
+      }
+
+      promises.push(
+        query.then(({ data }) => (data || []).map((as: any) => ({
+          id: as.id,
+          creator_id: as.user_id,
+          title: as.title,
+          description: as.description,
+          category: as.category,
+          location: as.location,
+          price: as.hourly_rate,
+          pricing_type: 'hourly',
+          rating: 0,
+          reviews_count: 0,
+          created_at: as.created_at,
+          updated_at: as.updated_at,
+          display_name: as.profiles?.display_name,
+          avatar_url: as.profiles?.avatar_url,
+          service_type: 'artisan',
+        })))
+      );
     }
 
-    if (serviceType && serviceType !== 'all') {
-      filters.push(`service_type = $${paramIndex}`);
-      params.push(serviceType);
-      paramIndex++;
+    // Restaurant services (menu items)
+    if (!serviceType || serviceType === 'restaurant' || serviceType === 'all') {
+      let query = supabase
+        .from('menu_items')
+        .select(`
+          id,
+          restaurant_id,
+          name,
+          description,
+          price,
+          created_at,
+          updated_at,
+          restaurants!menu_items_restaurant_id_fkey(owner_id, name, city)
+        `)
+        .eq('is_available', true);
+
+      if (location && location !== 'all') {
+        query = query.eq('restaurants.city', location as string);
+      }
+      if (search) {
+        query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
+      }
+
+      promises.push(
+        query.then(({ data }) => (data || []).map((mi: any) => ({
+          id: mi.id,
+          creator_id: mi.restaurants?.owner_id,
+          title: mi.name,
+          description: mi.description,
+          category: 'Food & Dining',
+          location: mi.restaurants?.city,
+          price: mi.price,
+          pricing_type: 'fixed',
+          rating: 0,
+          reviews_count: 0,
+          created_at: mi.created_at,
+          updated_at: mi.updated_at,
+          display_name: mi.restaurants?.name,
+          avatar_url: null,
+          service_type: 'restaurant',
+        })))
+      );
     }
 
-    if (search) {
-      filters.push(`(title ILIKE $${paramIndex} OR description ILIKE $${paramIndex})`);
-      params.push(`%${search}%`);
-      paramIndex++;
+    // Event services
+    if (!serviceType || serviceType === 'event' || serviceType === 'all') {
+      let query = supabase
+        .from('events')
+        .select(`
+          id,
+          organizer_id,
+          title,
+          description,
+          location,
+          ticket_price,
+          created_at,
+          updated_at,
+          profiles!events_organizer_id_fkey(display_name, avatar_url)
+        `)
+        .eq('status', 'published');
+
+      if (location && location !== 'all') {
+        query = query.eq('location', location as string);
+      }
+      if (search) {
+        query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`);
+      }
+
+      promises.push(
+        query.then(({ data }) => (data || []).map((e: any) => ({
+          id: e.id,
+          creator_id: e.organizer_id,
+          title: e.title,
+          description: e.description,
+          category: 'Events',
+          location: e.location,
+          price: e.ticket_price,
+          pricing_type: 'fixed',
+          rating: 0,
+          reviews_count: 0,
+          created_at: e.created_at,
+          updated_at: e.updated_at,
+          display_name: e.profiles?.display_name,
+          avatar_url: e.profiles?.avatar_url,
+          service_type: 'event',
+        })))
+      );
     }
 
-    const filterClause = filters.length > 0 ? ` AND ${filters.join(' AND ')}` : '';
+    // Lodging services (rooms)
+    if (!serviceType || serviceType === 'lodging' || serviceType === 'all') {
+      let query = supabase
+        .from('lodging_rooms')
+        .select(`
+          id,
+          property_id,
+          room_type,
+          description,
+          price_per_night,
+          created_at,
+          updated_at,
+          lodging_properties!lodging_rooms_property_id_fkey(owner_id, name, location)
+        `)
+        .eq('availability_status', 'available');
 
-    freelancerQuery += filterClause;
-    artisanQuery += filterClause;
-    restaurantQuery += filterClause;
-    eventQuery += filterClause;
-    lodgingQuery += filterClause;
+      if (location && location !== 'all') {
+        query = query.eq('lodging_properties.location', location as string);
+      }
+      if (search) {
+        query = query.or(`room_type.ilike.%${search}%,description.ilike.%${search}%`);
+      }
 
-    // Combine all queries
-    const combinedQuery = `
-      ${freelancerQuery}
-      UNION ALL
-      ${artisanQuery}
-      UNION ALL
-      ${restaurantQuery}
-      UNION ALL
-      ${eventQuery}
-      UNION ALL
-      ${lodgingQuery}
-      ORDER BY created_at DESC
-      LIMIT 100
-    `;
+      promises.push(
+        query.then(({ data }) => (data || []).map((lr: any) => ({
+          id: lr.id,
+          creator_id: lr.lodging_properties?.owner_id,
+          title: `${lr.lodging_properties?.name} - ${lr.room_type}`,
+          description: lr.description,
+          category: 'Lodging',
+          location: lr.lodging_properties?.location,
+          price: lr.price_per_night,
+          pricing_type: 'daily',
+          rating: 0,
+          reviews_count: 0,
+          created_at: lr.created_at,
+          updated_at: lr.updated_at,
+          display_name: lr.lodging_properties?.name,
+          avatar_url: null,
+          service_type: 'lodging',
+        })))
+      );
+    }
 
-    const result = await pool.query(combinedQuery, params);
-    res.json(result.rows);
+    // Execute all queries in parallel
+    const results = await Promise.all(promises);
+    
+    // Combine and sort all results
+    const allServices = results.flat().sort((a, b) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+
+    // Apply category filter if needed (already filtered in queries, but double-check)
+    const filtered = category && category !== 'all' 
+      ? allServices.filter(s => s.category === category)
+      : allServices;
+
+    // Limit to 100
+    res.json(filtered.slice(0, 100));
   } catch (error: any) {
     console.error('Get services error:', error);
     res.status(500).json({ error: 'Failed to get services' });

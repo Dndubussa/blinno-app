@@ -1,10 +1,11 @@
 import express from 'express';
-import { pool } from '../config/database.js';
+import { supabase } from '../config/supabase.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import ClickPesaService, { PaymentRequest } from '../services/clickpesa.js';
 import { platformFees } from '../services/platformFees.js';
 import { notificationService } from '../services/notifications.js';
 import dotenv from 'dotenv';
+import { userPreferences } from '../services/userPreferences.js';
 
 dotenv.config();
 
@@ -21,37 +22,52 @@ router.get('/', authenticate, async (req: AuthRequest, res) => {
   try {
     const { type } = req.query; // 'user' or 'creator'
 
-    let query = '';
+    let query = supabase
+      .from('bookings')
+      .select(`
+        *,
+        user:profiles!bookings_user_id_fkey(display_name, user_id),
+        creator:profiles!bookings_creator_id_fkey(display_name, user_id)
+      `)
+      .order('created_at', { ascending: false });
+
     if (type === 'creator') {
-      query = `
-        SELECT b.*, 
-               u1.email as user_email, p1.display_name as user_name,
-               u2.email as creator_email, p2.display_name as creator_name
-        FROM bookings b
-        JOIN users u1 ON b.user_id = u1.id
-        JOIN profiles p1 ON b.user_id = p1.user_id
-        JOIN users u2 ON b.creator_id = u2.id
-        JOIN profiles p2 ON b.creator_id = p2.user_id
-        WHERE b.creator_id = $1
-        ORDER BY b.created_at DESC
-      `;
+      query = query.eq('creator_id', req.userId);
     } else {
-      query = `
-        SELECT b.*, 
-               u1.email as user_email, p1.display_name as user_name,
-               u2.email as creator_email, p2.display_name as creator_name
-        FROM bookings b
-        JOIN users u1 ON b.user_id = u1.id
-        JOIN profiles p1 ON b.user_id = p1.user_id
-        JOIN users u2 ON b.creator_id = u2.id
-        JOIN profiles p2 ON b.creator_id = p2.user_id
-        WHERE b.user_id = $1
-        ORDER BY b.created_at DESC
-      `;
+      query = query.eq('user_id', req.userId);
     }
 
-    const result = await pool.query(query, [req.userId]);
-    res.json(result.rows);
+    const { data: bookings, error } = await query;
+
+    if (error) {
+      throw error;
+    }
+
+    // Get user emails from auth
+    const userIds = new Set<string>();
+    (bookings || []).forEach((b: any) => {
+      userIds.add(b.user_id);
+      userIds.add(b.creator_id);
+    });
+
+    const emails: Record<string, string> = {};
+    for (const userId of userIds) {
+      const { data: user } = await supabase.auth.admin.getUserById(userId);
+      if (user?.user?.email) {
+        emails[userId] = user.user.email;
+      }
+    }
+
+    // Transform to match expected format
+    const result = (bookings || []).map((b: any) => ({
+      ...b,
+      user_email: emails[b.user_id] || null,
+      user_name: b.user?.display_name || null,
+      creator_email: emails[b.creator_id] || null,
+      creator_name: b.creator?.display_name || null,
+    }));
+
+    res.json(result);
   } catch (error: any) {
     console.error('Get bookings error:', error);
     res.status(500).json({ error: 'Failed to get bookings' });
@@ -79,22 +95,24 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
       });
     }
 
-    const result = await pool.query(
-      `INSERT INTO bookings (user_id, creator_id, service_type, start_date, end_date, total_amount, notes, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending')
-       RETURNING *`,
-      [
-        req.userId,
-        creatorId,
-        serviceType,
-        startDate,
-        endDate || null,
-        totalAmount ? parseFloat(totalAmount) : null,
-        notes || null
-      ]
-    );
+    const { data: booking, error } = await supabase
+      .from('bookings')
+      .insert({
+        user_id: req.userId,
+        creator_id: creatorId,
+        service_type: serviceType,
+        start_date: startDate,
+        end_date: endDate || null,
+        total_amount: totalAmount ? parseFloat(totalAmount) : null,
+        notes: notes || null,
+        status: 'pending',
+      })
+      .select()
+      .single();
 
-    const booking = result.rows[0];
+    if (error) {
+      throw error;
+    }
 
     // Notify creator about new booking request
     await notificationService.notifyBooking(creatorId, booking.id, 'requested');
@@ -113,29 +131,33 @@ router.put('/:id', authenticate, async (req: AuthRequest, res) => {
     const { status } = req.body;
 
     // Check if user has permission (either user or creator)
-    const checkResult = await pool.query(
-      'SELECT user_id, creator_id FROM bookings WHERE id = $1',
-      [id]
-    );
+    const { data: existing, error: checkError } = await supabase
+      .from('bookings')
+      .select('user_id, creator_id')
+      .eq('id', id)
+      .single();
 
-    if (checkResult.rows.length === 0) {
+    if (checkError || !existing) {
       return res.status(404).json({ error: 'Booking not found' });
     }
 
-    const existingBooking = checkResult.rows[0];
-    if (existingBooking.user_id !== req.userId && existingBooking.creator_id !== req.userId) {
+    if (existing.user_id !== req.userId && existing.creator_id !== req.userId) {
       return res.status(403).json({ error: 'Not authorized' });
     }
 
-    const result = await pool.query(
-      `UPDATE bookings
-       SET status = $1, updated_at = now()
-       WHERE id = $2
-       RETURNING *`,
-      [status, id]
-    );
+    const { data: booking, error } = await supabase
+      .from('bookings')
+      .update({
+        status,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select()
+      .single();
 
-    const booking = result.rows[0];
+    if (error) {
+      throw error;
+    }
 
     // Notify user about booking status change
     if (status === 'confirmed') {
@@ -165,66 +187,83 @@ router.post('/:id/payment', authenticate, async (req: AuthRequest, res) => {
       return res.status(400).json({ error: 'Customer phone number is required' });
     }
 
-    // Get booking details
-    const bookingResult = await pool.query(
-      `SELECT b.*, u.email, p.display_name, p.phone
-       FROM bookings b
-       JOIN users u ON b.user_id = u.id
-       LEFT JOIN profiles p ON b.user_id = p.user_id
-       WHERE b.id = $1 AND b.user_id = $2`,
-      [id, req.userId]
-    );
+    // Check if user is authenticated
+    if (!req.userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
 
-    if (bookingResult.rows.length === 0) {
+    // Get user's preferred currency
+    const userPrefs = await userPreferences.getUserPreferences(req.userId);
+    const currency = userPrefs.currency || 'TZS';
+
+    // Get booking details
+    const { data: booking, error: bookingError } = await supabase
+      .from('bookings')
+      .select(`
+        *,
+        user:profiles!bookings_user_id_fkey(display_name, phone)
+      `)
+      .eq('id', id)
+      .eq('user_id', req.userId)
+      .single();
+
+    if (bookingError || !booking) {
       return res.status(404).json({ error: 'Booking not found' });
     }
 
-    const booking = bookingResult.rows[0];
+    // Get user email
+    const { data: authUser } = await supabase.auth.admin.getUserById(req.userId);
 
     if (!booking.total_amount || booking.total_amount <= 0) {
       return res.status(400).json({ error: 'Booking has no amount to pay' });
     }
 
-    // Calculate fees
-    const feeCalculation = platformFees.calculateServiceBookingFee(parseFloat(booking.total_amount));
+    // Calculate fees with user's currency
+    const feeCalculation = platformFees.calculateServiceBookingFee(parseFloat(booking.total_amount), undefined, currency);
 
-    // Create payment record
-    const paymentResult = await pool.query(
-      `INSERT INTO payments (order_id, user_id, amount, currency, status, payment_method, payment_type)
-       VALUES ($1, $2, $3, $4, 'pending', 'clickpesa', 'service_booking')
-       RETURNING *`,
-      [id, req.userId, feeCalculation.total, 'TZS']
-    );
+    // Create payment record with user's currency
+    const { data: payment, error: paymentError } = await supabase
+      .from('payments')
+      .insert({
+        order_id: id,
+        user_id: req.userId,
+        amount: feeCalculation.total,
+        currency: currency,
+        status: 'pending',
+        payment_method: 'clickpesa',
+        payment_type: 'service_booking',
+      })
+      .select()
+      .single();
 
-    const payment = paymentResult.rows[0];
+    if (paymentError || !payment) {
+      throw paymentError;
+    }
 
     // Record platform fee
-    await pool.query(
-      `INSERT INTO platform_fees (
-        transaction_id, transaction_type, user_id, buyer_id,
-        subtotal, platform_fee, payment_processing_fee, total_fees, creator_payout, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending')`,
-      [
-        id,
-        'service_booking',
-        booking.creator_id,
-        req.userId,
-        feeCalculation.subtotal,
-        feeCalculation.platformFee,
-        feeCalculation.paymentProcessingFee,
-        feeCalculation.totalFees,
-        feeCalculation.creatorPayout,
-      ]
-    );
+    await supabase
+      .from('platform_fees')
+      .insert({
+        transaction_id: id,
+        transaction_type: 'service_booking',
+        user_id: booking.creator_id,
+        buyer_id: req.userId,
+        subtotal: feeCalculation.subtotal,
+        platform_fee: feeCalculation.platformFee,
+        payment_processing_fee: feeCalculation.paymentProcessingFee,
+        total_fees: feeCalculation.totalFees,
+        creator_payout: feeCalculation.creatorPayout,
+        status: 'pending',
+      });
 
-    // Create Click Pesa payment request
+    // Create Click Pesa payment request with user's currency
     const paymentRequest: PaymentRequest = {
       amount: feeCalculation.total,
-      currency: 'TZS',
+      currency: currency,
       orderId: `service_booking_${id}`,
       customerPhone: customerPhone,
-      customerEmail: customerEmail || booking.email,
-      customerName: customerName || booking.display_name || 'Customer',
+      customerEmail: customerEmail || authUser?.user?.email || '',
+      customerName: customerName || booking.user?.display_name || 'Customer',
       description: `Payment for service booking: ${booking.service_type}`,
       callbackUrl: `${process.env.APP_URL || 'https://www.blinno.app'}/api/payments/webhook`,
     };
@@ -232,27 +271,29 @@ router.post('/:id/payment', authenticate, async (req: AuthRequest, res) => {
     const clickPesaResponse = await clickPesa.createPayment(paymentRequest);
 
     if (!clickPesaResponse.success) {
-      await pool.query(
-        `UPDATE payments SET status = 'failed', error_message = $1 WHERE id = $2`,
-        [clickPesaResponse.error || 'Payment creation failed', payment.id]
-      );
+      await supabase
+        .from('payments')
+        .update({
+          status: 'failed',
+          error_message: clickPesaResponse.error || 'Payment creation failed',
+        })
+        .eq('id', payment.id);
+
       return res.status(400).json({
         error: clickPesaResponse.error || 'Failed to create payment',
       });
     }
 
     // Update payment with Click Pesa details
-    await pool.query(
-      `UPDATE payments 
-       SET payment_id = $1, transaction_id = $2, checkout_url = $3, status = 'initiated'
-       WHERE id = $4`,
-      [
-        clickPesaResponse.paymentId,
-        clickPesaResponse.transactionId,
-        clickPesaResponse.checkoutUrl,
-        payment.id,
-      ]
-    );
+    await supabase
+      .from('payments')
+      .update({
+        payment_id: clickPesaResponse.paymentId,
+        transaction_id: clickPesaResponse.transactionId,
+        checkout_url: clickPesaResponse.checkoutUrl,
+        status: 'initiated',
+      })
+      .eq('id', payment.id);
 
     res.json({
       success: true,
@@ -267,4 +308,3 @@ router.post('/:id/payment', authenticate, async (req: AuthRequest, res) => {
 });
 
 export default router;
-

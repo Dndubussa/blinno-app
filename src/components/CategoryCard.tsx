@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 
 interface CategoryCardProps {
+  id: string;
   icon: LucideIcon;
   title: string;
   description: string;
@@ -18,6 +19,7 @@ interface CategoryCardProps {
 }
 
 export const CategoryCard = ({ 
+  id,
   icon: Icon, 
   title, 
   description, 
@@ -43,7 +45,7 @@ export const CategoryCard = ({
   }, []);
 
   return (
-    <Card ref={cardRef} className="group relative overflow-hidden border-border bg-card hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10">
+    <Card ref={cardRef} className="group relative overflow-hidden border-border bg-card hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 h-full flex flex-col">
       {backgroundImage && (
         <>
           <div 
@@ -56,10 +58,10 @@ export const CategoryCard = ({
           <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/80 to-background/95" />
         </>
       )}
-      <div className="p-6 relative z-10">
+      <div className="p-6 relative z-10 flex flex-col flex-1">
         {badge && (
           <Badge 
-            className={`mb-3 ${
+            className={`mb-3 self-start ${
               badge.variant === "trending" 
                 ? "bg-red-500 text-white hover:bg-red-600" 
                 : "bg-accent text-accent-foreground"
@@ -69,7 +71,7 @@ export const CategoryCard = ({
           </Badge>
         )}
         
-        <div className="flex items-start gap-4 mb-4">
+        <div className="flex items-start gap-4 mb-4 flex-1">
           <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-colors backdrop-blur-sm">
             <Icon className="h-6 w-6 text-primary" />
           </div>
@@ -82,7 +84,7 @@ export const CategoryCard = ({
 
         <Button 
           variant="ghost" 
-          className="w-full justify-between group-hover:text-primary transition-colors"
+          className="w-full justify-between group-hover:text-primary transition-colors mt-auto"
           asChild
         >
           <a href={href}>

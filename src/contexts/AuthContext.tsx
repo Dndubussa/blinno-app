@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useNavigate } from "react-router-dom";
 import { getDashboardRoute } from "@/lib/dashboardRoutes";
+import { supabase } from "@/integrations/supabase/client";
 
 interface User {
   id: string;
@@ -12,7 +13,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   profile: any | null;
-  signUp: (email: string, password: string, displayName: string, role?: 'user' | 'creator' | 'freelancer' | 'seller' | 'lodging' | 'restaurant' | 'educator' | 'journalist' | 'artisan' | 'employer' | 'event_organizer') => Promise<{ error: any }>;
+  signUp: (email: string, password: string, displayName: string, role?: 'user' | 'creator' | 'freelancer' | 'seller' | 'lodging' | 'restaurant' | 'educator' | 'journalist' | 'artisan' | 'employer' | 'event_organizer' | 'musician') => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signInWithGoogle: () => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -31,10 +32,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Check for existing session
     const checkAuth = async () => {
       try {
-        const profileData = await api.getCurrentUser();
-        if (profileData) {
-          setUser({ id: profileData.id || profileData.user_id, email: profileData.email });
-          setProfile(profileData);
+        // Check Supabase session first
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          // Get user profile from API
+          const profileData = await api.getCurrentUser();
+          if (profileData) {
+            setUser({ id: profileData.id || profileData.user_id, email: profileData.email });
+            setProfile(profileData);
+          } else {
+            // No valid session
+            setUser(null);
+            setProfile(null);
+          }
         } else {
           // No valid session
           setUser(null);
@@ -50,27 +60,71 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     checkAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUser({ id: session.user.id, email: session.user.email || '' });
+        // Fetch profile
+        api.getCurrentUser().then(profileData => {
+          setProfile(profileData);
+        });
+      } else {
+        setUser(null);
+        setProfile(null);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const signUp = async (email: string, password: string, displayName: string, role: 'user' | 'creator' | 'freelancer' | 'seller' | 'lodging' | 'restaurant' | 'educator' | 'journalist' | 'artisan' | 'employer' | 'event_organizer' = 'user') => {
+  const signUp = async (email: string, password: string, displayName: string, role: 'user' | 'creator' | 'freelancer' | 'seller' | 'lodging' | 'restaurant' | 'educator' | 'journalist' | 'artisan' | 'employer' | 'event_organizer' | 'musician' = 'user') => {
     try {
-      const result = await api.register({ email, password, displayName, role });
-      setUser(result.user);
-      // Fetch profile
-      const profileData = await api.getCurrentUser();
-      setProfile(profileData);
-      
-      // Extract primary role from roles array (prefer non-'user' role, or use the sign-up role)
-      let primaryRole: string | string[] = role;
-      if (profileData?.roles && Array.isArray(profileData.roles)) {
-        // Use the roles array directly, getDashboardRoute will handle it
-        primaryRole = profileData.roles;
+      // Sign up with Supabase
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            display_name: displayName
+          }
+        }
+      });
+
+      if (error) {
+        return { error: { message: error.message } };
       }
-      
-      // Redirect to appropriate dashboard
-      const dashboardRoute = getDashboardRoute(primaryRole);
-      navigate(dashboardRoute, { replace: true });
-      return { error: null };
+
+      if (data.user) {
+        setUser({ id: data.user.id, email: data.user.email || '' });
+        
+        // Register user with API to set role
+        try {
+          await api.register({ email, password, displayName, role });
+        } catch (apiError) {
+          console.error('API registration error:', apiError);
+        }
+        
+        // Fetch profile
+        const profileData = await api.getCurrentUser();
+        setProfile(profileData);
+        
+        // Extract primary role from roles array (prefer non-'user' role, or use the sign-up role)
+        let primaryRole: string | string[] = role;
+        if (profileData?.roles && Array.isArray(profileData.roles)) {
+          // Use the roles array directly, getDashboardRoute will handle it
+          primaryRole = profileData.roles;
+        }
+        
+        // Redirect to appropriate dashboard
+        const dashboardRoute = getDashboardRoute(primaryRole);
+        navigate(dashboardRoute, { replace: true });
+        return { error: null };
+      } else {
+        return { error: { message: 'Failed to create user' } };
+      }
     } catch (error: any) {
       return { error: { message: error.message } };
     }
@@ -78,34 +132,63 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signIn = async (email: string, password: string) => {
     try {
-      const result = await api.login(email, password);
-      setUser(result.user);
-      // Fetch profile
-      const profileData = await api.getCurrentUser();
-      setProfile(profileData);
-      
-      // Extract primary role from roles array
-      let primaryRole: string | string[] | null = null;
-      if (profileData?.roles && Array.isArray(profileData.roles)) {
-        // Use the roles array directly, getDashboardRoute will handle it
-        primaryRole = profileData.roles;
+      // Sign in with Supabase
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        return { error: { message: error.message } };
       }
-      
-      // Redirect to appropriate dashboard
-      const dashboardRoute = getDashboardRoute(primaryRole);
-      navigate(dashboardRoute, { replace: true });
-      return { error: null };
+
+      if (data.user) {
+        setUser({ id: data.user.id, email: data.user.email || '' });
+        // Fetch profile
+        const profileData = await api.getCurrentUser();
+        setProfile(profileData);
+        
+        // Extract primary role from roles array
+        let primaryRole: string | string[] | null = null;
+        if (profileData?.roles && Array.isArray(profileData.roles)) {
+          // Use the roles array directly, getDashboardRoute will handle it
+          primaryRole = profileData.roles;
+        }
+        
+        // Redirect to appropriate dashboard
+        const dashboardRoute = getDashboardRoute(primaryRole);
+        navigate(dashboardRoute, { replace: true });
+        return { error: null };
+      } else {
+        return { error: { message: 'Failed to sign in' } };
+      }
     } catch (error: any) {
       return { error: { message: error.message } };
     }
   };
 
   const signInWithGoogle = async () => {
-    // TODO: Implement Google OAuth
-    return { error: { message: 'Google OAuth not yet implemented' } };
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin
+        }
+      });
+
+      if (error) {
+        return { error: { message: error.message } };
+      }
+
+      // The OAuth flow will redirect the user, so we don't need to do anything here
+      return { error: null };
+    } catch (error: any) {
+      return { error: { message: error.message } };
+    }
   };
 
   const signOut = async () => {
+    await supabase.auth.signOut();
     api.logout();
     setUser(null);
     setProfile(null);

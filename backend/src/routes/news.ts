@@ -1,5 +1,5 @@
 import express from 'express';
-import { pool } from '../config/database.js';
+import { supabase } from '../config/supabase.js';
 import { authenticate, AuthRequest, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -7,11 +7,17 @@ const router = express.Router();
 // Get articles for current journalist
 router.get('/articles', authenticate, async (req: AuthRequest, res) => {
   try {
-    const result = await pool.query(
-      'SELECT * FROM news_articles WHERE journalist_id = $1 ORDER BY created_at DESC',
-      [req.userId]
-    );
-    res.json(result.rows);
+    const { data, error } = await supabase
+      .from('news_articles')
+      .select('*')
+      .eq('journalist_id', req.userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    res.json(data || []);
   } catch (error: any) {
     console.error('Get articles error:', error);
     res.status(500).json({ error: 'Failed to get articles' });
@@ -22,23 +28,28 @@ router.get('/articles', authenticate, async (req: AuthRequest, res) => {
 router.post('/articles', authenticate, requireRole('journalist'), async (req: AuthRequest, res) => {
   try {
     const { title, content, excerpt, category, tags, coverImageUrl, isPublished, isFeatured } = req.body;
-    const result = await pool.query(
-      `INSERT INTO news_articles (journalist_id, title, content, excerpt, category, tags, cover_image_url, is_published, is_featured)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-       RETURNING *`,
-      [
-        req.userId,
+    
+    const { data, error } = await supabase
+      .from('news_articles')
+      .insert({
+        journalist_id: req.userId,
         title,
         content,
-        excerpt || null,
+        excerpt: excerpt || null,
         category,
-        tags || [],
-        coverImageUrl || null,
-        isPublished || false,
-        isFeatured || false,
-      ]
-    );
-    res.status(201).json(result.rows[0]);
+        tags: tags || [],
+        cover_image_url: coverImageUrl || null,
+        is_published: isPublished || false,
+        is_featured: isFeatured || false,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    res.status(201).json(data);
   } catch (error: any) {
     console.error('Create article error:', error);
     res.status(500).json({ error: 'Failed to create article' });
@@ -48,8 +59,16 @@ router.post('/articles', authenticate, requireRole('journalist'), async (req: Au
 // Get categories
 router.get('/categories', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM news_categories ORDER BY name');
-    res.json(result.rows);
+    const { data, error } = await supabase
+      .from('news_categories')
+      .select('*')
+      .order('name', { ascending: true });
+
+    if (error) {
+      throw error;
+    }
+
+    res.json(data || []);
   } catch (error: any) {
     console.error('Get categories error:', error);
     res.status(500).json({ error: 'Failed to get categories' });
@@ -57,4 +76,3 @@ router.get('/categories', async (req, res) => {
 });
 
 export default router;
-

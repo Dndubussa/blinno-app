@@ -1,43 +1,38 @@
 import express from 'express';
-import { pool } from '../config/database.js';
+import { supabase } from '../config/supabase.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
-import { upload } from '../middleware/upload.js';
-import { getFileUrl } from '../middleware/upload.js';
+import { upload, uploadToSupabaseStorage } from '../middleware/upload.js';
+import { checkProductLimit } from '../utils/subscriptionLimits.js';
 
 const router = express.Router();
 
-// Get all products (with filters)
+// Get all products
 router.get('/', async (req, res) => {
   try {
-    const { category, location, search, isActive = 'true' } = req.query;
+    const { category, search, limit = '20', offset = '0' } = req.query;
     
-    let query = `
-      SELECT p.*, pr.display_name, pr.avatar_url
-      FROM products p
-      JOIN profiles pr ON p.creator_id = pr.user_id
-      WHERE p.is_active = $1
-    `;
-    const params: any[] = [isActive === 'true'];
-    let paramCount = 2;
+    let query = supabase
+      .from('products')
+      .select('*')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .range(parseInt(offset as string), parseInt(offset as string) + parseInt(limit as string) - 1);
 
-    if (category && category !== 'all') {
-      query += ` AND p.category = $${paramCount++}`;
-      params.push(category);
+    if (category) {
+      query = query.eq('category', category as string);
     }
-    if (location && location !== 'all') {
-      query += ` AND p.location = $${paramCount++}`;
-      params.push(location);
-    }
+
     if (search) {
-      query += ` AND (p.title ILIKE $${paramCount} OR p.description ILIKE $${paramCount})`;
-      params.push(`%${search}%`);
-      paramCount++;
+      query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`);
     }
 
-    query += ` ORDER BY p.created_at DESC`;
+    const { data, error } = await query;
 
-    const result = await pool.query(query, params);
-    res.json(result.rows);
+    if (error) {
+      throw error;
+    }
+
+    res.json(data || []);
   } catch (error: any) {
     console.error('Get products error:', error);
     res.status(500).json({ error: 'Failed to get products' });
@@ -47,19 +42,20 @@ router.get('/', async (req, res) => {
 // Get product by ID
 router.get('/:id', async (req, res) => {
   try {
-    const result = await pool.query(
-      `SELECT p.*, pr.display_name, pr.avatar_url, pr.location as creator_location
-       FROM products p
-       JOIN profiles pr ON p.creator_id = pr.user_id
-       WHERE p.id = $1`,
-      [req.params.id]
-    );
-
-    if (result.rows.length === 0) {
+    const { id } = req.params;
+    
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('id', id)
+      .eq('is_active', true)
+      .single();
+    
+    if (error || !data) {
       return res.status(404).json({ error: 'Product not found' });
     }
-
-    res.json(result.rows[0]);
+    
+    res.json(data);
   } catch (error: any) {
     console.error('Get product error:', error);
     res.status(500).json({ error: 'Failed to get product' });
@@ -75,28 +71,39 @@ router.post('/', authenticate, upload.single('image'), async (req: AuthRequest, 
       return res.status(400).json({ error: 'Title, price, and category are required' });
     }
 
-    let imageUrl = null;
-    if (req.file) {
-      imageUrl = getFileUrl(req.file.path);
+    // Check subscription limits
+    const limitCheck = await checkProductLimit(req.userId!);
+    if (!limitCheck.canCreate) {
+      return res.status(403).json({ 
+        error: `Product limit reached. Your plan allows up to ${limitCheck.limit} products.` 
+      });
     }
 
-    const result = await pool.query(
-      `INSERT INTO products (creator_id, title, description, price, category, location, image_url, stock_quantity)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING *`,
-      [
-        req.userId,
-        title,
-        description || null,
-        parseFloat(price),
-        category,
-        location || null,
-        imageUrl,
-        stockQuantity ? parseInt(stockQuantity) : 0
-      ]
-    );
+    let imageUrl = null;
+    if (req.file) {
+      imageUrl = await uploadToSupabaseStorage(req.file, 'products', req.userId);
+    }
 
-    res.status(201).json(result.rows[0]);
+    const { data, error } = await supabase
+      .from('products')
+      .insert({
+        creator_id: req.userId,
+        title,
+        description: description || null,
+        price: parseFloat(price),
+        category,
+        location: location || null,
+        image_url: imageUrl,
+        stock_quantity: stockQuantity ? parseInt(stockQuantity) : 0,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    res.status(201).json(data);
   } catch (error: any) {
     console.error('Create product error:', error);
     res.status(500).json({ error: 'Failed to create product' });
@@ -110,72 +117,47 @@ router.put('/:id', authenticate, upload.single('image'), async (req: AuthRequest
     const { title, description, price, category, location, stockQuantity, isActive } = req.body;
 
     // Check ownership
-    const checkResult = await pool.query(
-      'SELECT creator_id FROM products WHERE id = $1',
-      [id]
-    );
+    const { data: existing, error: checkError } = await supabase
+      .from('products')
+      .select('creator_id')
+      .eq('id', id)
+      .single();
 
-    if (checkResult.rows.length === 0) {
+    if (checkError || !existing) {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    if (checkResult.rows[0].creator_id !== req.userId) {
+    if (existing.creator_id !== req.userId) {
       return res.status(403).json({ error: 'Not authorized' });
     }
 
-    const updates: string[] = [];
-    const values: any[] = [];
-    let paramCount = 1;
+    const updates: any = {
+      updated_at: new Date().toISOString(),
+    };
 
-    if (title !== undefined) {
-      updates.push(`title = $${paramCount++}`);
-      values.push(title);
-    }
-    if (description !== undefined) {
-      updates.push(`description = $${paramCount++}`);
-      values.push(description);
-    }
-    if (price !== undefined) {
-      updates.push(`price = $${paramCount++}`);
-      values.push(parseFloat(price));
-    }
-    if (category !== undefined) {
-      updates.push(`category = $${paramCount++}`);
-      values.push(category);
-    }
-    if (location !== undefined) {
-      updates.push(`location = $${paramCount++}`);
-      values.push(location);
-    }
-    if (stockQuantity !== undefined) {
-      updates.push(`stock_quantity = $${paramCount++}`);
-      values.push(parseInt(stockQuantity));
-    }
-    if (isActive !== undefined) {
-      updates.push(`is_active = $${paramCount++}`);
-      values.push(isActive === 'true' || isActive === true);
-    }
+    if (title !== undefined) updates.title = title;
+    if (description !== undefined) updates.description = description;
+    if (price !== undefined) updates.price = parseFloat(price);
+    if (category !== undefined) updates.category = category;
+    if (location !== undefined) updates.location = location;
+    if (stockQuantity !== undefined) updates.stock_quantity = parseInt(stockQuantity);
+    if (isActive !== undefined) updates.is_active = isActive === 'true' || isActive === true;
     if (req.file) {
-      updates.push(`image_url = $${paramCount++}`);
-      values.push(getFileUrl(req.file.path));
+      updates.image_url = await uploadToSupabaseStorage(req.file, 'products', req.userId);
     }
 
-    if (updates.length === 0) {
-      return res.status(400).json({ error: 'No fields to update' });
+    const { data, error } = await supabase
+      .from('products')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
     }
 
-    values.push(id);
-    updates.push(`updated_at = now()`);
-
-    const result = await pool.query(
-      `UPDATE products
-       SET ${updates.join(', ')}
-       WHERE id = $${paramCount}
-       RETURNING *`,
-      values
-    );
-
-    res.json(result.rows[0]);
+    res.json(data);
   } catch (error: any) {
     console.error('Update product error:', error);
     res.status(500).json({ error: 'Failed to update product' });
@@ -188,20 +170,28 @@ router.delete('/:id', authenticate, async (req: AuthRequest, res) => {
     const { id } = req.params;
 
     // Check ownership
-    const checkResult = await pool.query(
-      'SELECT creator_id FROM products WHERE id = $1',
-      [id]
-    );
+    const { data: existing, error: checkError } = await supabase
+      .from('products')
+      .select('creator_id')
+      .eq('id', id)
+      .single();
 
-    if (checkResult.rows.length === 0) {
+    if (checkError || !existing) {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    if (checkResult.rows[0].creator_id !== req.userId) {
+    if (existing.creator_id !== req.userId) {
       return res.status(403).json({ error: 'Not authorized' });
     }
 
-    await pool.query('DELETE FROM products WHERE id = $1', [id]);
+    const { error } = await supabase
+      .from('products')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw error;
+    }
 
     res.json({ message: 'Product deleted successfully' });
   } catch (error: any) {
@@ -211,4 +201,3 @@ router.delete('/:id', authenticate, async (req: AuthRequest, res) => {
 });
 
 export default router;
-

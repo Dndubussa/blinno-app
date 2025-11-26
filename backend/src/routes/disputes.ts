@@ -1,5 +1,5 @@
 import express from 'express';
-import { pool } from '../config/database.js';
+import { supabase } from '../config/supabase.js';
 import { authenticate, AuthRequest, requireRole } from '../middleware/auth.js';
 import { notificationService } from '../services/notifications.js';
 
@@ -29,29 +29,35 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
     // Verify user has a relationship with respondent (order, booking, etc.)
     let hasRelationship = false;
     if (orderId) {
-      const orderResult = await pool.query(
-        `SELECT * FROM orders 
-         WHERE id = $1 AND (user_id = $2 OR EXISTS (
-           SELECT 1 FROM order_items oi
-           JOIN products p ON oi.product_id = p.id
-           WHERE oi.order_id = $1 AND p.creator_id = $2
-         ))`,
-        [orderId, req.userId]
-      );
-      hasRelationship = orderResult.rows.length > 0;
+      const { data: order } = await supabase
+        .from('orders')
+        .select(`
+          id,
+          user_id,
+          order_items!inner(
+            products!inner(creator_id)
+          )
+        `)
+        .eq('id', orderId)
+        .eq('user_id', req.userId)
+        .single();
+      hasRelationship = !!order;
     } else if (bookingId) {
-      const bookingResult = await pool.query(
-        `SELECT * FROM bookings 
-         WHERE id = $1 AND (user_id = $2 OR creator_id = $2)`,
-        [bookingId, req.userId]
-      );
-      hasRelationship = bookingResult.rows.length > 0;
+      const { data: booking } = await supabase
+        .from('bookings')
+        .select('id, user_id, creator_id')
+        .eq('id', bookingId)
+        .or(`user_id.eq.${req.userId},creator_id.eq.${req.userId}`)
+        .single();
+      hasRelationship = !!booking;
     } else if (paymentId) {
-      const paymentResult = await pool.query(
-        `SELECT * FROM payments WHERE id = $1 AND user_id = $2`,
-        [paymentId, req.userId]
-      );
-      hasRelationship = paymentResult.rows.length > 0;
+      const { data: payment } = await supabase
+        .from('payments')
+        .select('id, user_id')
+        .eq('id', paymentId)
+        .eq('user_id', req.userId)
+        .single();
+      hasRelationship = !!payment;
     }
 
     if (!hasRelationship) {
@@ -61,25 +67,25 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
     }
 
     // Create dispute
-    const result = await pool.query(
-      `INSERT INTO disputes (
-        order_id, booking_id, payment_id, dispute_type,
-        initiator_id, respondent_id, title, description, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'open')
-      RETURNING *`,
-      [
-        orderId || null,
-        bookingId || null,
-        paymentId || null,
-        disputeType,
-        req.userId,
-        respondentId,
+    const { data, error } = await supabase
+      .from('disputes')
+      .insert({
+        order_id: orderId || null,
+        booking_id: bookingId || null,
+        payment_id: paymentId || null,
+        dispute_type: disputeType,
+        initiator_id: req.userId,
+        respondent_id: respondentId,
         title,
         description,
-      ]
-    );
+        status: 'open',
+      })
+      .select()
+      .single();
 
-    const dispute = result.rows[0];
+    if (error) {
+      throw error;
+    }
 
     // Notify respondent
     await notificationService.createNotification(
@@ -87,10 +93,10 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
       'dispute_opened',
       'Dispute Opened',
       `A dispute has been opened against you: ${title}`,
-      { dispute_id: dispute.id, dispute_type: disputeType }
+      { dispute_id: data.id, dispute_type: disputeType }
     );
 
-    res.status(201).json(dispute);
+    res.status(201).json(data);
   } catch (error: any) {
     console.error('Create dispute error:', error);
     res.status(500).json({ error: 'Failed to create dispute' });
@@ -104,34 +110,37 @@ router.get('/my-disputes', authenticate, async (req: AuthRequest, res) => {
   try {
     const { status, type } = req.query;
 
-    let query = `
-      SELECT 
-        d.*,
-        p1.display_name as initiator_name,
-        p2.display_name as respondent_name
-      FROM disputes d
-      JOIN profiles p1 ON d.initiator_id = p1.user_id
-      JOIN profiles p2 ON d.respondent_id = p2.user_id
-      WHERE (d.initiator_id = $1 OR d.respondent_id = $1)
-    `;
-    const params: any[] = [req.userId];
-    let paramCount = 2;
+    let query = supabase
+      .from('disputes')
+      .select(`
+        *,
+        initiator:profiles!disputes_initiator_id_fkey(display_name),
+        respondent:profiles!disputes_respondent_id_fkey(display_name)
+      `)
+      .or(`initiator_id.eq.${req.userId},respondent_id.eq.${req.userId}`)
+      .order('created_at', { ascending: false });
 
     if (status) {
-      query += ` AND d.status = $${paramCount++}`;
-      params.push(status);
+      query = query.eq('status', status as string);
     }
-
     if (type) {
-      query += ` AND d.dispute_type = $${paramCount++}`;
-      params.push(type);
+      query = query.eq('dispute_type', type as string);
     }
 
-    query += ` ORDER BY d.created_at DESC`;
+    const { data, error } = await query;
 
-    const result = await pool.query(query, params);
+    if (error) {
+      throw error;
+    }
 
-    res.json(result.rows);
+    // Transform to match expected format
+    const transformed = (data || []).map((d: any) => ({
+      ...d,
+      initiator_name: d.initiator?.display_name,
+      respondent_name: d.respondent?.display_name,
+    }));
+
+    res.json(transformed);
   } catch (error: any) {
     console.error('Get my disputes error:', error);
     res.status(500).json({ error: 'Failed to get disputes' });
@@ -146,30 +155,28 @@ router.get('/:id', authenticate, async (req: AuthRequest, res) => {
     const { id } = req.params;
 
     // Get dispute
-    const disputeResult = await pool.query(
-      `SELECT 
-        d.*,
-        p1.display_name as initiator_name,
-        p2.display_name as respondent_name
-       FROM disputes d
-       JOIN profiles p1 ON d.initiator_id = p1.user_id
-       JOIN profiles p2 ON d.respondent_id = p2.user_id
-       WHERE d.id = $1`,
-      [id]
-    );
+    const { data: dispute, error: disputeError } = await supabase
+      .from('disputes')
+      .select(`
+        *,
+        initiator:profiles!disputes_initiator_id_fkey(display_name),
+        respondent:profiles!disputes_respondent_id_fkey(display_name)
+      `)
+      .eq('id', id)
+      .single();
 
-    if (disputeResult.rows.length === 0) {
+    if (disputeError || !dispute) {
       return res.status(404).json({ error: 'Dispute not found' });
     }
 
-    const dispute = disputeResult.rows[0];
-
     // Check authorization
-    const roleResult = await pool.query(
-      `SELECT role FROM user_roles WHERE user_id = $1 AND role = 'admin'`,
-      [req.userId]
-    );
-    const isAdmin = roleResult.rows.length > 0;
+    const { data: roleCheck } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', req.userId)
+      .eq('role', 'admin')
+      .single();
+    const isAdmin = !!roleCheck;
     const isInvolved = dispute.initiator_id === req.userId || dispute.respondent_id === req.userId;
 
     if (!isAdmin && !isInvolved) {
@@ -177,32 +184,52 @@ router.get('/:id', authenticate, async (req: AuthRequest, res) => {
     }
 
     // Get evidence
-    const evidenceResult = await pool.query(
-      `SELECT de.*, p.display_name as uploaded_by_name
-       FROM dispute_evidence de
-       JOIN profiles p ON de.uploaded_by = p.user_id
-       WHERE de.dispute_id = $1
-       ORDER BY de.created_at ASC`,
-      [id]
-    );
+    const { data: evidence } = await supabase
+      .from('dispute_evidence')
+      .select(`
+        *,
+        uploaded_by:profiles!dispute_evidence_uploaded_by_fkey(display_name)
+      `)
+      .eq('dispute_id', id)
+      .order('created_at', { ascending: true });
 
     // Get messages
-    const messagesResult = await pool.query(
-      `SELECT 
-        dm.*,
-        p.display_name as sender_name
-       FROM dispute_messages dm
-       JOIN profiles p ON dm.sender_id = p.user_id
-       WHERE dm.dispute_id = $1 
-         AND (dm.is_internal = false OR $2 = true)
-       ORDER BY dm.created_at ASC`,
-      [id, isAdmin]
-    );
+    let messagesQuery = supabase
+      .from('dispute_messages')
+      .select(`
+        *,
+        sender:profiles!dispute_messages_sender_id_fkey(display_name)
+      `)
+      .eq('dispute_id', id)
+      .order('created_at', { ascending: true });
+
+    if (!isAdmin) {
+      messagesQuery = messagesQuery.eq('is_internal', false);
+    }
+
+    const { data: messages } = await messagesQuery;
+
+    // Transform
+    const transformedDispute = {
+      ...dispute,
+      initiator_name: dispute.initiator?.display_name,
+      respondent_name: dispute.respondent?.display_name,
+    };
+
+    const transformedEvidence = (evidence || []).map((de: any) => ({
+      ...de,
+      uploaded_by_name: de.uploaded_by?.display_name,
+    }));
+
+    const transformedMessages = (messages || []).map((dm: any) => ({
+      ...dm,
+      sender_name: dm.sender?.display_name,
+    }));
 
     res.json({
-      ...dispute,
-      evidence: evidenceResult.rows,
-      messages: messagesResult.rows,
+      ...transformedDispute,
+      evidence: transformedEvidence,
+      messages: transformedMessages,
     });
   } catch (error: any) {
     console.error('Get dispute error:', error);
@@ -223,16 +250,16 @@ router.post('/:id/evidence', authenticate, async (req: AuthRequest, res) => {
     }
 
     // Get dispute and check authorization
-    const disputeResult = await pool.query(
-      'SELECT * FROM disputes WHERE id = $1',
-      [id]
-    );
+    const { data: dispute, error: disputeError } = await supabase
+      .from('disputes')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    if (disputeResult.rows.length === 0) {
+    if (disputeError || !dispute) {
       return res.status(404).json({ error: 'Dispute not found' });
     }
 
-    const dispute = disputeResult.rows[0];
     const isInvolved = dispute.initiator_id === req.userId || dispute.respondent_id === req.userId;
 
     if (!isInvolved) {
@@ -240,14 +267,23 @@ router.post('/:id/evidence', authenticate, async (req: AuthRequest, res) => {
     }
 
     // Add evidence
-    const result = await pool.query(
-      `INSERT INTO dispute_evidence (dispute_id, uploaded_by, file_url, file_type, description)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING *`,
-      [id, req.userId, fileUrl, fileType || null, description || null]
-    );
+    const { data, error } = await supabase
+      .from('dispute_evidence')
+      .insert({
+        dispute_id: id,
+        uploaded_by: req.userId,
+        file_url: fileUrl,
+        file_type: fileType || null,
+        description: description || null,
+      })
+      .select()
+      .single();
 
-    res.status(201).json(result.rows[0]);
+    if (error) {
+      throw error;
+    }
+
+    res.status(201).json(data);
   } catch (error: any) {
     console.error('Add evidence error:', error);
     res.status(500).json({ error: 'Failed to add evidence' });
@@ -267,23 +303,24 @@ router.post('/:id/messages', authenticate, async (req: AuthRequest, res) => {
     }
 
     // Get dispute and check authorization
-    const disputeResult = await pool.query(
-      'SELECT * FROM disputes WHERE id = $1',
-      [id]
-    );
+    const { data: dispute, error: disputeError } = await supabase
+      .from('disputes')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    if (disputeResult.rows.length === 0) {
+    if (disputeError || !dispute) {
       return res.status(404).json({ error: 'Dispute not found' });
     }
 
-    const dispute = disputeResult.rows[0];
-
     // Check if user is admin (for internal messages)
-    const roleResult = await pool.query(
-      `SELECT role FROM user_roles WHERE user_id = $1 AND role = 'admin'`,
-      [req.userId]
-    );
-    const isAdmin = roleResult.rows.length > 0;
+    const { data: roleCheck } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', req.userId)
+      .eq('role', 'admin')
+      .single();
+    const isAdmin = !!roleCheck;
     const isInvolved = dispute.initiator_id === req.userId || dispute.respondent_id === req.userId;
 
     if (isInternal && !isAdmin) {
@@ -295,12 +332,20 @@ router.post('/:id/messages', authenticate, async (req: AuthRequest, res) => {
     }
 
     // Add message
-    const result = await pool.query(
-      `INSERT INTO dispute_messages (dispute_id, sender_id, message, is_internal)
-       VALUES ($1, $2, $3, $4)
-       RETURNING *`,
-      [id, req.userId, message, isInternal || false]
-    );
+    const { data, error } = await supabase
+      .from('dispute_messages')
+      .insert({
+        dispute_id: id,
+        sender_id: req.userId,
+        message,
+        is_internal: isInternal || false,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
 
     // Notify other party (if not internal)
     if (!isInternal) {
@@ -317,7 +362,7 @@ router.post('/:id/messages', authenticate, async (req: AuthRequest, res) => {
       );
     }
 
-    res.status(201).json(result.rows[0]);
+    res.status(201).json(data);
   } catch (error: any) {
     console.error('Add message error:', error);
     res.status(500).json({ error: 'Failed to add message' });
@@ -337,32 +382,31 @@ router.post('/:id/resolve', authenticate, requireRole('admin'), async (req: Auth
     }
 
     // Get dispute
-    const disputeResult = await pool.query(
-      'SELECT * FROM disputes WHERE id = $1',
-      [id]
-    );
+    const { data: dispute, error: disputeError } = await supabase
+      .from('disputes')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    if (disputeResult.rows.length === 0) {
+    if (disputeError || !dispute) {
       return res.status(404).json({ error: 'Dispute not found' });
     }
-
-    const dispute = disputeResult.rows[0];
 
     if (dispute.status === 'resolved' || dispute.status === 'closed') {
       return res.status(400).json({ error: 'Dispute is already resolved or closed' });
     }
 
     // Update dispute
-    await pool.query(
-      `UPDATE disputes
-       SET status = 'resolved',
-           resolution = $1,
-           resolved_by = $2,
-           resolved_at = now(),
-           updated_at = now()
-       WHERE id = $3`,
-      [resolution, req.userId, id]
-    );
+    await supabase
+      .from('disputes')
+      .update({
+        status: 'resolved',
+        resolution,
+        resolved_by: req.userId,
+        resolved_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id);
 
     // Notify both parties
     await notificationService.createNotification(
@@ -395,34 +439,36 @@ router.get('/', authenticate, requireRole('admin'), async (req: AuthRequest, res
   try {
     const { status, type } = req.query;
 
-    let query = `
-      SELECT 
-        d.*,
-        p1.display_name as initiator_name,
-        p2.display_name as respondent_name
-      FROM disputes d
-      JOIN profiles p1 ON d.initiator_id = p1.user_id
-      JOIN profiles p2 ON d.respondent_id = p2.user_id
-      WHERE 1=1
-    `;
-    const params: any[] = [];
-    let paramCount = 1;
+    let query = supabase
+      .from('disputes')
+      .select(`
+        *,
+        initiator:profiles!disputes_initiator_id_fkey(display_name),
+        respondent:profiles!disputes_respondent_id_fkey(display_name)
+      `)
+      .order('created_at', { ascending: false });
 
     if (status) {
-      query += ` AND d.status = $${paramCount++}`;
-      params.push(status);
+      query = query.eq('status', status as string);
     }
-
     if (type) {
-      query += ` AND d.dispute_type = $${paramCount++}`;
-      params.push(type);
+      query = query.eq('dispute_type', type as string);
     }
 
-    query += ` ORDER BY d.created_at DESC`;
+    const { data, error } = await query;
 
-    const result = await pool.query(query, params);
+    if (error) {
+      throw error;
+    }
 
-    res.json(result.rows);
+    // Transform to match expected format
+    const transformed = (data || []).map((d: any) => ({
+      ...d,
+      initiator_name: d.initiator?.display_name,
+      respondent_name: d.respondent?.display_name,
+    }));
+
+    res.json(transformed);
   } catch (error: any) {
     console.error('Get disputes error:', error);
     res.status(500).json({ error: 'Failed to get disputes' });
@@ -430,4 +476,3 @@ router.get('/', authenticate, requireRole('admin'), async (req: AuthRequest, res
 });
 
 export default router;
-

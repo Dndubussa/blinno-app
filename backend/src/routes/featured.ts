@@ -1,9 +1,10 @@
 import express from 'express';
-import { pool } from '../config/database.js';
-import { authenticate, AuthRequest, requireRole } from '../middleware/auth.js';
+import { supabase } from '../config/supabase.js';
+import { authenticate, AuthRequest } from '../middleware/auth.js';
 import ClickPesaService, { PaymentRequest } from '../services/clickpesa.js';
 import { platformFees } from '../services/platformFees.js';
 import dotenv from 'dotenv';
+import { userPreferences } from '../services/userPreferences.js';
 
 dotenv.config();
 
@@ -58,16 +59,20 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
 
     const tableName = listingTypes[listingType];
     if (tableName) {
-      const checkResult = await pool.query(
-        `SELECT creator_id, owner_id FROM ${tableName} WHERE id = $1`,
-        [listingId]
-      );
+      // Check ownership - different tables have different owner/creator columns
+      let ownerColumn = 'creator_id';
+      if (['restaurants', 'lodging_properties'].includes(tableName)) {
+        ownerColumn = 'owner_id';
+      }
 
-      if (checkResult.rows.length > 0) {
-        const ownerId = checkResult.rows[0].creator_id || checkResult.rows[0].owner_id;
-        if (ownerId === req.userId) {
-          listingExists = true;
-        }
+      const { data: listing } = await supabase
+        .from(tableName)
+        .select(ownerColumn)
+        .eq('id', listingId)
+        .single();
+
+      if (listing && (listing as any)[ownerColumn] === req.userId) {
+        listingExists = true;
       }
     }
 
@@ -80,44 +85,59 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
     const totalWithFees = totalPrice + paymentProcessingFee;
 
     // Create featured listing (pending payment)
-    const result = await pool.query(
-      `INSERT INTO featured_listings (
-        user_id, listing_type, listing_id, placement_type,
-        start_date, end_date, price_paid, status, payment_status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending', 'pending')
-      RETURNING *`,
-      [req.userId, listingType, listingId, placementType, startDate, endDate, totalPrice]
-    );
+    const { data: featuredListing, error: listingError } = await supabase
+      .from('featured_listings')
+      .insert({
+        user_id: req.userId,
+        listing_type: listingType,
+        listing_id: listingId,
+        placement_type: placementType,
+        start_date: startDate.toISOString(),
+        end_date: endDate.toISOString(),
+        price_paid: totalPrice,
+        status: 'pending',
+        payment_status: 'pending',
+      })
+      .select()
+      .single();
 
-    const featuredListing = result.rows[0];
+    if (listingError || !featuredListing) {
+      throw listingError;
+    }
 
     // Record platform fee for featured listing
-    await pool.query(
-      `INSERT INTO platform_fees (
-        transaction_id, transaction_type, user_id,
-        subtotal, platform_fee, payment_processing_fee, total_fees, creator_payout, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending')`,
-      [
-        `featured_${featuredListing.id}`,
-        'featured_listing',
-        req.userId,
-        totalPrice,
-        0, // No platform fee on featured listings (revenue is the listing itself)
-        paymentProcessingFee,
-        paymentProcessingFee,
-        totalPrice,
-      ]
-    );
+    await supabase
+      .from('platform_fees')
+      .insert({
+        transaction_id: `featured_${featuredListing.id}`,
+        transaction_type: 'featured_listing',
+        user_id: req.userId,
+        subtotal: totalPrice,
+        platform_fee: 0, // No platform fee on featured listings (revenue is the listing itself)
+        payment_processing_fee: paymentProcessingFee,
+        total_fees: paymentProcessingFee,
+        creator_payout: totalPrice,
+        status: 'pending',
+      });
 
     // Create payment record
-    const paymentResult = await pool.query(
-      `INSERT INTO payments (order_id, user_id, amount, currency, status, payment_method, payment_type)
-       VALUES ($1, $2, $3, $4, 'pending', 'clickpesa', 'featured_listing')
-       RETURNING *`,
-      [`featured_${featuredListing.id}`, req.userId, totalWithFees, 'TZS']
-    );
+    const { data: payment, error: paymentError } = await supabase
+      .from('payments')
+      .insert({
+        order_id: `featured_${featuredListing.id}`,
+        user_id: req.userId,
+        amount: totalWithFees,
+        currency: 'TZS',
+        status: 'pending',
+        payment_method: 'clickpesa',
+        payment_type: 'featured_listing',
+      })
+      .select()
+      .single();
 
-    const payment = paymentResult.rows[0];
+    if (paymentError || !payment) {
+      throw paymentError;
+    }
 
     res.status(201).json({
       ...featuredListing,
@@ -139,29 +159,38 @@ router.get('/', async (req, res) => {
   try {
     const { placementType, listingType } = req.query;
 
-    let query = `
-      SELECT fl.*, u.email, p.display_name
-      FROM featured_listings fl
-      JOIN users u ON fl.user_id = u.id
-      LEFT JOIN profiles p ON fl.user_id = p.user_id
-      WHERE fl.status = 'active' AND fl.end_date > now()
-    `;
-    const params: any[] = [];
-    let paramCount = 1;
+    let query = supabase
+      .from('featured_listings')
+      .select(`
+        *,
+        user:users!featured_listings_user_id_fkey(email),
+        profile:profiles!featured_listings_user_id_fkey(display_name)
+      `)
+      .eq('status', 'active')
+      .gt('end_date', new Date().toISOString())
+      .order('start_date', { ascending: false });
 
     if (placementType) {
-      query += ` AND fl.placement_type = $${paramCount++}`;
-      params.push(placementType);
+      query = query.eq('placement_type', placementType as string);
     }
     if (listingType) {
-      query += ` AND fl.listing_type = $${paramCount++}`;
-      params.push(listingType);
+      query = query.eq('listing_type', listingType as string);
     }
 
-    query += ` ORDER BY fl.start_date DESC`;
+    const { data, error } = await query;
 
-    const result = await pool.query(query, params);
-    res.json(result.rows);
+    if (error) {
+      throw error;
+    }
+
+    // Transform to match expected format
+    const transformed = (data || []).map((fl: any) => ({
+      ...fl,
+      email: fl.user?.email,
+      display_name: fl.profile?.display_name,
+    }));
+
+    res.json(transformed);
   } catch (error: any) {
     console.error('Get featured listings error:', error);
     res.status(500).json({ error: 'Failed to get featured listings' });
@@ -173,14 +202,17 @@ router.get('/', async (req, res) => {
  */
 router.get('/my-listings', authenticate, async (req: AuthRequest, res) => {
   try {
-    const result = await pool.query(
-      `SELECT * FROM featured_listings
-       WHERE user_id = $1
-       ORDER BY created_at DESC`,
-      [req.userId]
-    );
+    const { data, error } = await supabase
+      .from('featured_listings')
+      .select('*')
+      .eq('user_id', req.userId)
+      .order('created_at', { ascending: false });
 
-    res.json(result.rows);
+    if (error) {
+      throw error;
+    }
+
+    res.json(data || []);
   } catch (error: any) {
     console.error('Get my featured listings error:', error);
     res.status(500).json({ error: 'Failed to get featured listings' });
@@ -211,57 +243,82 @@ router.post('/:id/payment', authenticate, async (req: AuthRequest, res) => {
       return res.status(400).json({ error: 'Customer phone number is required' });
     }
 
-    // Get featured listing
-    const listingResult = await pool.query(
-      `SELECT fl.*, u.email, p.display_name
-       FROM featured_listings fl
-       JOIN users u ON fl.user_id = u.id
-       LEFT JOIN profiles p ON fl.user_id = p.user_id
-       WHERE fl.id = $1 AND fl.user_id = $2 AND fl.payment_status = 'pending'`,
-      [id, req.userId]
-    );
+    // Check if user is authenticated
+    if (!req.userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
 
-    if (listingResult.rows.length === 0) {
+    // Get user's preferred currency
+    const userPrefs = await userPreferences.getUserPreferences(req.userId);
+    const currency = userPrefs.currency || 'TZS';
+
+    // Get featured listing
+    const { data: listing, error: listingError } = await supabase
+      .from('featured_listings')
+      .select(`
+        *,
+        user:users!featured_listings_user_id_fkey(email),
+        profile:profiles!featured_listings_user_id_fkey(display_name)
+      `)
+      .eq('id', id)
+      .eq('user_id', req.userId)
+      .eq('payment_status', 'pending')
+      .single();
+
+    if (listingError || !listing) {
       return res.status(404).json({ error: 'Featured listing not found or already paid' });
     }
 
-    const listing = listingResult.rows[0];
-
-    // Calculate total with fees
-    const paymentProcessingFee = (listing.price_paid * 0.025) + 500;
-    const totalWithFees = listing.price_paid + paymentProcessingFee;
+    // Calculate total with fees using user's currency
+    const fixedFee = platformFees['getFixedFeeForCurrency'] ? 
+      platformFees['getFixedFeeForCurrency'](currency) : 500;
+    const paymentProcessingFee = (parseFloat(listing.price_paid.toString()) * 0.025) + fixedFee;
+    const totalWithFees = parseFloat(listing.price_paid.toString()) + paymentProcessingFee;
 
     // Get or create payment record
-    let paymentResult = await pool.query(
-      `SELECT * FROM payments WHERE order_id = $1 AND user_id = $2`,
-      [`featured_${id}`, req.userId]
-    );
+    const { data: existingPayment } = await supabase
+      .from('payments')
+      .select('*')
+      .eq('order_id', `featured_${id}`)
+      .eq('user_id', req.userId)
+      .single();
 
     let payment;
-    if (paymentResult.rows.length === 0) {
-      // Create payment record
-      const newPaymentResult = await pool.query(
-        `INSERT INTO payments (order_id, user_id, amount, currency, status, payment_method, payment_type)
-         VALUES ($1, $2, $3, $4, 'pending', 'clickpesa', 'featured_listing')
-         RETURNING *`,
-        [`featured_${id}`, req.userId, totalWithFees, 'TZS']
-      );
-      payment = newPaymentResult.rows[0];
+    if (!existingPayment) {
+      // Create payment record with user's currency
+      const { data: newPayment, error: paymentError } = await supabase
+        .from('payments')
+        .insert({
+          order_id: `featured_${id}`,
+          user_id: req.userId,
+          amount: totalWithFees,
+          currency: currency,
+          status: 'pending',
+          payment_method: 'clickpesa',
+          payment_type: 'featured_listing',
+        })
+        .select()
+        .single();
+
+      if (paymentError || !newPayment) {
+        throw paymentError;
+      }
+      payment = newPayment;
     } else {
-      payment = paymentResult.rows[0];
+      payment = existingPayment;
       if (payment.status !== 'pending') {
         return res.status(400).json({ error: 'Payment already processed' });
       }
     }
 
-    // Create Click Pesa payment request
+    // Create Click Pesa payment request with user's currency
     const paymentRequest: PaymentRequest = {
       amount: totalWithFees,
-      currency: 'TZS',
+      currency: currency,
       orderId: `featured_${id}`,
       customerPhone: customerPhone,
-      customerEmail: customerEmail || listing.email,
-      customerName: customerName || listing.display_name || 'Customer',
+      customerEmail: customerEmail || listing.user?.email || '',
+      customerName: customerName || listing.profile?.display_name || 'Customer',
       description: `Featured listing: ${listing.placement_type} placement`,
       callbackUrl: `${process.env.APP_URL || 'https://www.blinno.app'}/api/payments/webhook`,
     };
@@ -269,27 +326,29 @@ router.post('/:id/payment', authenticate, async (req: AuthRequest, res) => {
     const clickPesaResponse = await clickPesa.createPayment(paymentRequest);
 
     if (!clickPesaResponse.success) {
-      await pool.query(
-        `UPDATE payments SET status = 'failed', error_message = $1 WHERE id = $2`,
-        [clickPesaResponse.error || 'Payment creation failed', payment.id]
-      );
+      await supabase
+        .from('payments')
+        .update({
+          status: 'failed',
+          error_message: clickPesaResponse.error || 'Payment creation failed',
+        })
+        .eq('id', payment.id);
+
       return res.status(400).json({
         error: clickPesaResponse.error || 'Failed to create payment',
       });
     }
 
     // Update payment with Click Pesa details
-    await pool.query(
-      `UPDATE payments 
-       SET payment_id = $1, transaction_id = $2, checkout_url = $3, status = 'initiated'
-       WHERE id = $4`,
-      [
-        clickPesaResponse.paymentId,
-        clickPesaResponse.transactionId,
-        clickPesaResponse.checkoutUrl,
-        payment.id,
-      ]
-    );
+    await supabase
+      .from('payments')
+      .update({
+        payment_id: clickPesaResponse.paymentId,
+        transaction_id: clickPesaResponse.transactionId,
+        checkout_url: clickPesaResponse.checkoutUrl,
+        status: 'initiated',
+      })
+      .eq('id', payment.id);
 
     res.json({
       success: true,
@@ -304,4 +363,3 @@ router.post('/:id/payment', authenticate, async (req: AuthRequest, res) => {
 });
 
 export default router;
-

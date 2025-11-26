@@ -1,30 +1,33 @@
-import pg from 'pg';
+import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-const { Pool } = pg;
+// Supabase configuration
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 
-export const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432'),
-  database: process.env.DB_NAME || 'blinno',
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || '',
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
-});
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('❌ Missing Supabase environment variables');
+  console.error('Please set SUPABASE_URL and SUPABASE_ANON_KEY in your .env file');
+  process.exit(-1);
+}
+
+// Create Supabase client
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Test connection
-pool.on('connect', () => {
-  console.log('✅ Connected to PostgreSQL database');
-});
+supabase.auth.getSession()
+  .then(({ data, error }) => {
+    if (error) {
+      console.log('⚠️ Supabase client initialized but not yet connected');
+    } else {
+      console.log('✅ Supabase client initialized successfully');
+    }
+  })
+  .catch((error) => {
+    console.log('⚠️ Supabase client initialized but not yet connected');
+  });
 
-pool.on('error', (err) => {
-  console.error('❌ Unexpected error on idle client', err);
-  process.exit(-1);
-});
-
-export default pool;
-
+export default supabase;
+export default supabase;

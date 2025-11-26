@@ -8,9 +8,12 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "migrate": "node dist/db/migrate.js"
+    "migrate": "node dist/db/migrate.js",
+    "test:email": "node scripts/test-email-service.js",
+    "test:email-config": "node scripts/simple-email-test.js"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.84.0",
     "@types/qrcode": "^1.5.6",
     "@types/speakeasy": "^2.0.10",
     "bcryptjs": "^2.4.3",
@@ -24,6 +27,7 @@
     "multer": "^1.4.5-lts.1",
     "pg": "^8.11.3",
     "qrcode": "^1.5.4",
+    "resend": "^6.5.2",
     "speakeasy": "^2.0.0",
     "zod": "^3.22.4"
   },

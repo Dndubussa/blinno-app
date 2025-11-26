@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Check, Loader2, Crown, Sparkles, Rocket, Building2, CreditCard } from "lucide-react";
+import { Check, Loader2, Crown, Sparkles, Rocket, Building2, CreditCard, Percent, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { AnimatedSection } from "./AnimatedSection";
@@ -58,6 +58,7 @@ export function SubscriptionPricing() {
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [pendingSubscription, setPendingSubscription] = useState<any>(null);
   const [customerPhone, setCustomerPhone] = useState("");
+  const [pricingModel, setPricingModel] = useState<"subscription" | "percentage">("subscription");
 
   useEffect(() => {
     fetchTiers();
@@ -300,11 +301,68 @@ export function SubscriptionPricing() {
   // Always render the section, show loading state if needed
   // The component will use fallback tiers if API hasn't loaded
 
-  const tierList = [
+  const subscriptionTierList = [
     { key: "free" as const, ...displayTiers.free },
     { key: "creator" as const, ...displayTiers.creator },
     { key: "professional" as const, ...displayTiers.professional },
     { key: "enterprise" as const, ...displayTiers.enterprise },
+  ];
+
+  // Define percentage-based pricing options
+  const percentageTiers = [
+    {
+      key: "basic",
+      name: "Basic",
+      feeRate: "8%",
+      monthlyPrice: 0,
+      features: [
+        "Basic profile",
+        "5 product listings",
+        "Standard support",
+        "8% marketplace fees",
+        "6% digital product fees",
+        "10% service booking fees",
+        "12% commission work fees"
+      ],
+      limits: { products: 5, portfolios: 3 },
+      icon: Sparkles
+    },
+    {
+      key: "premium",
+      name: "Premium",
+      feeRate: "5%",
+      monthlyPrice: 0,
+      features: [
+        "Unlimited listings",
+        "Advanced analytics",
+        "Priority support",
+        "Featured listings",
+        "Reduced 5% marketplace fees",
+        "6% digital product fees",
+        "8% service booking fees",
+        "10% commission work fees"
+      ],
+      limits: { products: -1, portfolios: -1 },
+      icon: Crown
+    },
+    {
+      key: "pro",
+      name: "Professional",
+      feeRate: "3%",
+      monthlyPrice: 0,
+      features: [
+        "All Premium features",
+        "Marketing tools",
+        "API access",
+        "Custom branding",
+        "Reduced 3% marketplace fees",
+        "4% digital product fees",
+        "6% service booking fees",
+        "8% commission work fees"
+      ],
+      limits: { products: -1, portfolios: -1 },
+      icon: Rocket
+    }
   ];
 
   return (
@@ -312,127 +370,279 @@ export function SubscriptionPricing() {
       <section className="py-16 bg-gradient-to-b from-background to-muted/20" id="subscription-pricing">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4">Choose Your Plan</h2>
+            <h2 className="text-4xl font-bold mb-4">Choose Your Pricing Model</h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Unlock your potential with BLINNO. Start free and upgrade as you grow.
-              All plans include access to our marketplace and community.
+              Select the pricing model that works best for you. Switch between models at any time.
             </p>
-            <div className="mt-4 p-4 bg-primary/5 rounded-lg max-w-3xl mx-auto">
-              <p className="text-sm text-muted-foreground">
-                <strong>Transaction Fees:</strong> 8% on marketplace sales • 6% on digital products • 
-                10% on service bookings • 12% on commissions • 3% on tips
-                <br />
-                <strong>Payment Processing:</strong> 2.5% + TZS 500 per transaction (paid by buyer)
-              </p>
+          </div>
+
+          {/* Pricing Model Selector */}
+          <div className="flex justify-center mb-12">
+            <div className="inline-flex rounded-lg border bg-muted p-1">
+              <button
+                type="button"
+                className={`inline-flex items-center gap-2 rounded-md px-6 py-3 text-sm font-medium transition-all ${
+                  pricingModel === "subscription"
+                    ? "bg-background shadow"
+                    : "hover:bg-muted/50"
+                }`}
+                onClick={() => setPricingModel("subscription")}
+              >
+                <Calendar className="h-4 w-4" />
+                Subscription-Based
+              </button>
+              <button
+                type="button"
+                className={`inline-flex items-center gap-2 rounded-md px-6 py-3 text-sm font-medium transition-all ${
+                  pricingModel === "percentage"
+                    ? "bg-background shadow"
+                    : "hover:bg-muted/50"
+                }`}
+                onClick={() => setPricingModel("percentage")}
+              >
+                <Percent className="h-4 w-4" />
+                Percentage-Based
+              </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-            {tierList.map((tier) => {
-              const Icon = tierIcons[tier.key];
-              const isCurrentTier = currentSubscription?.tier === tier.key;
-              const isPopular = tier.key === "creator";
-              const isEnterprise = tier.key === "enterprise";
+          {/* Subscription-Based Pricing */}
+          {pricingModel === "subscription" && (
+            <div>
+              <div className="text-center mb-8">
+                <h3 className="text-2xl font-bold mb-2">Subscription Plans</h3>
+                <p className="text-muted-foreground">
+                  Pay a monthly fee for access to features and reduced transaction fees.
+                </p>
+                <div className="mt-4 p-4 bg-primary/5 rounded-lg max-w-3xl mx-auto">
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Transaction Fees:</strong> 8% on marketplace sales • 6% on digital products • 
+                    10% on service bookings • 12% on commissions • 3% on tips
+                    <br />
+                    <strong>Payment Processing:</strong> 2.5% + TZS 500 per transaction (paid by buyer)
+                  </p>
+                </div>
+              </div>
 
-              return (
-                <Card
-                  key={tier.key}
-                  className={`relative flex flex-col ${
-                    isPopular
-                      ? "border-primary shadow-lg scale-105"
-                      : tierColors[tier.key]
-                  } ${isEnterprise ? "lg:col-span-1" : ""}`}
-                >
-                  {isPopular && (
-                    <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                      <Badge className="bg-primary text-primary-foreground px-4 py-1">
-                        Most Popular
-                      </Badge>
-                    </div>
-                  )}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+                {subscriptionTierList.map((tier) => {
+                  const Icon = tierIcons[tier.key];
+                  const isCurrentTier = currentSubscription?.tier === tier.key;
+                  const isPopular = tier.key === "creator";
+                  const isEnterprise = tier.key === "enterprise";
 
-                  <CardHeader className="text-center pb-4">
-                    <div className="flex justify-center mb-4">
-                      <div
-                        className={`p-3 rounded-full ${
-                          isPopular
-                            ? "bg-primary/10 text-primary"
-                            : "bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        <Icon className="h-6 w-6" />
-                      </div>
-                    </div>
-                    <CardTitle className="text-2xl capitalize">{tier.name}</CardTitle>
-                    <div className="mt-4">
-                      <span className="text-4xl font-bold">
-                        {formatPrice(tier.monthlyPrice)}
-                      </span>
-                      {tier.monthlyPrice > 0 && (
-                        <span className="text-muted-foreground">/month</span>
-                      )}
-                    </div>
-                    {isCurrentTier && (
-                      <Badge variant="secondary" className="mt-2">
-                        Current Plan
-                      </Badge>
-                    )}
-                  </CardHeader>
-
-                  <CardContent className="flex-1 flex flex-col">
-                    <div className="space-y-3 mb-6 flex-1">
-                      {tier.features.map((feature, index) => (
-                        <div key={index} className="flex items-start gap-2">
-                          <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                          <span className="text-sm">{feature}</span>
-                        </div>
-                      ))}
-                      {tier.limits.products !== -1 && (
-                        <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                          <Check className="h-5 w-5 flex-shrink-0 mt-0.5" />
-                          <span>
-                            Up to {tier.limits.products} product listings
-                          </span>
-                        </div>
-                      )}
-                      {tier.limits.products === -1 && (
-                        <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                          <Check className="h-5 w-5 flex-shrink-0 mt-0.5" />
-                          <span>Unlimited product listings</span>
-                        </div>
-                      )}
-                    </div>
-
-                    <Button
-                      className="w-full"
-                      variant={isPopular ? "default" : "outline"}
-                      onClick={() => handleSubscribe(tier.key)}
-                      disabled={
-                        subscribing !== null ||
-                        isCurrentTier ||
-                        (isEnterprise && !user)
-                      }
+                  return (
+                    <Card
+                      key={tier.key}
+                      className={`relative flex flex-col ${
+                        isPopular
+                          ? "border-primary shadow-lg scale-105"
+                          : tierColors[tier.key]
+                      } ${isEnterprise ? "lg:col-span-1" : ""}`}
                     >
-                      {subscribing === tier.key ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Processing...
-                        </>
-                      ) : isCurrentTier ? (
-                        "Current Plan"
-                      ) : isEnterprise ? (
-                        "Contact Sales"
-                      ) : (
-                        tier.monthlyPrice === 0
-                          ? "Get Started"
-                          : "Subscribe Now"
+                      {isPopular && (
+                        <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                          <Badge className="bg-primary text-primary-foreground px-4 py-1">
+                            Most Popular
+                          </Badge>
+                        </div>
                       )}
-                    </Button>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+
+                      <CardHeader className="text-center pb-4">
+                        <div className="flex justify-center mb-4">
+                          <div
+                            className={`p-3 rounded-full ${
+                              isPopular
+                                ? "bg-primary/10 text-primary"
+                                : "bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            <Icon className="h-6 w-6" />
+                          </div>
+                        </div>
+                        <CardTitle className="text-2xl capitalize">{tier.name}</CardTitle>
+                        <div className="mt-4">
+                          <span className="text-4xl font-bold">
+                            {formatPrice(tier.monthlyPrice)}
+                          </span>
+                          {tier.monthlyPrice > 0 && (
+                            <span className="text-muted-foreground">/month</span>
+                          )}
+                        </div>
+                        {isCurrentTier && (
+                          <Badge variant="secondary" className="mt-2">
+                            Current Plan
+                          </Badge>
+                        )}
+                      </CardHeader>
+
+                      <CardContent className="flex-1 flex flex-col">
+                        <div className="space-y-3 mb-6 flex-1">
+                          {tier.features.map((feature, index) => (
+                            <div key={index} className="flex items-start gap-2">
+                              <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                              <span className="text-sm">{feature}</span>
+                            </div>
+                          ))}
+                          {tier.limits.products !== -1 && (
+                            <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                              <Check className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                              <span>
+                                Up to {tier.limits.products} product listings
+                              </span>
+                            </div>
+                          )}
+                          {tier.limits.products === -1 && (
+                            <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                              <Check className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                              <span>Unlimited product listings</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <Button
+                          className="w-full"
+                          variant={isPopular ? "default" : "outline"}
+                          onClick={() => handleSubscribe(tier.key)}
+                          disabled={
+                            subscribing !== null ||
+                            isCurrentTier ||
+                            (isEnterprise && !user)
+                          }
+                        >
+                          {subscribing === tier.key ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Processing...
+                            </>
+                          ) : isCurrentTier ? (
+                            "Current Plan"
+                          ) : isEnterprise ? (
+                            "Contact Sales"
+                          ) : (
+                            tier.monthlyPrice === 0
+                              ? "Get Started"
+                              : "Subscribe Now"
+                          )}
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Percentage-Based Pricing */}
+          {pricingModel === "percentage" && (
+            <div>
+              <div className="text-center mb-8">
+                <h3 className="text-2xl font-bold mb-2">Percentage-Based Plans</h3>
+                <p className="text-muted-foreground">
+                  Pay only transaction fees based on your sales. No monthly subscription required.
+                </p>
+                <div className="mt-4 p-4 bg-primary/5 rounded-lg max-w-3xl mx-auto">
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Payment Processing:</strong> 2.5% + TZS 500 per transaction (paid by buyer)
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto">
+                {percentageTiers.map((tier) => {
+                  const Icon = tier.icon;
+                  const isCurrent = currentSubscription?.pricing_model === "percentage" && 
+                                   currentSubscription?.percentage_tier === tier.key;
+
+                  return (
+                    <Card
+                      key={tier.key}
+                      className={`relative flex flex-col ${
+                        tier.key === "premium" 
+                          ? "border-primary shadow-lg" 
+                          : "border-border"
+                      }`}
+                    >
+                      {tier.key === "premium" && (
+                        <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                          <Badge className="bg-primary text-primary-foreground px-4 py-1">
+                            Most Popular
+                          </Badge>
+                        </div>
+                      )}
+
+                      <CardHeader className="text-center pb-4">
+                        <div className="flex justify-center mb-4">
+                          <div
+                            className={`p-3 rounded-full ${
+                              tier.key === "premium"
+                                ? "bg-primary/10 text-primary"
+                                : "bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            <Icon className="h-6 w-6" />
+                          </div>
+                        </div>
+                        <CardTitle className="text-2xl capitalize">{tier.name}</CardTitle>
+                        <div className="mt-2">
+                          <span className="text-3xl font-bold text-primary">{tier.feeRate}</span>
+                          <span className="text-muted-foreground"> transaction fee</span>
+                        </div>
+                        {isCurrent && (
+                          <Badge variant="secondary" className="mt-2">
+                            Current Plan
+                          </Badge>
+                        )}
+                      </CardHeader>
+
+                      <CardContent className="flex-1 flex flex-col">
+                        <div className="space-y-3 mb-6 flex-1">
+                          {tier.features.map((feature, index) => (
+                            <div key={index} className="flex items-start gap-2">
+                              <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                              <span className="text-sm">{feature}</span>
+                            </div>
+                          ))}
+                          {tier.limits.products !== -1 && (
+                            <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                              <Check className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                              <span>
+                                Up to {tier.limits.products} product listings
+                              </span>
+                            </div>
+                          )}
+                          {tier.limits.products === -1 && (
+                            <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                              <Check className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                              <span>Unlimited product listings</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <Button
+                          className="w-full"
+                          variant={tier.key === "premium" ? "default" : "outline"}
+                          onClick={() => handleSubscribe(`percentage-${tier.key}`)}
+                          disabled={subscribing !== null || isCurrent}
+                        >
+                          {subscribing === `percentage-${tier.key}` ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Processing...
+                            </>
+                          ) : isCurrent ? (
+                            "Current Plan"
+                          ) : (
+                            "Select Plan"
+                          )}
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <div className="mt-12 text-center">
             <p className="text-sm text-muted-foreground">
@@ -522,4 +732,3 @@ export function SubscriptionPricing() {
     </>
   );
 }
-

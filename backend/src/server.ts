@@ -42,6 +42,8 @@ import moderationRoutes from './routes/moderation.js';
 import analyticsRoutes from './routes/analytics.js';
 import emailTemplateRoutes from './routes/emailTemplates.js';
 import serviceRoutes from './routes/services.js';
+import musicRoutes from './routes/music.js';
+import { initializeStorageBuckets } from './middleware/upload.js';
 
 dotenv.config();
 
@@ -82,6 +84,7 @@ app.use('/api/financial', financialRoutes);
 app.use('/api/revenue', revenueRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/news', newsRoutes);
+app.use('/api/music', musicRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -97,6 +100,11 @@ app.use((req, res) => {
 app.use((err: any, req: any, res: any, next: any) => {
   console.error(err.stack);
   res.status(500).json({ error: 'Something went wrong!' });
+});
+
+// Initialize Supabase Storage buckets on startup
+initializeStorageBuckets().catch(err => {
+  console.error('Failed to initialize storage buckets:', err);
 });
 
 app.listen(PORT, () => {

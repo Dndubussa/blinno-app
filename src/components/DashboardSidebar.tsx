@@ -33,6 +33,7 @@ import {
   CreditCard,
   MessageSquare,
   LogOut,
+  Music,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -113,6 +114,13 @@ export function DashboardSidebar() {
     ],
     creator: [
       { title: "Creator Dashboard", icon: LayoutDashboard, href: "/dashboard" },
+    ],
+    musician: [
+      { title: "Musician Dashboard", icon: Music, href: "/musician-dashboard#overview" },
+      { title: "My Tracks", icon: Music, href: "/musician-dashboard#tracks" },
+      { title: "Analytics", icon: BarChart3, href: "/musician-dashboard#analytics" },
+      { title: "Financial", icon: CreditCard, href: "/musician-dashboard#financial" },
+      { title: "Settings", icon: Settings, href: "/musician-dashboard#profile" },
     ],
     user: [
       { title: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
@@ -213,4 +221,3 @@ export function DashboardSidebar() {
     </Sidebar>
   );
 }
-

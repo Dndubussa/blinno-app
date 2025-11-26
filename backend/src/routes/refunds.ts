@@ -1,5 +1,5 @@
 import express from 'express';
-import { pool } from '../config/database.js';
+import { supabase } from '../config/supabase.js';
 import { authenticate, AuthRequest, requireRole } from '../middleware/auth.js';
 import { notificationService } from '../services/notifications.js';
 import { financialTracking } from '../services/financialTracking.js';
@@ -18,21 +18,23 @@ router.post('/request', authenticate, async (req: AuthRequest, res) => {
     }
 
     // Get order details
-    const orderResult = await pool.query(
-      `SELECT o.*, p.creator_id
-       FROM orders o
-       JOIN order_items oi ON o.id = oi.order_id
-       JOIN products p ON oi.product_id = p.id
-       WHERE o.id = $1 AND o.user_id = $2
-       LIMIT 1`,
-      [orderId, req.userId]
-    );
+    const { data: orderItems } = await supabase
+      .from('order_items')
+      .select(`
+        order_id,
+        products!inner(creator_id),
+        orders!inner(id, user_id, total_amount, status, created_at)
+      `)
+      .eq('orders.id', orderId)
+      .eq('orders.user_id', req.userId)
+      .limit(1);
 
-    if (orderResult.rows.length === 0) {
+    if (!orderItems || orderItems.length === 0) {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    const order = orderResult.rows[0];
+    const order = (orderItems[0] as any).orders;
+    const creatorId = (orderItems[0] as any).products?.creator_id;
 
     // Check if order is eligible for refund
     if (!['delivered', 'paid', 'confirmed'].includes(order.status)) {
@@ -42,16 +44,15 @@ router.post('/request', authenticate, async (req: AuthRequest, res) => {
     }
 
     // Check refund policy
-    const policyResult = await pool.query(
-      `SELECT * FROM refund_policies 
-       WHERE (creator_id = $1 OR policy_type = 'platform') 
-       AND is_active = true
-       ORDER BY policy_type DESC
-       LIMIT 1`,
-      [order.creator_id]
-    );
+    const { data: policies } = await supabase
+      .from('refund_policies')
+      .select('*')
+      .or(`creator_id.eq.${creatorId},policy_type.eq.platform`)
+      .eq('is_active', true)
+      .order('policy_type', { ascending: false })
+      .limit(1);
 
-    const policy = policyResult.rows[0] || {
+    const policy = policies?.[0] || {
       refund_window_days: 7,
       return_window_days: 14,
       refund_percentage: 100,
@@ -69,50 +70,49 @@ router.post('/request', authenticate, async (req: AuthRequest, res) => {
 
     // Calculate refund amount
     const refundAmount = amount || parseFloat(order.total_amount);
-    const maxRefund = (parseFloat(order.total_amount) * parseFloat(policy.refund_percentage)) / 100;
+    const maxRefund = (parseFloat(order.total_amount) * parseFloat(policy.refund_percentage.toString())) / 100;
     const finalAmount = Math.min(refundAmount, maxRefund);
 
     // Create refund request
-    const refundResult = await pool.query(
-      `INSERT INTO refunds (
-        order_id, user_id, creator_id, amount, currency, reason, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, 'pending')
-      RETURNING *`,
-      [
-        orderId,
-        req.userId,
-        order.creator_id,
-        finalAmount,
-        'TZS',
+    const { data: refund, error: refundError } = await supabase
+      .from('refunds')
+      .insert({
+        order_id: orderId,
+        user_id: req.userId,
+        creator_id: creatorId,
+        amount: finalAmount,
+        currency: 'TZS',
         reason,
-      ]
-    );
+        status: 'pending',
+      })
+      .select()
+      .single();
 
-    const refund = refundResult.rows[0];
+    if (refundError || !refund) {
+      throw refundError;
+    }
 
     // Create return requests if items specified
     if (items && items.length > 0) {
       for (const item of items) {
-        await pool.query(
-          `INSERT INTO returns (
-            order_id, order_item_id, user_id, creator_id, quantity, reason, status, refund_id
-          ) VALUES ($1, $2, $3, $4, $5, $6, 'pending', $7)`,
-          [
-            orderId,
-            item.orderItemId,
-            req.userId,
-            order.creator_id,
-            item.quantity,
+        await supabase
+          .from('returns')
+          .insert({
+            order_id: orderId,
+            order_item_id: item.orderItemId,
+            user_id: req.userId,
+            creator_id: creatorId,
+            quantity: item.quantity,
             reason,
-            refund.id,
-          ]
-        );
+            status: 'pending',
+            refund_id: refund.id,
+          });
       }
     }
 
     // Notify seller
     await notificationService.createNotification(
-      order.creator_id,
+      creatorId,
       'refund_requested',
       'Refund Requested',
       `A refund request has been submitted for order #${orderId}`,
@@ -131,16 +131,26 @@ router.post('/request', authenticate, async (req: AuthRequest, res) => {
  */
 router.get('/my-refunds', authenticate, async (req: AuthRequest, res) => {
   try {
-    const result = await pool.query(
-      `SELECT r.*, o.total_amount as order_total
-       FROM refunds r
-       JOIN orders o ON r.order_id = o.id
-       WHERE r.user_id = $1
-       ORDER BY r.created_at DESC`,
-      [req.userId]
-    );
+    const { data, error } = await supabase
+      .from('refunds')
+      .select(`
+        *,
+        orders!inner(total_amount)
+      `)
+      .eq('user_id', req.userId)
+      .order('created_at', { ascending: false });
 
-    res.json(result.rows);
+    if (error) {
+      throw error;
+    }
+
+    // Transform to match expected format
+    const transformed = (data || []).map((r: any) => ({
+      ...r,
+      order_total: r.orders?.total_amount,
+    }));
+
+    res.json(transformed);
   } catch (error: any) {
     console.error('Get my refunds error:', error);
     res.status(500).json({ error: 'Failed to get refunds' });
@@ -152,17 +162,28 @@ router.get('/my-refunds', authenticate, async (req: AuthRequest, res) => {
  */
 router.get('/creator-refunds', authenticate, async (req: AuthRequest, res) => {
   try {
-    const result = await pool.query(
-      `SELECT r.*, o.total_amount as order_total, p.display_name as buyer_name
-       FROM refunds r
-       JOIN orders o ON r.order_id = o.id
-       JOIN profiles p ON r.user_id = p.user_id
-       WHERE r.creator_id = $1
-       ORDER BY r.created_at DESC`,
-      [req.userId]
-    );
+    const { data, error } = await supabase
+      .from('refunds')
+      .select(`
+        *,
+        orders!inner(total_amount),
+        buyer:profiles!refunds_user_id_fkey(display_name)
+      `)
+      .eq('creator_id', req.userId)
+      .order('created_at', { ascending: false });
 
-    res.json(result.rows);
+    if (error) {
+      throw error;
+    }
+
+    // Transform to match expected format
+    const transformed = (data || []).map((r: any) => ({
+      ...r,
+      order_total: r.orders?.total_amount,
+      buyer_name: r.buyer?.display_name,
+    }));
+
+    res.json(transformed);
   } catch (error: any) {
     console.error('Get creator refunds error:', error);
     res.status(500).json({ error: 'Failed to get refunds' });
@@ -178,23 +199,24 @@ router.post('/:id/approve', authenticate, async (req: AuthRequest, res) => {
     const { notes } = req.body;
 
     // Get refund
-    const refundResult = await pool.query(
-      'SELECT * FROM refunds WHERE id = $1',
-      [id]
-    );
+    const { data: refund, error: refundError } = await supabase
+      .from('refunds')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    if (refundResult.rows.length === 0) {
+    if (refundError || !refund) {
       return res.status(404).json({ error: 'Refund not found' });
     }
 
-    const refund = refundResult.rows[0];
-
     // Check authorization (creator or admin)
-    const roleResult = await pool.query(
-      `SELECT role FROM user_roles WHERE user_id = $1 AND role = 'admin'`,
-      [req.userId]
-    );
-    const isAdmin = roleResult.rows.length > 0;
+    const { data: roleCheck } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', req.userId)
+      .eq('role', 'admin')
+      .single();
+    const isAdmin = !!roleCheck;
     const isCreator = refund.creator_id === req.userId;
 
     if (!isAdmin && !isCreator) {
@@ -206,14 +228,14 @@ router.post('/:id/approve', authenticate, async (req: AuthRequest, res) => {
     }
 
     // Update refund status
-    await pool.query(
-      `UPDATE refunds
-       SET status = 'approved',
-           admin_notes = COALESCE($1, admin_notes),
-           updated_at = now()
-       WHERE id = $2`,
-      [notes || null, id]
-    );
+    await supabase
+      .from('refunds')
+      .update({
+        status: 'approved',
+        admin_notes: notes || refund.admin_notes,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id);
 
     // Notify buyer
     await notificationService.createNotification(
@@ -240,32 +262,31 @@ router.post('/:id/process', authenticate, requireRole('admin'), async (req: Auth
     const { paymentReference, notes } = req.body;
 
     // Get refund
-    const refundResult = await pool.query(
-      'SELECT * FROM refunds WHERE id = $1',
-      [id]
-    );
+    const { data: refund, error: refundError } = await supabase
+      .from('refunds')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    if (refundResult.rows.length === 0) {
+    if (refundError || !refund) {
       return res.status(404).json({ error: 'Refund not found' });
     }
-
-    const refund = refundResult.rows[0];
 
     if (refund.status !== 'approved') {
       return res.status(400).json({ error: 'Refund must be approved before processing' });
     }
 
     // Update refund status
-    await pool.query(
-      `UPDATE refunds
-       SET status = 'processing',
-           payment_reference = COALESCE($1, payment_reference),
-           admin_notes = COALESCE($2, admin_notes),
-           processed_by = $3,
-           updated_at = now()
-       WHERE id = $4`,
-      [paymentReference || null, notes || null, req.userId, id]
-    );
+    await supabase
+      .from('refunds')
+      .update({
+        status: 'processing',
+        payment_reference: paymentReference || refund.payment_reference,
+        admin_notes: notes || refund.admin_notes,
+        processed_by: req.userId,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id);
 
     // TODO: Integrate with payment gateway to process refund
     // For now, we'll mark it as processing and admin can manually complete it
@@ -286,16 +307,15 @@ router.post('/:id/complete', authenticate, requireRole('admin'), async (req: Aut
     const { paymentReference, notes } = req.body;
 
     // Get refund
-    const refundResult = await pool.query(
-      'SELECT * FROM refunds WHERE id = $1',
-      [id]
-    );
+    const { data: refund, error: refundError } = await supabase
+      .from('refunds')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    if (refundResult.rows.length === 0) {
+    if (refundError || !refund) {
       return res.status(404).json({ error: 'Refund not found' });
     }
-
-    const refund = refundResult.rows[0];
 
     if (refund.status !== 'processing') {
       return res.status(400).json({ error: 'Refund must be in processing status' });
@@ -305,7 +325,7 @@ router.post('/:id/complete', authenticate, requireRole('admin'), async (req: Aut
     await financialTracking.recordTransaction(
       refund.creator_id,
       'refund',
-      parseFloat(refund.amount),
+      parseFloat(refund.amount.toString()),
       refund.id,
       'refund',
       `Refund for order #${refund.order_id}`,
@@ -313,23 +333,23 @@ router.post('/:id/complete', authenticate, requireRole('admin'), async (req: Aut
     );
 
     // Update refund status
-    await pool.query(
-      `UPDATE refunds
-       SET status = 'completed',
-           payment_reference = COALESCE($1, payment_reference),
-           admin_notes = COALESCE($2, admin_notes),
-           processed_by = $3,
-           processed_at = now(),
-           updated_at = now()
-       WHERE id = $4`,
-      [paymentReference || null, notes || null, req.userId, id]
-    );
+    await supabase
+      .from('refunds')
+      .update({
+        status: 'completed',
+        payment_reference: paymentReference || refund.payment_reference,
+        admin_notes: notes || refund.admin_notes,
+        processed_by: req.userId,
+        processed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id);
 
     // Update order status
-    await pool.query(
-      `UPDATE orders SET status = 'refunded' WHERE id = $1`,
-      [refund.order_id]
-    );
+    await supabase
+      .from('orders')
+      .update({ status: 'refunded' })
+      .eq('id', refund.order_id);
 
     // Notify buyer
     await notificationService.createNotification(
@@ -360,23 +380,24 @@ router.post('/:id/reject', authenticate, async (req: AuthRequest, res) => {
     }
 
     // Get refund
-    const refundResult = await pool.query(
-      'SELECT * FROM refunds WHERE id = $1',
-      [id]
-    );
+    const { data: refund, error: refundError } = await supabase
+      .from('refunds')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    if (refundResult.rows.length === 0) {
+    if (refundError || !refund) {
       return res.status(404).json({ error: 'Refund not found' });
     }
 
-    const refund = refundResult.rows[0];
-
     // Check authorization
-    const roleResult = await pool.query(
-      `SELECT role FROM user_roles WHERE user_id = $1 AND role = 'admin'`,
-      [req.userId]
-    );
-    const isAdmin = roleResult.rows.length > 0;
+    const { data: roleCheck } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', req.userId)
+      .eq('role', 'admin')
+      .single();
+    const isAdmin = !!roleCheck;
     const isCreator = refund.creator_id === req.userId;
 
     if (!isAdmin && !isCreator) {
@@ -388,15 +409,15 @@ router.post('/:id/reject', authenticate, async (req: AuthRequest, res) => {
     }
 
     // Update refund status
-    await pool.query(
-      `UPDATE refunds
-       SET status = 'rejected',
-           admin_notes = $1,
-           processed_by = $2,
-           updated_at = now()
-       WHERE id = $3`,
-      [reason, req.userId, id]
-    );
+    await supabase
+      .from('refunds')
+      .update({
+        status: 'rejected',
+        admin_notes: reason,
+        processed_by: req.userId,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id);
 
     // Notify buyer
     await notificationService.createNotification(
@@ -421,28 +442,26 @@ router.get('/policy', async (req, res) => {
   try {
     const { creatorId } = req.query;
 
-    let query = `
-      SELECT * FROM refund_policies
-      WHERE is_active = true
-    `;
-    const params: any[] = [];
-    let paramCount = 1;
+    let query = supabase
+      .from('refund_policies')
+      .select('*')
+      .eq('is_active', true);
 
     if (creatorId) {
-      query += ` AND (creator_id = $${paramCount++} OR policy_type = 'platform')`;
-      params.push(creatorId);
-      query += ` ORDER BY policy_type DESC LIMIT 1`;
+      query = query.or(`creator_id.eq.${creatorId},policy_type.eq.platform`)
+        .order('policy_type', { ascending: false })
+        .limit(1);
     } else {
-      query += ` AND policy_type = 'platform' LIMIT 1`;
+      query = query.eq('policy_type', 'platform').limit(1);
     }
 
-    const result = await pool.query(query, params);
+    const { data, error } = await query;
 
-    if (result.rows.length === 0) {
+    if (error || !data || data.length === 0) {
       return res.status(404).json({ error: 'Refund policy not found' });
     }
 
-    res.json(result.rows[0]);
+    res.json(data[0]);
   } catch (error: any) {
     console.error('Get refund policy error:', error);
     res.status(500).json({ error: 'Failed to get refund policy' });
@@ -450,4 +469,3 @@ router.get('/policy', async (req, res) => {
 });
 
 export default router;
-

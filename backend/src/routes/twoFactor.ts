@@ -1,5 +1,5 @@
 import express from 'express';
-import { pool } from '../config/database.js';
+import { supabase } from '../config/supabase.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import speakeasy from 'speakeasy';
 import QRCode from 'qrcode';
@@ -11,13 +11,18 @@ const router = express.Router();
  */
 router.get('/status', authenticate, async (req: AuthRequest, res) => {
   try {
-    const result = await pool.query(
-      'SELECT is_enabled FROM two_factor_auth WHERE user_id = $1',
-      [req.userId]
-    );
+    const { data, error } = await supabase
+      .from('two_factor_auth')
+      .select('is_enabled')
+      .eq('user_id', req.userId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      throw error;
+    }
 
     res.json({
-      isEnabled: result.rows[0]?.is_enabled || false,
+      isEnabled: data?.is_enabled || false,
     });
   } catch (error: any) {
     console.error('Get 2FA status error:', error);
@@ -31,12 +36,14 @@ router.get('/status', authenticate, async (req: AuthRequest, res) => {
 router.post('/setup', authenticate, async (req: AuthRequest, res) => {
   try {
     // Check if already enabled
-    const existingResult = await pool.query(
-      'SELECT * FROM two_factor_auth WHERE user_id = $1 AND is_enabled = true',
-      [req.userId]
-    );
+    const { data: existing } = await supabase
+      .from('two_factor_auth')
+      .select('*')
+      .eq('user_id', req.userId)
+      .eq('is_enabled', true)
+      .single();
 
-    if (existingResult.rows.length > 0) {
+    if (existing) {
       return res.status(400).json({ error: '2FA is already enabled' });
     }
 
@@ -47,23 +54,20 @@ router.post('/setup', authenticate, async (req: AuthRequest, res) => {
     });
 
     // Get user email for QR code label
-    const userResult = await pool.query(
-      'SELECT email FROM users WHERE id = $1',
-      [req.userId]
-    );
-    const userEmail = userResult.rows[0]?.email || req.userId;
+    const { data: authUser } = await supabase.auth.admin.getUserById(req.userId);
+    const userEmail = authUser?.user?.email || req.userId;
 
     // Generate QR code
     const qrCodeUrl = await QRCode.toDataURL(secret.otpauth_url!);
 
     // Store secret (not enabled yet)
-    await pool.query(
-      `INSERT INTO two_factor_auth (user_id, secret, is_enabled)
-       VALUES ($1, $2, false)
-       ON CONFLICT (user_id) 
-       DO UPDATE SET secret = $2, is_enabled = false, updated_at = now()`,
-      [req.userId, secret.base32]
-    );
+    await supabase
+      .from('two_factor_auth')
+      .upsert({
+        user_id: req.userId,
+        secret: secret.base32,
+        is_enabled: false,
+      }, { onConflict: 'user_id' });
 
     res.json({
       secret: secret.base32,
@@ -88,16 +92,17 @@ router.post('/verify', authenticate, async (req: AuthRequest, res) => {
     }
 
     // Get secret
-    const result = await pool.query(
-      'SELECT secret FROM two_factor_auth WHERE user_id = $1',
-      [req.userId]
-    );
+    const { data, error } = await supabase
+      .from('two_factor_auth')
+      .select('secret')
+      .eq('user_id', req.userId)
+      .single();
 
-    if (result.rows.length === 0) {
+    if (error || !data) {
       return res.status(400).json({ error: '2FA not set up. Please setup first.' });
     }
 
-    const secret = result.rows[0].secret;
+    const secret = data.secret;
 
     // Verify token
     const verified = speakeasy.totp.verify({
@@ -109,10 +114,12 @@ router.post('/verify', authenticate, async (req: AuthRequest, res) => {
 
     if (!verified) {
       // Log failed attempt
-      await pool.query(
-        'INSERT INTO two_factor_attempts (user_id, success) VALUES ($1, false)',
-        [req.userId]
-      );
+      await supabase
+        .from('two_factor_attempts')
+        .insert({
+          user_id: req.userId,
+          success: false,
+        });
 
       return res.status(400).json({ error: 'Invalid token' });
     }
@@ -123,20 +130,22 @@ router.post('/verify', authenticate, async (req: AuthRequest, res) => {
     );
 
     // Enable 2FA and store backup codes
-    await pool.query(
-      `UPDATE two_factor_auth
-       SET is_enabled = true,
-           backup_codes = $1,
-           updated_at = now()
-       WHERE user_id = $2`,
-      [backupCodes, req.userId]
-    );
+    await supabase
+      .from('two_factor_auth')
+      .update({
+        is_enabled: true,
+        backup_codes: backupCodes,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('user_id', req.userId);
 
     // Log successful attempt
-    await pool.query(
-      'INSERT INTO two_factor_attempts (user_id, success) VALUES ($1, true)',
-      [req.userId]
-    );
+    await supabase
+      .from('two_factor_attempts')
+      .insert({
+        user_id: req.userId,
+        success: true,
+      });
 
     res.json({
       success: true,
@@ -155,27 +164,17 @@ router.post('/disable', authenticate, async (req: AuthRequest, res) => {
   try {
     const { password } = req.body; // Require password confirmation
 
-    // Verify password
-    const userResult = await pool.query(
-      'SELECT password_hash FROM users WHERE id = $1',
-      [req.userId]
-    );
-
-    if (userResult.rows.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    // TODO: Verify password with bcrypt
+    // TODO: Verify password with Supabase Auth
     // For now, just disable
 
-    await pool.query(
-      `UPDATE two_factor_auth
-       SET is_enabled = false,
-           backup_codes = NULL,
-           updated_at = now()
-       WHERE user_id = $1`,
-      [req.userId]
-    );
+    await supabase
+      .from('two_factor_auth')
+      .update({
+        is_enabled: false,
+        backup_codes: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('user_id', req.userId);
 
     res.json({ message: '2FA disabled successfully' });
   } catch (error: any) {
@@ -189,17 +188,19 @@ router.post('/disable', authenticate, async (req: AuthRequest, res) => {
  */
 router.get('/backup-codes', authenticate, async (req: AuthRequest, res) => {
   try {
-    const result = await pool.query(
-      'SELECT backup_codes FROM two_factor_auth WHERE user_id = $1 AND is_enabled = true',
-      [req.userId]
-    );
+    const { data, error } = await supabase
+      .from('two_factor_auth')
+      .select('backup_codes')
+      .eq('user_id', req.userId)
+      .eq('is_enabled', true)
+      .single();
 
-    if (result.rows.length === 0) {
+    if (error || !data) {
       return res.status(404).json({ error: '2FA not enabled' });
     }
 
     res.json({
-      backupCodes: result.rows[0].backup_codes || [],
+      backupCodes: data.backup_codes || [],
     });
   } catch (error: any) {
     console.error('Get backup codes error:', error);
@@ -219,16 +220,18 @@ router.post('/verify-token', async (req, res) => {
     }
 
     // Get secret
-    const result = await pool.query(
-      'SELECT secret, backup_codes FROM two_factor_auth WHERE user_id = $1 AND is_enabled = true',
-      [userId]
-    );
+    const { data, error } = await supabase
+      .from('two_factor_auth')
+      .select('secret, backup_codes')
+      .eq('user_id', userId)
+      .eq('is_enabled', true)
+      .single();
 
-    if (result.rows.length === 0) {
+    if (error || !data) {
       return res.status(400).json({ error: '2FA not enabled for this user' });
     }
 
-    const { secret, backup_codes } = result.rows[0];
+    const { secret, backup_codes } = data;
 
     // Check if it's a backup code
     const isBackupCode = backup_codes && backup_codes.includes(token);
@@ -236,10 +239,10 @@ router.post('/verify-token', async (req, res) => {
     if (isBackupCode) {
       // Remove used backup code
       const updatedCodes = backup_codes.filter((code: string) => code !== token);
-      await pool.query(
-        'UPDATE two_factor_auth SET backup_codes = $1 WHERE user_id = $2',
-        [updatedCodes, userId]
-      );
+      await supabase
+        .from('two_factor_auth')
+        .update({ backup_codes: updatedCodes })
+        .eq('user_id', userId);
 
       return res.json({ verified: true, usedBackupCode: true });
     }
@@ -253,10 +256,13 @@ router.post('/verify-token', async (req, res) => {
     });
 
     // Log attempt
-    await pool.query(
-      'INSERT INTO two_factor_attempts (user_id, success, ip_address) VALUES ($1, $2, $3)',
-      [userId, verified, req.ip]
-    );
+    await supabase
+      .from('two_factor_attempts')
+      .insert({
+        user_id: userId,
+        success: verified,
+        ip_address: req.ip,
+      });
 
     if (!verified) {
       return res.status(400).json({ error: 'Invalid token' });
@@ -270,4 +276,3 @@ router.post('/verify-token', async (req, res) => {
 });
 
 export default router;
-

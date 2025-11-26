@@ -1,5 +1,5 @@
 import express from 'express';
-import { pool } from '../config/database.js';
+import { supabase } from '../config/supabase.js';
 import { authenticate, AuthRequest, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -9,92 +9,111 @@ const getDashboardStats = async (userId: string, role: string) => {
   switch (role) {
     case 'lodging':
       const [properties, rooms, bookings, revenue] = await Promise.all([
-        pool.query('SELECT COUNT(*) as count FROM lodging_properties WHERE owner_id = $1', [userId]),
-        pool.query('SELECT COUNT(*) as count FROM lodging_rooms r JOIN lodging_properties p ON r.property_id = p.id WHERE p.owner_id = $1', [userId]),
-        pool.query("SELECT COUNT(*) as count FROM lodging_bookings b JOIN lodging_rooms r ON b.room_id = r.id JOIN lodging_properties p ON r.property_id = p.id WHERE p.owner_id = $1 AND b.status = 'confirmed'", [userId]),
-        pool.query("SELECT COALESCE(SUM(b.total_amount), 0) as total FROM lodging_bookings b JOIN lodging_rooms r ON b.room_id = r.id JOIN lodging_properties p ON r.property_id = p.id WHERE p.owner_id = $1 AND b.status = 'completed'", [userId]),
+        supabase.from('lodging_properties').select('*', { count: 'exact', head: true }).eq('owner_id', userId),
+        supabase.from('lodging_rooms').select('*, lodging_properties!inner(owner_id)').eq('lodging_properties.owner_id', userId),
+        supabase.from('lodging_bookings').select('*, lodging_rooms!inner(lodging_properties!inner(owner_id))').eq('lodging_rooms.lodging_properties.owner_id', userId).eq('status', 'confirmed'),
+        supabase.from('lodging_bookings').select('total_amount').eq('status', 'completed'),
       ]);
+      
+      // Calculate revenue
+      let totalRevenue = 0;
+      if (revenue.data) {
+        totalRevenue = revenue.data.reduce((sum: number, b: any) => sum + (parseFloat(b.total_amount) || 0), 0);
+      }
+
       return {
-        totalProperties: parseInt(properties.rows[0].count),
-        totalRooms: parseInt(rooms.rows[0].count),
-        activeBookings: parseInt(bookings.rows[0].count),
-        totalRevenue: parseFloat(revenue.rows[0].total || 0),
+        totalProperties: properties.count || 0,
+        totalRooms: rooms.data?.length || 0,
+        activeBookings: bookings.data?.length || 0,
+        totalRevenue,
       };
 
     case 'restaurant':
       const [restaurants, menuItems, pendingReservations, todayReservations] = await Promise.all([
-        pool.query('SELECT COUNT(*) as count FROM restaurants WHERE owner_id = $1', [userId]),
-        pool.query('SELECT COUNT(*) as count FROM menu_items m JOIN restaurants r ON m.restaurant_id = r.id WHERE r.owner_id = $1', [userId]),
-        pool.query("SELECT COUNT(*) as count FROM restaurant_reservations res JOIN restaurants r ON res.restaurant_id = r.id WHERE r.owner_id = $1 AND res.status = 'pending'", [userId]),
-        pool.query("SELECT COUNT(*) as count FROM restaurant_reservations res JOIN restaurants r ON res.restaurant_id = r.id WHERE r.owner_id = $1 AND DATE(res.reservation_date) = CURRENT_DATE", [userId]),
+        supabase.from('restaurants').select('*', { count: 'exact', head: true }).eq('owner_id', userId),
+        supabase.from('menu_items').select('*, restaurants!inner(owner_id)').eq('restaurants.owner_id', userId),
+        supabase.from('restaurant_reservations').select('*, restaurants!inner(owner_id)').eq('restaurants.owner_id', userId).eq('status', 'pending'),
+        supabase.from('restaurant_reservations').select('*, restaurants!inner(owner_id)').eq('restaurants.owner_id', userId).gte('reservation_date', new Date().toISOString().split('T')[0]),
       ]);
+      
       return {
-        totalRestaurants: parseInt(restaurants.rows[0].count),
-        totalMenuItems: parseInt(menuItems.rows[0].count),
-        pendingReservations: parseInt(pendingReservations.rows[0].count),
-        todayReservations: parseInt(todayReservations.rows[0].count),
+        totalRestaurants: restaurants.count || 0,
+        totalMenuItems: menuItems.data?.length || 0,
+        pendingReservations: pendingReservations.data?.length || 0,
+        todayReservations: todayReservations.data?.length || 0,
       };
 
     case 'educator':
-      const [courses, students, enrollments, courseRevenue] = await Promise.all([
-        pool.query('SELECT COUNT(*) as count FROM courses WHERE educator_id = $1', [userId]),
-        pool.query('SELECT COUNT(DISTINCT student_id) as count FROM course_enrollments e JOIN courses c ON e.course_id = c.id WHERE c.educator_id = $1', [userId]),
-        pool.query('SELECT COUNT(*) as count FROM course_enrollments e JOIN courses c ON e.course_id = c.id WHERE c.educator_id = $1', [userId]),
-        pool.query("SELECT COALESCE(SUM(c.price), 0) as total FROM course_enrollments e JOIN courses c ON e.course_id = c.id WHERE c.educator_id = $1 AND e.payment_status = 'paid'", [userId]),
+      const [courses, enrollments, courseRevenue] = await Promise.all([
+        supabase.from('courses').select('*', { count: 'exact', head: true }).eq('educator_id', userId),
+        supabase.from('course_enrollments').select('*, courses!inner(educator_id)').eq('courses.educator_id', userId),
+        supabase.from('course_enrollments').select('*, courses!inner(educator_id, price)').eq('courses.educator_id', userId).eq('payment_status', 'paid'),
       ]);
+      
+      let totalRevenue = 0;
+      if (courseRevenue.data) {
+        totalRevenue = courseRevenue.data.reduce((sum: number, e: any) => sum + (parseFloat(e.courses?.price) || 0), 0);
+      }
+
+      const uniqueStudents = new Set(enrollments.data?.map((e: any) => e.student_id) || []);
+      
       return {
-        totalCourses: parseInt(courses.rows[0].count),
-        totalStudents: parseInt(students.rows[0].count),
-        totalEnrollments: parseInt(enrollments.rows[0].count),
-        totalRevenue: parseFloat(courseRevenue.rows[0].total || 0),
+        totalCourses: courses.count || 0,
+        totalStudents: uniqueStudents.size,
+        totalEnrollments: enrollments.data?.length || 0,
+        totalRevenue,
       };
 
     case 'journalist':
       const [articles, publishedArticles, categories] = await Promise.all([
-        pool.query('SELECT COUNT(*) as count FROM news_articles WHERE journalist_id = $1', [userId]),
-        pool.query("SELECT COUNT(*) as count FROM news_articles WHERE journalist_id = $1 AND is_published = true", [userId]),
-        pool.query('SELECT COUNT(*) as count FROM news_categories', []),
+        supabase.from('news_articles').select('*', { count: 'exact', head: true }).eq('journalist_id', userId),
+        supabase.from('news_articles').select('*', { count: 'exact', head: true }).eq('journalist_id', userId).eq('is_published', true),
+        supabase.from('news_categories').select('*', { count: 'exact', head: true }),
       ]);
+      
       return {
-        totalArticles: parseInt(articles.rows[0].count),
-        publishedArticles: parseInt(publishedArticles.rows[0].count),
-        totalCategories: parseInt(categories.rows[0].count),
+        totalArticles: articles.count || 0,
+        publishedArticles: publishedArticles.count || 0,
+        totalCategories: categories.count || 0,
       };
 
     case 'artisan':
       const [services, artisanBookings, completedJobs] = await Promise.all([
-        pool.query('SELECT COUNT(*) as count FROM artisan_services WHERE artisan_id = $1', [userId]),
-        pool.query("SELECT COUNT(*) as count FROM artisan_bookings WHERE artisan_id = $1 AND status = 'confirmed'", [userId]),
-        pool.query("SELECT COUNT(*) as count FROM artisan_bookings WHERE artisan_id = $1 AND status = 'completed'", [userId]),
+        supabase.from('artisan_services').select('*', { count: 'exact', head: true }).eq('artisan_id', userId),
+        supabase.from('artisan_bookings').select('*', { count: 'exact', head: true }).eq('artisan_id', userId).eq('status', 'confirmed'),
+        supabase.from('artisan_bookings').select('*', { count: 'exact', head: true }).eq('artisan_id', userId).eq('status', 'completed'),
       ]);
+      
       return {
-        totalServices: parseInt(services.rows[0].count),
-        activeBookings: parseInt(artisanBookings.rows[0].count),
-        completedJobs: parseInt(completedJobs.rows[0].count),
+        totalServices: services.count || 0,
+        activeBookings: artisanBookings.count || 0,
+        completedJobs: completedJobs.count || 0,
       };
 
     case 'employer':
       const [jobPostings, applications, activeJobs] = await Promise.all([
-        pool.query('SELECT COUNT(*) as count FROM job_postings WHERE employer_id = $1', [userId]),
-        pool.query("SELECT COUNT(*) as count FROM job_applications ja JOIN job_postings jp ON ja.job_posting_id = jp.id WHERE jp.employer_id = $1 AND ja.status = 'pending'", [userId]),
-        pool.query("SELECT COUNT(*) as count FROM job_postings WHERE employer_id = $1 AND is_active = true", [userId]),
+        supabase.from('job_postings').select('*', { count: 'exact', head: true }).eq('employer_id', userId),
+        supabase.from('job_applications').select('*, job_postings!inner(employer_id)').eq('job_postings.employer_id', userId).eq('status', 'pending'),
+        supabase.from('job_postings').select('*', { count: 'exact', head: true }).eq('employer_id', userId).eq('is_active', true),
       ]);
+      
       return {
-        totalJobPostings: parseInt(jobPostings.rows[0].count),
-        pendingApplications: parseInt(applications.rows[0].count),
-        activeJobs: parseInt(activeJobs.rows[0].count),
+        totalJobPostings: jobPostings.count || 0,
+        pendingApplications: applications.data?.length || 0,
+        activeJobs: activeJobs.count || 0,
       };
 
     case 'event_organizer':
       const [events, registrations, upcomingEvents] = await Promise.all([
-        pool.query('SELECT COUNT(*) as count FROM organized_events WHERE organizer_id = $1', [userId]),
-        pool.query('SELECT COUNT(*) as count FROM event_registrations er JOIN organized_events e ON er.event_id = e.id WHERE e.organizer_id = $1', [userId]),
-        pool.query("SELECT COUNT(*) as count FROM organized_events WHERE organizer_id = $1 AND start_date > NOW() AND status = 'published'", [userId]),
+        supabase.from('organized_events').select('*', { count: 'exact', head: true }).eq('organizer_id', userId),
+        supabase.from('event_registrations').select('*, organized_events!inner(organizer_id)').eq('organized_events.organizer_id', userId),
+        supabase.from('organized_events').select('*', { count: 'exact', head: true }).eq('organizer_id', userId).eq('status', 'published').gt('start_date', new Date().toISOString()),
       ]);
+      
       return {
-        totalEvents: parseInt(events.rows[0].count),
-        totalRegistrations: parseInt(registrations.rows[0].count),
-        upcomingEvents: parseInt(upcomingEvents.rows[0].count),
+        totalEvents: events.count || 0,
+        totalRegistrations: registrations.data?.length || 0,
+        upcomingEvents: upcomingEvents.count || 0,
       };
 
     default:
@@ -108,12 +127,14 @@ router.get('/:role/stats', authenticate, async (req: AuthRequest, res) => {
     const { role } = req.params;
     
     // Check if user has the role
-    const roleCheck = await pool.query(
-      'SELECT role FROM user_roles WHERE user_id = $1 AND role = $2',
-      [req.userId, role]
-    );
+    const { data: roleCheck } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', req.userId)
+      .eq('role', role)
+      .single();
 
-    if (roleCheck.rows.length === 0) {
+    if (!roleCheck) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
@@ -126,4 +147,3 @@ router.get('/:role/stats', authenticate, async (req: AuthRequest, res) => {
 });
 
 export default router;
-

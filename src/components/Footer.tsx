@@ -1,6 +1,7 @@
-import { Facebook, Twitter, Instagram, Youtube, Mail, MapPin, Phone } from "lucide-react";
+import { Facebook, Twitter, Instagram, Youtube, Mail, MapPin, Phone, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import logo from "@/assets/logo.png";
 
 export const Footer = () => {
   const navigate = useNavigate();
@@ -22,15 +23,13 @@ export const Footer = () => {
                 scrollToTop();
               }}
             >
-              <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center font-bold text-primary-foreground">
-                BL
-              </div>
+              <img src={logo} alt="BLINNO Logo" className="w-8 h-8" />
               <span className="text-lg font-bold text-primary">
                 BLINNO
               </span>
             </div>
             <p className="text-muted-foreground text-sm mb-4">
-              Your platform to discover, create, and connect with all things Tanzanian. Supporting local talent and culture worldwide.
+              Your platform to discover, create, and connect with all things Tanzanian. Supporting local talent and culture worldwide through our globally accessible platform that's proudly 100% Tanzanian owned.
             </p>
             <div className="flex gap-3">
               <Button 
@@ -194,13 +193,19 @@ export const Footer = () => {
                   hello@blinno.com
                 </a>
               </li>
+              <li className="flex items-center gap-2">
+                <Globe className="h-4 w-4 text-primary flex-shrink-0" />
+                <span className="text-muted-foreground text-sm">
+                  Worldwide Platform
+                </span>
+              </li>
             </ul>
           </div>
         </div>
 
         <div className="border-t border-border mt-8 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-muted-foreground text-sm">
-            © 2024 BLINNO. All rights reserved.
+            © 2024 BLINNO. All rights reserved. Worldwide Platform, 100% Tanzanian Owned.
           </p>
           <div className="flex gap-6 text-sm">
             <button 

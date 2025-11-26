@@ -1,5 +1,5 @@
 import express from 'express';
-import { pool } from '../config/database.js';
+import { supabase } from '../config/supabase.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { notificationService } from '../services/notifications.js';
 
@@ -12,38 +12,49 @@ router.get('/', authenticate, async (req: AuthRequest, res) => {
   try {
     const { status, limit = 50, offset = 0 } = req.query;
 
-    let query = `
-      SELECT 
-        o.*,
-        json_agg(
-          json_build_object(
-            'id', oi.id,
-            'product_id', oi.product_id,
-            'quantity', oi.quantity,
-            'price_at_purchase', oi.price_at_purchase,
-            'product_title', p.title,
-            'product_image', p.image_url
+    let query = supabase
+      .from('orders')
+      .select(`
+        *,
+        order_items (
+          id,
+          product_id,
+          quantity,
+          price_at_purchase,
+          products (
+            title,
+            image_url
           )
-        ) as items
-      FROM orders o
-      LEFT JOIN order_items oi ON o.id = oi.order_id
-      LEFT JOIN products p ON oi.product_id = p.id
-      WHERE o.user_id = $1
-    `;
-    const params: any[] = [req.userId];
-    let paramCount = 2;
+        )
+      `)
+      .eq('user_id', req.userId)
+      .order('created_at', { ascending: false })
+      .range(parseInt(offset as string), parseInt(offset as string) + parseInt(limit as string) - 1);
 
     if (status) {
-      query += ` AND o.status = $${paramCount++}`;
-      params.push(status);
+      query = query.eq('status', status as string);
     }
 
-    query += ` GROUP BY o.id ORDER BY o.created_at DESC LIMIT $${paramCount++} OFFSET $${paramCount++}`;
-    params.push(parseInt(limit as string), parseInt(offset as string));
+    const { data: orders, error } = await query;
 
-    const result = await pool.query(query, params);
+    if (error) {
+      throw error;
+    }
 
-    res.json(result.rows);
+    // Transform to match expected format
+    const transformed = (orders || []).map((order: any) => ({
+      ...order,
+      items: (order.order_items || []).map((oi: any) => ({
+        id: oi.id,
+        product_id: oi.product_id,
+        quantity: oi.quantity,
+        price_at_purchase: oi.price_at_purchase,
+        product_title: oi.products?.title,
+        product_image: oi.products?.image_url,
+      })),
+    }));
+
+    res.json(transformed);
   } catch (error: any) {
     console.error('Get orders error:', error);
     res.status(500).json({ error: 'Failed to get orders' });
@@ -57,56 +68,69 @@ router.get('/:id', authenticate, async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
 
-    // Get order
-    const orderResult = await pool.query(
-      `SELECT 
-        o.*,
-        json_agg(
-          json_build_object(
-            'id', oi.id,
-            'product_id', oi.product_id,
-            'quantity', oi.quantity,
-            'price_at_purchase', oi.price_at_purchase,
-            'product_title', p.title,
-            'product_image', p.image_url
+    // Get order with items
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .select(`
+        *,
+        order_items (
+          id,
+          product_id,
+          quantity,
+          price_at_purchase,
+          products (
+            title,
+            image_url
           )
-        ) as items
-       FROM orders o
-       LEFT JOIN order_items oi ON o.id = oi.order_id
-       LEFT JOIN products p ON oi.product_id = p.id
-       WHERE o.id = $1 AND o.user_id = $2
-       GROUP BY o.id`,
-      [id, req.userId]
-    );
+        )
+      `)
+      .eq('id', id)
+      .eq('user_id', req.userId)
+      .single();
 
-    if (orderResult.rows.length === 0) {
+    if (orderError || !order) {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    const order = orderResult.rows[0];
-
     // Get status history
-    const historyResult = await pool.query(
-      `SELECT 
-        osh.*,
-        p.display_name as changed_by_name
-       FROM order_status_history osh
-       LEFT JOIN profiles p ON osh.changed_by = p.user_id
-       WHERE osh.order_id = $1
-       ORDER BY osh.created_at ASC`,
-      [id]
-    );
+    const { data: history } = await supabase
+      .from('order_status_history')
+      .select(`
+        *,
+        changed_by:profiles!order_status_history_changed_by_fkey(display_name)
+      `)
+      .eq('order_id', id)
+      .order('created_at', { ascending: true });
 
     // Get payment info
-    const paymentResult = await pool.query(
-      `SELECT * FROM payments WHERE order_id = $1 ORDER BY created_at DESC LIMIT 1`,
-      [id]
-    );
+    const { data: payments } = await supabase
+      .from('payments')
+      .select('*')
+      .eq('order_id', id)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    // Transform order items
+    const items = (order.order_items || []).map((oi: any) => ({
+      id: oi.id,
+      product_id: oi.product_id,
+      quantity: oi.quantity,
+      price_at_purchase: oi.price_at_purchase,
+      product_title: oi.products?.title,
+      product_image: oi.products?.image_url,
+    }));
+
+    // Transform status history
+    const statusHistory = (history || []).map((h: any) => ({
+      ...h,
+      changed_by_name: h.changed_by?.display_name,
+    }));
 
     res.json({
       ...order,
-      statusHistory: historyResult.rows,
-      payment: paymentResult.rows[0] || null,
+      items,
+      statusHistory,
+      payment: payments?.[0] || null,
     });
   } catch (error: any) {
     console.error('Get order details error:', error);
@@ -123,60 +147,87 @@ router.put('/:id/status', authenticate, async (req: AuthRequest, res) => {
     const { status, trackingNumber, shippingCarrier, estimatedDeliveryDate, notes } = req.body;
 
     // Get order to check ownership
-    const orderResult = await pool.query(
-      `SELECT o.*, p.creator_id 
-       FROM orders o
-       JOIN order_items oi ON o.id = oi.order_id
-       JOIN products p ON oi.product_id = p.id
-       WHERE o.id = $1
-       LIMIT 1`,
-      [id]
-    );
+    const { data: orderItems } = await supabase
+      .from('order_items')
+      .select(`
+        order_id,
+        products!inner(creator_id)
+      `)
+      .eq('order_id', id)
+      .limit(1);
 
-    if (orderResult.rows.length === 0) {
+    if (!orderItems || orderItems.length === 0) {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    const order = orderResult.rows[0];
+    const creatorId = (orderItems[0] as any).products?.creator_id;
 
     // Check if user is admin or product creator
-    const roleResult = await pool.query(
-      `SELECT role FROM user_roles WHERE user_id = $1 AND role = 'admin'`,
-      [req.userId]
-    );
-    const isAdmin = roleResult.rows.length > 0;
-    const isCreator = order.creator_id === req.userId;
+    const { data: roleCheck } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', req.userId)
+      .eq('role', 'admin')
+      .single();
+    const isAdmin = !!roleCheck;
+    const isCreator = creatorId === req.userId;
 
     if (!isAdmin && !isCreator) {
       return res.status(403).json({ error: 'Not authorized' });
     }
 
-    // Update order status
-    await pool.query(
-      `SELECT update_order_status($1::uuid, $2::text, $3::uuid, $4::text)`,
-      [id, status, req.userId, notes || null]
-    );
+    // Update order status (using RPC function if available, otherwise direct update)
+    // For now, we'll update directly and create history entry
+    await supabase
+      .from('orders')
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq('id', id);
+
+    // Create status history entry
+    await supabase
+      .from('order_status_history')
+      .insert({
+        order_id: id,
+        status,
+        changed_by: req.userId,
+        notes: notes || null,
+      });
 
     // Update tracking info if provided
     if (trackingNumber || shippingCarrier || estimatedDeliveryDate) {
-      await pool.query(
-        `UPDATE orders
-         SET tracking_number = COALESCE($1, tracking_number),
-             shipping_carrier = COALESCE($2, shipping_carrier),
-             estimated_delivery_date = COALESCE($3, estimated_delivery_date),
-             updated_at = now()
-         WHERE id = $4`,
-        [trackingNumber || null, shippingCarrier || null, estimatedDeliveryDate || null, id]
-      );
+      const trackingUpdates: any = {
+        updated_at: new Date().toISOString(),
+      };
+      if (trackingNumber) trackingUpdates.tracking_number = trackingNumber;
+      if (shippingCarrier) trackingUpdates.shipping_carrier = shippingCarrier;
+      if (estimatedDeliveryDate) trackingUpdates.estimated_delivery_date = estimatedDeliveryDate;
+
+      await supabase
+        .from('orders')
+        .update(trackingUpdates)
+        .eq('id', id);
     }
 
+    // Get order user_id for notification
+    const { data: order } = await supabase
+      .from('orders')
+      .select('user_id')
+      .eq('id', id)
+      .single();
+
     // Notify buyer about status change
-    await notificationService.notifyOrderStatus(order.user_id, id, status);
+    if (order) {
+      await notificationService.notifyOrderStatus(order.user_id, id, status);
+    }
 
     // Get updated order
-    const updatedResult = await pool.query('SELECT * FROM orders WHERE id = $1', [id]);
+    const { data: updatedOrder } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    res.json(updatedResult.rows[0]);
+    res.json(updatedOrder);
   } catch (error: any) {
     console.error('Update order status error:', error);
     res.status(500).json({ error: 'Failed to update order status' });
@@ -192,16 +243,16 @@ router.post('/:id/cancel', authenticate, async (req: AuthRequest, res) => {
     const { reason } = req.body;
 
     // Get order
-    const orderResult = await pool.query(
-      'SELECT * FROM orders WHERE id = $1 AND user_id = $2',
-      [id, req.userId]
-    );
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('id', id)
+      .eq('user_id', req.userId)
+      .single();
 
-    if (orderResult.rows.length === 0) {
+    if (orderError || !order) {
       return res.status(404).json({ error: 'Order not found' });
     }
-
-    const order = orderResult.rows[0];
 
     // Only allow cancellation if order is pending or confirmed
     if (!['pending', 'confirmed'].includes(order.status)) {
@@ -211,23 +262,40 @@ router.post('/:id/cancel', authenticate, async (req: AuthRequest, res) => {
     }
 
     // Update order status
-    await pool.query(
-      `SELECT update_order_status($1::uuid, $2::text, $3::uuid, $4::text)`,
-      [id, 'cancelled', req.userId, reason || 'Cancelled by buyer']
-    );
+    await supabase
+      .from('orders')
+      .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+      .eq('id', id);
 
-    // Notify seller
-    const sellerResult = await pool.query(
-      `SELECT DISTINCT p.creator_id 
-       FROM order_items oi
-       JOIN products p ON oi.product_id = p.id
-       WHERE oi.order_id = $1`,
-      [id]
-    );
+    // Create status history entry
+    await supabase
+      .from('order_status_history')
+      .insert({
+        order_id: id,
+        status: 'cancelled',
+        changed_by: req.userId,
+        notes: reason || 'Cancelled by buyer',
+      });
 
-    for (const seller of sellerResult.rows) {
+    // Get seller IDs from order items
+    const { data: orderItems } = await supabase
+      .from('order_items')
+      .select(`
+        products!inner(creator_id)
+      `)
+      .eq('order_id', id);
+
+    const sellerIds = new Set<string>();
+    (orderItems || []).forEach((oi: any) => {
+      if (oi.products?.creator_id) {
+        sellerIds.add(oi.products.creator_id);
+      }
+    });
+
+    // Notify sellers
+    for (const sellerId of sellerIds) {
       await notificationService.createNotification(
-        seller.creator_id,
+        sellerId,
         'order_cancelled',
         'Order Cancelled',
         `Order #${id} has been cancelled by the buyer.`,
@@ -250,16 +318,16 @@ router.post('/:id/confirm-delivery', authenticate, async (req: AuthRequest, res)
     const { id } = req.params;
 
     // Get order
-    const orderResult = await pool.query(
-      'SELECT * FROM orders WHERE id = $1 AND user_id = $2',
-      [id, req.userId]
-    );
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('id', id)
+      .eq('user_id', req.userId)
+      .single();
 
-    if (orderResult.rows.length === 0) {
+    if (orderError || !order) {
       return res.status(404).json({ error: 'Order not found' });
     }
-
-    const order = orderResult.rows[0];
 
     if (order.status !== 'shipped') {
       return res.status(400).json({ 
@@ -268,16 +336,24 @@ router.post('/:id/confirm-delivery', authenticate, async (req: AuthRequest, res)
     }
 
     // Update order status
-    await pool.query(
-      `SELECT update_order_status($1::uuid, $2::text, $3::uuid, $4::text)`,
-      [id, 'delivered', req.userId, 'Confirmed by buyer']
-    );
+    await supabase
+      .from('orders')
+      .update({
+        status: 'delivered',
+        delivered_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id);
 
-    // Update delivered_at
-    await pool.query(
-      `UPDATE orders SET delivered_at = now() WHERE id = $1`,
-      [id]
-    );
+    // Create status history entry
+    await supabase
+      .from('order_status_history')
+      .insert({
+        order_id: id,
+        status: 'delivered',
+        changed_by: req.userId,
+        notes: 'Confirmed by buyer',
+      });
 
     res.json({ message: 'Delivery confirmed successfully' });
   } catch (error: any) {
@@ -291,14 +367,18 @@ router.post('/:id/confirm-delivery', authenticate, async (req: AuthRequest, res)
  */
 router.get('/shipping-addresses', authenticate, async (req: AuthRequest, res) => {
   try {
-    const result = await pool.query(
-      `SELECT * FROM shipping_addresses
-       WHERE user_id = $1
-       ORDER BY is_default DESC, created_at DESC`,
-      [req.userId]
-    );
+    const { data, error } = await supabase
+      .from('shipping_addresses')
+      .select('*')
+      .eq('user_id', req.userId)
+      .order('is_default', { ascending: false })
+      .order('created_at', { ascending: false });
 
-    res.json(result.rows);
+    if (error) {
+      throw error;
+    }
+
+    res.json(data || []);
   } catch (error: any) {
     console.error('Get shipping addresses error:', error);
     res.status(500).json({ error: 'Failed to get shipping addresses' });
@@ -328,32 +408,34 @@ router.post('/shipping-addresses', authenticate, async (req: AuthRequest, res) =
 
     // If this is set as default, unset other defaults
     if (is_default) {
-      await pool.query(
-        `UPDATE shipping_addresses SET is_default = false WHERE user_id = $1`,
-        [req.userId]
-      );
+      await supabase
+        .from('shipping_addresses')
+        .update({ is_default: false })
+        .eq('user_id', req.userId);
     }
 
-    const result = await pool.query(
-      `INSERT INTO shipping_addresses (
-        user_id, label, recipient_name, phone, street, city, region, postal_code, country, is_default
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-      RETURNING *`,
-      [
-        req.userId,
-        label || null,
+    const { data, error } = await supabase
+      .from('shipping_addresses')
+      .insert({
+        user_id: req.userId,
+        label: label || null,
         recipient_name,
         phone,
         street,
         city,
-        region || null,
-        postal_code || null,
-        country || 'Tanzania',
-        is_default || false,
-      ]
-    );
+        region: region || null,
+        postal_code: postal_code || null,
+        country: country || 'Tanzania',
+        is_default: is_default || false,
+      })
+      .select()
+      .single();
 
-    res.status(201).json(result.rows[0]);
+    if (error) {
+      throw error;
+    }
+
+    res.status(201).json(data);
   } catch (error: any) {
     console.error('Create shipping address error:', error);
     res.status(500).json({ error: 'Failed to create shipping address' });
@@ -361,4 +443,3 @@ router.post('/shipping-addresses', authenticate, async (req: AuthRequest, res) =
 });
 
 export default router;
-

@@ -1,9 +1,10 @@
 import express from 'express';
-import { pool } from '../config/database.js';
+import { supabase } from '../config/supabase.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import ClickPesaService, { PaymentRequest } from '../services/clickpesa.js';
 import { platformFees } from '../services/platformFees.js';
 import dotenv from 'dotenv';
+import { userPreferences } from '../services/userPreferences.js';
 
 dotenv.config();
 
@@ -18,11 +19,17 @@ const clickPesa = new ClickPesaService({
 // Get restaurants for current owner
 router.get('/', authenticate, async (req: AuthRequest, res) => {
   try {
-    const result = await pool.query(
-      'SELECT * FROM restaurants WHERE owner_id = $1 ORDER BY created_at DESC',
-      [req.userId]
-    );
-    res.json(result.rows);
+    const { data, error } = await supabase
+      .from('restaurants')
+      .select('*')
+      .eq('owner_id', req.userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    res.json(data || []);
   } catch (error: any) {
     console.error('Get restaurants error:', error);
     res.status(500).json({ error: 'Failed to get restaurants' });
@@ -37,31 +44,32 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
       priceRange, acceptsReservations, deliveryAvailable, images
     } = req.body;
     
-    const result = await pool.query(
-      `INSERT INTO restaurants (
-        owner_id, name, description, cuisine_type, address, city, country,
-        phone, email, website, price_range, accepts_reservations, delivery_available, images
-      )
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-       RETURNING *`,
-      [
-        req.userId,
+    const { data, error } = await supabase
+      .from('restaurants')
+      .insert({
+        owner_id: req.userId,
         name,
-        description || null,
-        cuisineType,
+        description: description || null,
+        cuisine_type: cuisineType,
         address,
         city,
         country,
-        phone || null,
-        email || null,
-        website || null,
-        priceRange || null,
-        acceptsReservations !== undefined ? acceptsReservations : true,
-        deliveryAvailable || false,
-        images || [],
-      ]
-    );
-    res.status(201).json(result.rows[0]);
+        phone: phone || null,
+        email: email || null,
+        website: website || null,
+        price_range: priceRange || null,
+        accepts_reservations: acceptsReservations !== undefined ? acceptsReservations : true,
+        delivery_available: deliveryAvailable || false,
+        images: images || [],
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    res.status(201).json(data);
   } catch (error: any) {
     console.error('Create restaurant error:', error);
     res.status(500).json({ error: 'Failed to create restaurant' });
@@ -72,23 +80,27 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
 router.get('/menu-items', authenticate, async (req: AuthRequest, res) => {
   try {
     const { restaurantId } = req.query;
-    let query = `
-      SELECT mi.*, r.owner_id
-      FROM menu_items mi
-      JOIN restaurants r ON mi.restaurant_id = r.id
-      WHERE r.owner_id = $1
-    `;
-    const params: any[] = [req.userId];
     
+    let query = supabase
+      .from('menu_items')
+      .select(`
+        *,
+        restaurant:restaurants!inner(owner_id)
+      `)
+      .eq('restaurant.owner_id', req.userId)
+      .order('created_at', { ascending: false });
+
     if (restaurantId) {
-      query += ' AND mi.restaurant_id = $2';
-      params.push(restaurantId);
+      query = query.eq('restaurant_id', restaurantId as string);
     }
-    
-    query += ' ORDER BY mi.created_at DESC';
-    
-    const result = await pool.query(query, params);
-    res.json(result.rows);
+
+    const { data, error } = await query;
+
+    if (error) {
+      throw error;
+    }
+
+    res.json(data || []);
   } catch (error: any) {
     console.error('Get menu items error:', error);
     res.status(500).json({ error: 'Failed to get menu items' });
@@ -101,30 +113,36 @@ router.post('/menu-items', authenticate, async (req: AuthRequest, res) => {
     const { restaurantId, name, description, price, category, isAvailable, imageUrl } = req.body;
     
     // Verify restaurant belongs to owner
-    const restaurantCheck = await pool.query(
-      'SELECT id FROM restaurants WHERE id = $1 AND owner_id = $2',
-      [restaurantId, req.userId]
-    );
+    const { data: restaurant } = await supabase
+      .from('restaurants')
+      .select('id')
+      .eq('id', restaurantId)
+      .eq('owner_id', req.userId)
+      .single();
     
-    if (restaurantCheck.rows.length === 0) {
+    if (!restaurant) {
       return res.status(403).json({ error: 'Restaurant not found or access denied' });
     }
     
-    const result = await pool.query(
-      `INSERT INTO menu_items (restaurant_id, name, description, price, category, is_available, image_url)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING *`,
-      [
-        restaurantId,
+    const { data, error } = await supabase
+      .from('menu_items')
+      .insert({
+        restaurant_id: restaurantId,
         name,
-        description || null,
-        price ? parseFloat(price) : null,
-        category || null,
-        isAvailable !== undefined ? isAvailable : true,
-        imageUrl || null,
-      ]
-    );
-    res.status(201).json(result.rows[0]);
+        description: description || null,
+        price: price ? parseFloat(price) : null,
+        category: category || null,
+        is_available: isAvailable !== undefined ? isAvailable : true,
+        image_url: imageUrl || null,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    res.status(201).json(data);
   } catch (error: any) {
     console.error('Create menu item error:', error);
     res.status(500).json({ error: 'Failed to create menu item' });
@@ -134,20 +152,30 @@ router.post('/menu-items', authenticate, async (req: AuthRequest, res) => {
 // Get reservations
 router.get('/reservations', authenticate, async (req: AuthRequest, res) => {
   try {
-    const result = await pool.query(
-      `SELECT rr.*, 
-              r.name as restaurant_name,
-              u.email,
-              p.display_name
-       FROM restaurant_reservations rr
-       JOIN restaurants r ON rr.restaurant_id = r.id
-       JOIN users u ON rr.guest_id = u.id
-       LEFT JOIN profiles p ON rr.guest_id = p.user_id
-       WHERE r.owner_id = $1
-       ORDER BY rr.created_at DESC`,
-      [req.userId]
-    );
-    res.json(result.rows);
+    const { data: reservations, error } = await supabase
+      .from('restaurant_reservations')
+      .select(`
+        *,
+        restaurant:restaurants!inner(name),
+        guest:users!restaurant_reservations_guest_id_fkey(email),
+        guest_profile:profiles!restaurant_reservations_guest_id_fkey(display_name)
+      `)
+      .eq('restaurant.owner_id', req.userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    // Transform to match expected format
+    const transformed = (reservations || []).map((rr: any) => ({
+      ...rr,
+      restaurant_name: rr.restaurant?.name,
+      email: rr.guest?.email,
+      display_name: rr.guest_profile?.display_name,
+    }));
+
+    res.json(transformed);
   } catch (error: any) {
     console.error('Get reservations error:', error);
     res.status(500).json({ error: 'Failed to get reservations' });
@@ -166,51 +194,61 @@ router.post('/orders', authenticate, async (req: AuthRequest, res) => {
     }
 
     // Calculate total from menu items
-    let subtotal = 0;
     const menuItemIds = items.map((item: any) => item.menuItemId);
 
-    const menuItemsResult = await pool.query(
-      `SELECT mi.*, r.owner_id
-       FROM menu_items mi
-       JOIN restaurants r ON mi.restaurant_id = r.id
-       WHERE mi.id = ANY($1::uuid[]) AND mi.restaurant_id = $2 AND mi.is_available = true`,
-      [menuItemIds, restaurantId]
-    );
+    const { data: menuItems, error: menuError } = await supabase
+      .from('menu_items')
+      .select(`
+        *,
+        restaurant:restaurants!inner(owner_id)
+      `)
+      .in('id', menuItemIds)
+      .eq('restaurant_id', restaurantId)
+      .eq('is_available', true);
 
-    if (menuItemsResult.rows.length !== items.length) {
+    if (menuError || !menuItems || menuItems.length !== items.length) {
       return res.status(400).json({ error: 'Some menu items not found or unavailable' });
     }
 
-    const menuItems = menuItemsResult.rows;
-    const ownerId = menuItems[0].owner_id;
+    const ownerId = (menuItems[0] as any).restaurant?.owner_id;
 
     // Calculate subtotal
+    let subtotal = 0;
     for (const item of items) {
       const menuItem = menuItems.find((mi: any) => mi.id === item.menuItemId);
       if (menuItem) {
-        subtotal += parseFloat(menuItem.price) * item.quantity;
+        subtotal += parseFloat(menuItem.price.toString()) * item.quantity;
       }
     }
 
     // Create order (we'll use orders table for restaurant orders)
-    const orderResult = await pool.query(
-      `INSERT INTO orders (user_id, total_amount, status, notes)
-       VALUES ($1, $2, 'pending', $3)
-       RETURNING *`,
-      [req.userId, subtotal, JSON.stringify({ restaurantId, items, type: 'restaurant_order' })]
-    );
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .insert({
+        user_id: req.userId,
+        total_amount: subtotal,
+        status: 'pending',
+        notes: JSON.stringify({ restaurantId, items, type: 'restaurant_order' }),
+      })
+      .select()
+      .single();
 
-    const order = orderResult.rows[0];
+    if (orderError || !order) {
+      throw orderError;
+    }
 
     // Create order items
     for (const item of items) {
       const menuItem = menuItems.find((mi: any) => mi.id === item.menuItemId);
       if (menuItem) {
-        await pool.query(
-          `INSERT INTO order_items (order_id, product_id, quantity, price_at_purchase)
-           VALUES ($1, $2, $3, $4)`,
-          [order.id, item.menuItemId, item.quantity, menuItem.price]
-        );
+        await supabase
+          .from('order_items')
+          .insert({
+            order_id: order.id,
+            product_id: item.menuItemId,
+            quantity: item.quantity,
+            price_at_purchase: menuItem.price,
+          });
       }
     }
 
@@ -237,65 +275,87 @@ router.post('/orders/:id/payment', authenticate, async (req: AuthRequest, res) =
     }
 
     // Get order details
-    const orderResult = await pool.query(
-      `SELECT o.*, u.email, p.display_name, o.notes::jsonb->>'restaurantId' as restaurant_id
-       FROM orders o
-       JOIN users u ON o.user_id = u.id
-       LEFT JOIN profiles p ON o.user_id = p.user_id
-       WHERE o.id = $1 AND o.user_id = $2 AND o.status = 'pending'
-       AND o.notes::jsonb->>'type' = 'restaurant_order'`,
-      [id, req.userId]
-    );
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .select(`
+        *,
+        user:users!orders_user_id_fkey(email),
+        user_profile:profiles!orders_user_id_fkey(display_name)
+      `)
+      .eq('id', id)
+      .eq('user_id', req.userId)
+      .eq('status', 'pending')
+      .single();
 
-    if (orderResult.rows.length === 0) {
+    if (orderError || !order) {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    const order = orderResult.rows[0];
+    // Parse notes to get restaurant ID
+    let restaurantId = null;
+    try {
+      const notes = typeof order.notes === 'string' ? JSON.parse(order.notes) : order.notes;
+      if (notes?.type === 'restaurant_order' && notes?.restaurantId) {
+        restaurantId = notes.restaurantId;
+      }
+    } catch (e) {
+      // Notes might not be JSON
+    }
+
+    if (!restaurantId) {
+      return res.status(400).json({ error: 'Invalid restaurant order' });
+    }
 
     // Get restaurant owner
-    const restaurantResult = await pool.query(
-      `SELECT owner_id FROM restaurants WHERE id = $1`,
-      [order.restaurant_id]
-    );
+    const { data: restaurant } = await supabase
+      .from('restaurants')
+      .select('owner_id')
+      .eq('id', restaurantId)
+      .single();
 
-    if (restaurantResult.rows.length === 0) {
+    if (!restaurant) {
       return res.status(404).json({ error: 'Restaurant not found' });
     }
 
-    const ownerId = restaurantResult.rows[0].owner_id;
+    const ownerId = restaurant.owner_id;
 
     // Calculate fees
-    const feeCalculation = platformFees.calculateMarketplaceFee(parseFloat(order.total_amount));
+    const feeCalculation = platformFees.calculateMarketplaceFee(parseFloat(order.total_amount.toString()));
 
     // Create payment record
-    const paymentResult = await pool.query(
-      `INSERT INTO payments (order_id, user_id, amount, currency, status, payment_method, payment_type)
-       VALUES ($1, $2, $3, $4, 'pending', 'clickpesa', 'restaurant_order')
-       RETURNING *`,
-      [id, req.userId, feeCalculation.total, 'TZS']
-    );
+    const { data: payment, error: paymentError } = await supabase
+      .from('payments')
+      .insert({
+        order_id: id,
+        user_id: req.userId,
+        amount: feeCalculation.total,
+        currency: 'TZS',
+        status: 'pending',
+        payment_method: 'clickpesa',
+        payment_type: 'restaurant_order',
+      })
+      .select()
+      .single();
 
-    const payment = paymentResult.rows[0];
+    if (paymentError || !payment) {
+      throw paymentError;
+    }
 
     // Record platform fee
-    await pool.query(
-      `INSERT INTO platform_fees (
-        transaction_id, transaction_type, user_id, buyer_id,
-        subtotal, platform_fee, payment_processing_fee, total_fees, creator_payout, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending')`,
-      [
-        id,
-        'restaurant_order',
-        ownerId,
-        req.userId,
-        feeCalculation.subtotal,
-        feeCalculation.platformFee,
-        feeCalculation.paymentProcessingFee,
-        feeCalculation.totalFees,
-        feeCalculation.creatorPayout,
-      ]
-    );
+    await supabase
+      .from('platform_fees')
+      .insert({
+        transaction_id: id,
+        transaction_type: 'restaurant_order',
+        user_id: ownerId,
+        buyer_id: req.userId,
+        subtotal: feeCalculation.subtotal,
+        platform_fee: feeCalculation.platformFee,
+        payment_processing_fee: feeCalculation.paymentProcessingFee,
+        total_fees: feeCalculation.totalFees,
+        creator_payout: feeCalculation.creatorPayout,
+        status: 'pending',
+      });
 
     // Create Click Pesa payment request
     const paymentRequest: PaymentRequest = {
@@ -303,8 +363,8 @@ router.post('/orders/:id/payment', authenticate, async (req: AuthRequest, res) =
       currency: 'TZS',
       orderId: id,
       customerPhone: customerPhone,
-      customerEmail: customerEmail || order.email,
-      customerName: customerName || order.display_name || 'Customer',
+      customerEmail: customerEmail || order.user?.email || '',
+      customerName: customerName || order.user_profile?.display_name || 'Customer',
       description: `Restaurant order #${id}`,
       callbackUrl: `${process.env.APP_URL || 'https://www.blinno.app'}/api/payments/webhook`,
     };
@@ -312,27 +372,29 @@ router.post('/orders/:id/payment', authenticate, async (req: AuthRequest, res) =
     const clickPesaResponse = await clickPesa.createPayment(paymentRequest);
 
     if (!clickPesaResponse.success) {
-      await pool.query(
-        `UPDATE payments SET status = 'failed', error_message = $1 WHERE id = $2`,
-        [clickPesaResponse.error || 'Payment creation failed', payment.id]
-      );
+      await supabase
+        .from('payments')
+        .update({
+          status: 'failed',
+          error_message: clickPesaResponse.error || 'Payment creation failed',
+        })
+        .eq('id', payment.id);
+
       return res.status(400).json({
         error: clickPesaResponse.error || 'Failed to create payment',
       });
     }
 
     // Update payment with Click Pesa details
-    await pool.query(
-      `UPDATE payments 
-       SET payment_id = $1, transaction_id = $2, checkout_url = $3, status = 'initiated'
-       WHERE id = $4`,
-      [
-        clickPesaResponse.paymentId,
-        clickPesaResponse.transactionId,
-        clickPesaResponse.checkoutUrl,
-        payment.id,
-      ]
-    );
+    await supabase
+      .from('payments')
+      .update({
+        payment_id: clickPesaResponse.paymentId,
+        transaction_id: clickPesaResponse.transactionId,
+        checkout_url: clickPesaResponse.checkoutUrl,
+        status: 'initiated',
+      })
+      .eq('id', payment.id);
 
     res.json({
       success: true,
@@ -358,118 +420,119 @@ router.post('/reservations/:id/payment', authenticate, async (req: AuthRequest, 
       return res.status(400).json({ error: 'Customer phone number is required' });
     }
 
-    // Get reservation details
-    const reservationResult = await pool.query(
-      `SELECT rr.*, 
-              r.name as restaurant_name, r.owner_id,
-              u.email, p.display_name, p.phone
-       FROM restaurant_reservations rr
-       JOIN restaurants r ON rr.restaurant_id = r.id
-       JOIN users u ON rr.guest_id = u.id
-       LEFT JOIN profiles p ON rr.guest_id = p.user_id
-       WHERE rr.id = $1 AND rr.guest_id = $2`,
-      [id, req.userId]
-    );
+    // Check if user is authenticated
+    if (!req.userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
 
-    if (reservationResult.rows.length === 0) {
+    // Get user's preferred currency
+    const userPrefs = await userPreferences.getUserPreferences(req.userId);
+    const currency = userPrefs.currency || 'TZS';
+
+    // Get reservation details
+    const { data: reservation, error: reservationError } = await supabase
+      .from('restaurant_reservations')
+      .select(`
+        *,
+        restaurant:restaurants!inner(name, reservation_fee, owner_id),
+        guest:users!restaurant_reservations_guest_id_fkey(email),
+        guest_profile:profiles!restaurant_reservations_guest_id_fkey(display_name, phone)
+      `)
+      .eq('id', id)
+      .eq('guest_id', req.userId)
+      .single();
+
+    if (reservationError || !reservation) {
       return res.status(404).json({ error: 'Reservation not found' });
     }
 
-    const reservation = reservationResult.rows[0];
-
-    // For restaurant reservations, we might need to define pricing
-    // For now, we'll use a default amount or get it from the restaurant
-    const restaurantResult = await pool.query(
-      'SELECT reservation_fee FROM restaurants WHERE id = $1',
-      [reservation.restaurant_id]
-    );
-
-    if (restaurantResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Restaurant not found' });
-    }
-
-    const restaurant = restaurantResult.rows[0];
+    // Use reservation fee or default to 0
     let totalAmount = 0;
-
-    // Use restaurant reservation fee or default to 0
-    if (restaurant.reservation_fee) {
-      totalAmount = parseFloat(restaurant.reservation_fee);
+    if (reservation.restaurant?.reservation_fee) {
+      totalAmount = parseFloat(reservation.restaurant.reservation_fee.toString());
     }
 
     // If no reservation fee, we might want to charge for the reservation
-    // For now, we'll allow free reservations
     if (totalAmount <= 0) {
       return res.status(400).json({ error: 'Restaurant does not charge for reservations' });
     }
 
-    // Calculate fees
-    const feeCalculation = platformFees.calculateServiceBookingFee(totalAmount);
+    // Calculate fees with user's currency
+    const feeCalculation = platformFees.calculateServiceBookingFee(totalAmount, undefined, currency);
 
-    // Create payment record
-    const paymentResult = await pool.query(
-      `INSERT INTO payments (order_id, user_id, amount, currency, status, payment_method, payment_type)
-       VALUES ($1, $2, $3, $4, 'pending', 'clickpesa', 'restaurant_reservation')
-       RETURNING *`,
-      [id, req.userId, feeCalculation.total, 'TZS']
-    );
+    // Create payment record with user's currency
+    const { data: payment, error: paymentError } = await supabase
+      .from('payments')
+      .insert({
+        order_id: `restaurant_reservation_${id}`,
+        user_id: req.userId,
+        amount: feeCalculation.total,
+        currency: currency,
+        status: 'pending',
+        payment_method: 'clickpesa',
+        payment_type: 'restaurant_reservation',
+      })
+      .select()
+      .single();
 
-    const payment = paymentResult.rows[0];
+    if (paymentError || !payment) {
+      throw paymentError;
+    }
 
     // Record platform fee
-    await pool.query(
-      `INSERT INTO platform_fees (
-        transaction_id, transaction_type, user_id, buyer_id,
-        subtotal, platform_fee, payment_processing_fee, total_fees, creator_payout, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending')`,
-      [
-        id,
-        'restaurant_reservation',
-        reservation.owner_id,
-        req.userId,
-        feeCalculation.subtotal,
-        feeCalculation.platformFee,
-        feeCalculation.paymentProcessingFee,
-        feeCalculation.totalFees,
-        feeCalculation.creatorPayout,
-      ]
-    );
+    await supabase
+      .from('platform_fees')
+      .insert({
+        transaction_id: `restaurant_reservation_${id}`,
+        transaction_type: 'restaurant_reservation',
+        user_id: reservation.restaurant.owner_id,
+        buyer_id: req.userId,
+        subtotal: feeCalculation.subtotal,
+        platform_fee: feeCalculation.platformFee,
+        payment_processing_fee: feeCalculation.paymentProcessingFee,
+        total_fees: feeCalculation.totalFees,
+        creator_payout: feeCalculation.creatorPayout,
+        status: 'pending',
+      });
 
-    // Create Click Pesa payment request
+    // Create Click Pesa payment request with user's currency
     const paymentRequest: PaymentRequest = {
       amount: feeCalculation.total,
-      currency: 'TZS',
+      currency: currency,
       orderId: `restaurant_reservation_${id}`,
       customerPhone: customerPhone,
-      customerEmail: customerEmail || reservation.email,
-      customerName: customerName || reservation.display_name || 'Customer',
-      description: `Payment for restaurant reservation: ${reservation.restaurant_name}`,
+      customerEmail: customerEmail || reservation.guest?.email || '',
+      customerName: customerName || reservation.guest_profile?.display_name || 'Customer',
+      description: `Payment for restaurant reservation: ${reservation.restaurant.name}`,
       callbackUrl: `${process.env.APP_URL || 'https://www.blinno.app'}/api/payments/webhook`,
     };
 
     const clickPesaResponse = await clickPesa.createPayment(paymentRequest);
 
     if (!clickPesaResponse.success) {
-      await pool.query(
-        `UPDATE payments SET status = 'failed', error_message = $1 WHERE id = $2`,
-        [clickPesaResponse.error || 'Payment creation failed', payment.id]
-      );
+      await supabase
+        .from('payments')
+        .update({
+          status: 'failed',
+          error_message: clickPesaResponse.error || 'Payment creation failed',
+        })
+        .eq('id', payment.id);
+
       return res.status(400).json({
         error: clickPesaResponse.error || 'Failed to create payment',
       });
     }
 
     // Update payment with Click Pesa details
-    await pool.query(
-      `UPDATE payments 
-       SET payment_id = $1, transaction_id = $2, checkout_url = $3, status = 'initiated'
-       WHERE id = $4`,
-      [
-        clickPesaResponse.paymentId,
-        clickPesaResponse.transactionId,
-        clickPesaResponse.checkoutUrl,
-        payment.id,
-      ]
-    );
+    await supabase
+      .from('payments')
+      .update({
+        payment_id: clickPesaResponse.paymentId,
+        transaction_id: clickPesaResponse.transactionId,
+        checkout_url: clickPesaResponse.checkoutUrl,
+        status: 'initiated',
+      })
+      .eq('id', payment.id);
 
     res.json({
       success: true,
@@ -500,31 +563,36 @@ router.post('/reservations', async (req, res) => {
     }
 
     // Verify restaurant exists
-    const restaurantResult = await pool.query(
-      'SELECT id, owner_id, name FROM restaurants WHERE id = $1',
-      [restaurantId]
-    );
+    const { data: restaurant, error: restaurantError } = await supabase
+      .from('restaurants')
+      .select('id, owner_id, name')
+      .eq('id', restaurantId)
+      .single();
 
-    if (restaurantResult.rows.length === 0) {
+    if (restaurantError || !restaurant) {
       return res.status(404).json({ error: 'Restaurant not found' });
     }
 
-    const restaurant = restaurantResult.rows[0];
-
     // Create reservation
-    const result = await pool.query(
-      `INSERT INTO restaurant_reservations (
-        restaurant_id, guest_name, guest_email, guest_phone,
-        reservation_date, reservation_time, number_of_guests, special_requests, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending')
-       RETURNING *`,
-      [
-        restaurantId, guestName, guestEmail, guestPhone,
-        reservationDate, reservationTime, parseInt(numberOfGuests), specialRequests || null
-      ]
-    );
+    const { data: reservation, error: reservationError } = await supabase
+      .from('restaurant_reservations')
+      .insert({
+        restaurant_id: restaurantId,
+        guest_name: guestName,
+        guest_email: guestEmail,
+        guest_phone: guestPhone,
+        reservation_date: reservationDate,
+        reservation_time: reservationTime,
+        number_of_guests: parseInt(numberOfGuests),
+        special_requests: specialRequests || null,
+        status: 'pending',
+      })
+      .select()
+      .single();
 
-    const reservation = result.rows[0];
+    if (reservationError || !reservation) {
+      throw reservationError;
+    }
 
     res.status(201).json({
       ...reservation,
@@ -537,4 +605,3 @@ router.post('/reservations', async (req, res) => {
 });
 
 export default router;
-

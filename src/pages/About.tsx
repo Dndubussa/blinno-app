@@ -15,7 +15,8 @@ export default function About() {
               <p className="mb-4">
                 BLINNO is a comprehensive platform designed to connect, showcase, and empower Tanzanian creators, 
                 entrepreneurs, and talent both locally and across the diaspora. We believe in the power of community 
-                and the importance of supporting local businesses, artists, and innovators.
+                and the importance of supporting local businesses, artists, and innovators. As a worldwide platform 
+                that's 100% Tanzanian owned, we bridge the gap between local talent and global audiences.
               </p>
             </section>
 
@@ -37,31 +38,33 @@ export default function About() {
               <div className="grid md:grid-cols-2 gap-4 mb-4">
                 <div>
                   <h3 className="text-xl font-semibold mb-2">Community First</h3>
-                  <p>We prioritize building a supportive and inclusive community for all Tanzanians.</p>
+                  <p>We prioritize building a supportive and inclusive community for all Tanzanians, both locally and worldwide.</p>
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold mb-2">Empowerment</h3>
-                  <p>We provide tools and opportunities for creators and businesses to thrive.</p>
+                  <p>We provide tools and opportunities for creators and businesses to thrive globally while maintaining our Tanzanian roots.</p>
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold mb-2">Innovation</h3>
-                  <p>We continuously evolve our platform to meet the changing needs of our community.</p>
+                  <p>We continuously evolve our platform to meet the changing needs of our community, serving both local and international users.</p>
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold mb-2">Transparency</h3>
-                  <p>We believe in clear communication, fair pricing, and honest business practices.</p>
+                  <p>We believe in clear communication, fair pricing, and honest business practices across our worldwide platform.</p>
                 </div>
               </div>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-semibold mb-4">Join Us</h2>
+              <h2 className="text-2xl font-semibold mb-4">Global Reach, Local Impact</h2>
               <p className="mb-4">
-                Whether you're a creator looking to showcase your work, a business owner seeking to expand your reach, 
-                or someone looking to discover amazing Tanzanian talent, BLINNO is here for you.
+                While BLINNO is a worldwide platform accessible from anywhere in the globe, we remain 100% Tanzanian owned and operated.
+                Our mission is to showcase Tanzanian talent to the world while ensuring that the benefits of this global exposure
+                directly support our local creators and businesses.
               </p>
               <p>
-                Join our growing community and be part of the movement to celebrate and support Tanzanian creativity and entrepreneurship.
+                Whether you're a creator looking to showcase your work, a business owner seeking to expand your reach, 
+                or someone looking to discover amazing Tanzanian talent, BLINNO is here for you - connecting local talent with global opportunities.
               </p>
             </section>
           </CardContent>

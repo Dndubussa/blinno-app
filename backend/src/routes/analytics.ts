@@ -1,5 +1,5 @@
 import express from 'express';
-import { pool } from '../config/database.js';
+import { supabase } from '../config/supabase.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -13,82 +13,109 @@ router.get('/', authenticate, async (req: AuthRequest, res) => {
     const userId = req.userId;
 
     // Revenue analytics
-    const revenueResult = await pool.query(
-      `SELECT 
-        COALESCE(SUM(creator_payout), 0) as total_revenue,
-        COUNT(*) as transaction_count
-       FROM platform_fees
-       WHERE user_id = $1 
-         AND status = 'collected'
-         ${startDate ? 'AND created_at >= $2' : ''}
-         ${endDate ? `AND created_at <= $${startDate ? '3' : '2'}` : ''}`,
-      startDate && endDate ? [userId, startDate, endDate] : startDate ? [userId, startDate] : [userId]
+    let revenueQuery = supabase
+      .from('platform_fees')
+      .select('creator_payout', { count: 'exact' })
+      .eq('user_id', userId)
+      .eq('status', 'collected');
+
+    if (startDate) {
+      revenueQuery = revenueQuery.gte('created_at', startDate as string);
+    }
+    if (endDate) {
+      revenueQuery = revenueQuery.lte('created_at', endDate as string);
+    }
+
+    const { data: revenueData, error: revenueError } = await revenueQuery;
+
+    if (revenueError) {
+      throw revenueError;
+    }
+
+    const totalRevenue = (revenueData || []).reduce((sum: number, fee: any) => 
+      sum + (parseFloat(fee.creator_payout) || 0), 0
     );
 
     // Orders analytics
-    const ordersResult = await pool.query(
-      `SELECT 
-        COUNT(*) as total_orders,
-        COUNT(*) FILTER (WHERE status = 'delivered') as completed_orders,
-        COUNT(*) FILTER (WHERE status = 'cancelled') as cancelled_orders
-       FROM orders o
-       JOIN order_items oi ON o.id = oi.order_id
-       JOIN products p ON oi.product_id = p.id
-       WHERE p.creator_id = $1
-         ${startDate ? 'AND o.created_at >= $2' : ''}
-         ${endDate ? `AND o.created_at <= $${startDate ? '3' : '2'}` : ''}`,
-      startDate && endDate ? [userId, startDate, endDate] : startDate ? [userId, startDate] : [userId]
-    );
+    const { data: ordersData, error: ordersError } = await supabase
+      .from('orders')
+      .select(`
+        id,
+        status,
+        order_items!inner(
+          products!inner(creator_id)
+        )
+      `)
+      .eq('order_items.products.creator_id', userId);
+
+    if (ordersError) {
+      throw ordersError;
+    }
+
+    const orders = ordersData || [];
+    const totalOrders = orders.length;
+    const completedOrders = orders.filter((o: any) => o.status === 'delivered').length;
+    const cancelledOrders = orders.filter((o: any) => o.status === 'cancelled').length;
 
     // Views analytics (would need a views tracking table)
-    const viewsResult = await pool.query(
-      `SELECT COUNT(*) as total_views
-       FROM profiles
-       WHERE user_id = $1`,
-      [userId]
-    );
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('view_count')
+      .eq('user_id', userId)
+      .single();
 
     // Followers analytics
-    const followersResult = await pool.query(
-      `SELECT COUNT(*) as total_followers
-       FROM user_follows
-       WHERE following_id = $1`,
-      [userId]
-    );
+    const { count: followersCount } = await supabase
+      .from('user_follows')
+      .select('*', { count: 'exact', head: true })
+      .eq('following_id', userId);
 
     // Revenue trend (last 30 days by default)
-    const trendResult = await pool.query(
-      `SELECT 
-        DATE(created_at) as date,
-        SUM(creator_payout) as revenue
-       FROM platform_fees
-       WHERE user_id = $1 
-         AND status = 'collected'
-         AND created_at >= NOW() - INTERVAL '30 days'
-       GROUP BY DATE(created_at)
-       ORDER BY date ASC`
-    );
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const { data: trendData, error: trendError } = await supabase
+      .from('platform_fees')
+      .select('created_at, creator_payout')
+      .eq('user_id', userId)
+      .eq('status', 'collected')
+      .gte('created_at', thirtyDaysAgo.toISOString())
+      .order('created_at', { ascending: true });
+
+    if (trendError) {
+      throw trendError;
+    }
+
+    // Group by date
+    const trendMap = new Map<string, number>();
+    (trendData || []).forEach((fee: any) => {
+      const date = new Date(fee.created_at).toISOString().split('T')[0];
+      const current = trendMap.get(date) || 0;
+      trendMap.set(date, current + (parseFloat(fee.creator_payout) || 0));
+    });
+
+    const revenueTrend = Array.from(trendMap.entries()).map(([date, revenue]) => ({
+      date,
+      value: revenue,
+    }));
 
     res.json({
       revenue: {
-        total: parseFloat(revenueResult.rows[0]?.total_revenue || 0),
-        transactionCount: parseInt(revenueResult.rows[0]?.transaction_count || 0),
+        total: totalRevenue,
+        transactionCount: revenueData?.length || 0,
       },
       orders: {
-        total: parseInt(ordersResult.rows[0]?.total_orders || 0),
-        completed: parseInt(ordersResult.rows[0]?.completed_orders || 0),
-        cancelled: parseInt(ordersResult.rows[0]?.cancelled_orders || 0),
+        total: totalOrders,
+        completed: completedOrders,
+        cancelled: cancelledOrders,
       },
       views: {
-        total: parseInt(viewsResult.rows[0]?.total_views || 0),
+        total: profile?.view_count || 0,
       },
       followers: {
-        total: parseInt(followersResult.rows[0]?.total_followers || 0),
+        total: followersCount || 0,
       },
-      revenueTrend: trendResult.rows.map((row) => ({
-        date: row.date,
-        value: parseFloat(row.revenue || 0),
-      })),
+      revenueTrend,
     });
   } catch (error: any) {
     console.error('Get analytics error:', error);
@@ -101,23 +128,45 @@ router.get('/', authenticate, async (req: AuthRequest, res) => {
  */
 router.get('/products', authenticate, async (req: AuthRequest, res) => {
   try {
-    const result = await pool.query(
-      `SELECT 
-        p.*,
-        COUNT(DISTINCT oi.order_id) as order_count,
-        SUM(oi.quantity) as total_sold,
-        COALESCE(SUM(oi.price_at_purchase * oi.quantity), 0) as total_revenue
-       FROM products p
-       LEFT JOIN order_items oi ON p.id = oi.product_id
-       LEFT JOIN orders o ON oi.order_id = o.id AND o.status = 'delivered'
-       WHERE p.creator_id = $1
-       GROUP BY p.id
-       ORDER BY total_revenue DESC
-       LIMIT 20`,
-      [req.userId]
-    );
+    const { data: products, error } = await supabase
+      .from('products')
+      .select(`
+        *,
+        order_items!inner(
+          order_id,
+          quantity,
+          price_at_purchase,
+          orders!inner(status)
+        )
+      `)
+      .eq('creator_id', req.userId);
 
-    res.json(result.rows);
+    if (error) {
+      throw error;
+    }
+
+    // Transform and calculate metrics
+    const transformed = (products || []).map((p: any) => {
+      const deliveredOrders = (p.order_items || []).filter((oi: any) => 
+        oi.orders?.status === 'delivered'
+      );
+      const orderCount = new Set(deliveredOrders.map((oi: any) => oi.order_id)).size;
+      const totalSold = deliveredOrders.reduce((sum: number, oi: any) => 
+        sum + (parseInt(oi.quantity) || 0), 0
+      );
+      const totalRevenue = deliveredOrders.reduce((sum: number, oi: any) => 
+        sum + (parseFloat(oi.price_at_purchase) * parseInt(oi.quantity) || 0), 0
+      );
+
+      return {
+        ...p,
+        order_count: orderCount,
+        total_sold: totalSold,
+        total_revenue: totalRevenue,
+      };
+    }).sort((a: any, b: any) => b.total_revenue - a.total_revenue).slice(0, 20);
+
+    res.json(transformed);
   } catch (error: any) {
     console.error('Get product performance error:', error);
     res.status(500).json({ error: 'Failed to get product performance' });
@@ -125,4 +174,3 @@ router.get('/products', authenticate, async (req: AuthRequest, res) => {
 });
 
 export default router;
-

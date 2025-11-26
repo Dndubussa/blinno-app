@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media Player Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .media-player {
+            width: 100%;
+            margin: 10px 0;
+        }
+        video, audio {
+            width: 100%;
+            height: auto;
+        }
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        input[type="range"] {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Media Player Test</h1>
+        
+        <div class="test-section">
+            <h2>Video Player Test</h2>
+            <video id="videoPlayer" class="media-player" controls>
+                <source src="https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+            <div class="controls">
+                <button id="playVideo">Play/Pause</button>
+                <input type="range" id="videoSeek" min="0" max="100" value="0">
+                <span id="videoTime">00:00 / 00:00</span>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Audio Player Test</h2>
+            <audio id="audioPlayer" controls>
+                <source src="https://sample-videos.com/audio/mp3/crowd-cheering.mp3" type="audio/mpeg">
+                Your browser does not support the audio tag.
+            </audio>
+            <div class="controls">
+                <button id="playAudio">Play/Pause</button>
+                <input type="range" id="audioSeek" min="0" max="100" value="0">
+                <span id="audioTime">00:00 / 00:00</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Video player functionality
+        const videoPlayer = document.getElementById('videoPlayer');
+        const playVideoBtn = document.getElementById('playVideo');
+        const videoSeek = document.getElementById('videoSeek');
+        const videoTime = document.getElementById('videoTime');
+        
+        playVideoBtn.addEventListener('click', () => {
+            if (videoPlayer.paused) {
+                videoPlayer.play();
+            } else {
+                videoPlayer.pause();
+            }
+        });
+        
+        videoPlayer.addEventListener('timeupdate', () => {
+            const percent = (videoPlayer.currentTime / videoPlayer.duration) * 100;
+            videoSeek.value = percent;
+            
+            const currentMinutes = Math.floor(videoPlayer.currentTime / 60);
+            const currentSeconds = Math.floor(videoPlayer.currentTime % 60);
+            const durationMinutes = Math.floor(videoPlayer.duration / 60);
+            const durationSeconds = Math.floor(videoPlayer.duration % 60);
+            
+            videoTime.textContent = 
+                `${currentMinutes}:${currentSeconds.toString().padStart(2, '0')} / ${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`;
+        });
+        
+        videoSeek.addEventListener('input', () => {
+            const time = (videoSeek.value / 100) * videoPlayer.duration;
+            videoPlayer.currentTime = time;
+        });
+        
+        // Audio player functionality
+        const audioPlayer = document.getElementById('audioPlayer');
+        const playAudioBtn = document.getElementById('playAudio');
+        const audioSeek = document.getElementById('audioSeek');
+        const audioTime = document.getElementById('audioTime');
+        
+        playAudioBtn.addEventListener('click', () => {
+            if (audioPlayer.paused) {
+                audioPlayer.play();
+            } else {
+                audioPlayer.pause();
+            }
+        });
+        
+        audioPlayer.addEventListener('timeupdate', () => {
+            const percent = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+            audioSeek.value = percent;
+            
+            const currentMinutes = Math.floor(audioPlayer.currentTime / 60);
+            const currentSeconds = Math.floor(audioPlayer.currentTime % 60);
+            const durationMinutes = Math.floor(audioPlayer.duration / 60);
+            const durationSeconds = Math.floor(audioPlayer.duration % 60);
+            
+            audioTime.textContent = 
+                `${currentMinutes}:${currentSeconds.toString().padStart(2, '0')} / ${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`;
+        });
+        
+        audioSeek.addEventListener('input', () => {
+            const time = (audioSeek.value / 100) * audioPlayer.duration;
+            audioPlayer.currentTime = time;
+        });
+    </script>
+</body>
+</html>

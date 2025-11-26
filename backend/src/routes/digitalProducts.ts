@@ -1,10 +1,11 @@
 import express from 'express';
-import { pool } from '../config/database.js';
+import { supabase } from '../config/supabase.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import ClickPesaService, { PaymentRequest } from '../services/clickpesa.js';
 import { platformFees } from '../services/platformFees.js';
 import dotenv from 'dotenv';
 import crypto from 'crypto';
+import { userPreferences } from '../services/userPreferences.js';
 
 dotenv.config();
 
@@ -23,33 +24,39 @@ router.get('/', async (req, res) => {
   try {
     const { creatorId, category, search } = req.query;
     
-    let query = `
-      SELECT dp.*, p.display_name, p.avatar_url
-      FROM digital_products dp
-      JOIN profiles p ON dp.creator_id = p.user_id
-      WHERE dp.is_active = true
-    `;
-    const params: any[] = [];
-    let paramCount = 1;
+    let query = supabase
+      .from('digital_products')
+      .select(`
+        *,
+        creator:profiles!digital_products_creator_id_fkey(display_name, avatar_url)
+      `)
+      .eq('is_active', true)
+      .order('created_at', { ascending: false });
 
     if (creatorId) {
-      query += ` AND dp.creator_id = $${paramCount++}`;
-      params.push(creatorId);
+      query = query.eq('creator_id', creatorId as string);
     }
     if (category) {
-      query += ` AND dp.category = $${paramCount++}`;
-      params.push(category);
+      query = query.eq('category', category as string);
     }
     if (search) {
-      query += ` AND (dp.title ILIKE $${paramCount} OR dp.description ILIKE $${paramCount})`;
-      params.push(`%${search}%`);
-      paramCount++;
+      query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`);
     }
 
-    query += ` ORDER BY dp.created_at DESC`;
+    const { data, error } = await query;
 
-    const result = await pool.query(query, params);
-    res.json(result.rows);
+    if (error) {
+      throw error;
+    }
+
+    // Transform to match expected format
+    const transformed = (data || []).map((dp: any) => ({
+      ...dp,
+      display_name: dp.creator?.display_name,
+      avatar_url: dp.creator?.avatar_url,
+    }));
+
+    res.json(transformed);
   } catch (error: any) {
     console.error('Get digital products error:', error);
     res.status(500).json({ error: 'Failed to get digital products' });
@@ -62,19 +69,27 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await pool.query(
-      `SELECT dp.*, p.display_name, p.avatar_url
-       FROM digital_products dp
-       JOIN profiles p ON dp.creator_id = p.user_id
-       WHERE dp.id = $1`,
-      [id]
-    );
+    
+    const { data: product, error } = await supabase
+      .from('digital_products')
+      .select(`
+        *,
+        creator:profiles!digital_products_creator_id_fkey(display_name, avatar_url)
+      `)
+      .eq('id', id)
+      .single();
 
-    if (result.rows.length === 0) {
+    if (error || !product) {
       return res.status(404).json({ error: 'Digital product not found' });
     }
 
-    res.json(result.rows[0]);
+    const transformed = {
+      ...product,
+      display_name: product.creator?.display_name,
+      avatar_url: product.creator?.avatar_url,
+    };
+
+    res.json(transformed);
   } catch (error: any) {
     console.error('Get digital product error:', error);
     res.status(500).json({ error: 'Failed to get digital product' });
@@ -93,85 +108,109 @@ router.post('/:id/purchase', authenticate, async (req: AuthRequest, res) => {
       return res.status(400).json({ error: 'Customer phone number is required' });
     }
 
-    // Get digital product
-    const productResult = await pool.query(
-      `SELECT dp.*, u.email, p.display_name
-       FROM digital_products dp
-       JOIN users u ON dp.creator_id = u.id
-       LEFT JOIN profiles p ON dp.creator_id = p.user_id
-       WHERE dp.id = $1 AND dp.is_active = true`,
-      [id]
-    );
+    // Check if user is authenticated
+    if (!req.userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
 
-    if (productResult.rows.length === 0) {
+    // Get user's preferred currency
+    const userPrefs = await userPreferences.getUserPreferences(req.userId);
+    const currency = userPrefs.currency || 'TZS';
+
+    // Get digital product
+    const { data: product, error: productError } = await supabase
+      .from('digital_products')
+      .select(`
+        *,
+        creator:profiles!digital_products_creator_id_fkey(display_name)
+      `)
+      .eq('id', id)
+      .eq('is_active', true)
+      .single();
+
+    if (productError || !product) {
       return res.status(404).json({ error: 'Digital product not found' });
     }
 
-    const product = productResult.rows[0];
+    // Get creator email
+    const { data: authUser } = await supabase.auth.admin.getUserById(product.creator_id);
 
     // Check if already purchased
-    const purchaseCheck = await pool.query(
-      `SELECT * FROM digital_product_purchases
-       WHERE product_id = $1 AND buyer_id = $2 AND payment_status = 'paid'`,
-      [id, req.userId]
-    );
+    const { data: existingPurchase } = await supabase
+      .from('digital_product_purchases')
+      .select('*')
+      .eq('product_id', id)
+      .eq('buyer_id', req.userId)
+      .eq('payment_status', 'paid')
+      .single();
 
-    if (purchaseCheck.rows.length > 0) {
+    if (existingPurchase) {
       return res.status(400).json({ error: 'You have already purchased this product' });
     }
 
-    // Calculate fees
-    const feeCalculation = platformFees.calculateDigitalProductFee(parseFloat(product.price));
+    // Calculate fees with user's currency
+    const feeCalculation = platformFees.calculateDigitalProductFee(parseFloat(product.price), undefined, currency);
 
-    // Create purchase record (pending payment)
-    const purchaseResult = await pool.query(
-      `INSERT INTO digital_product_purchases (product_id, buyer_id, amount_paid, currency, payment_status)
-       VALUES ($1, $2, $3, $4, 'pending')
-       ON CONFLICT (product_id, buyer_id) 
-       DO UPDATE SET amount_paid = $3, payment_status = 'pending', created_at = now()
-       RETURNING *`,
-      [id, req.userId, feeCalculation.total, 'TZS']
-    );
+    // Create purchase record (pending payment) with user's currency
+    const { data: purchase, error: purchaseError } = await supabase
+      .from('digital_product_purchases')
+      .upsert({
+        product_id: id,
+        buyer_id: req.userId,
+        amount_paid: feeCalculation.total,
+        currency: currency,
+        payment_status: 'pending',
+      }, { onConflict: 'product_id,buyer_id' })
+      .select()
+      .single();
 
-    const purchase = purchaseResult.rows[0];
+    if (purchaseError || !purchase) {
+      throw purchaseError;
+    }
 
-    // Create payment record
-    const paymentResult = await pool.query(
-      `INSERT INTO payments (order_id, user_id, amount, currency, status, payment_method, payment_type)
-       VALUES ($1, $2, $3, $4, 'pending', 'clickpesa', 'digital_product')
-       RETURNING *`,
-      [`digital_product_${id}_${req.userId}`, req.userId, feeCalculation.total, 'TZS']
-    );
+    // Create payment record with user's currency
+    const { data: payment, error: paymentError } = await supabase
+      .from('payments')
+      .insert({
+        order_id: `digital_product_${id}_${req.userId}`,
+        user_id: req.userId,
+        amount: feeCalculation.total,
+        currency: currency,
+        status: 'pending',
+        payment_method: 'clickpesa',
+        payment_type: 'digital_product',
+      })
+      .select()
+      .single();
 
-    const payment = paymentResult.rows[0];
+    if (paymentError || !payment) {
+      throw paymentError;
+    }
 
     // Record platform fee
-    await pool.query(
-      `INSERT INTO platform_fees (
-        transaction_id, transaction_type, user_id, buyer_id,
-        subtotal, platform_fee, payment_processing_fee, total_fees, creator_payout, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending')`,
-      [
-        `digital_product_${id}_${req.userId}`,
-        'digital_product',
-        product.creator_id,
-        req.userId,
-        feeCalculation.subtotal,
-        feeCalculation.platformFee,
-        feeCalculation.paymentProcessingFee,
-        feeCalculation.totalFees,
-        feeCalculation.creatorPayout,
-      ]
-    );
+    await supabase
+      .from('platform_fees')
+      .insert({
+        transaction_id: `digital_product_${id}_${req.userId}`,
+        transaction_type: 'digital_product',
+        user_id: product.creator_id,
+        buyer_id: req.userId,
+        subtotal: feeCalculation.subtotal,
+        platform_fee: feeCalculation.platformFee,
+        payment_processing_fee: feeCalculation.paymentProcessingFee,
+        total_fees: feeCalculation.totalFees,
+        creator_payout: feeCalculation.creatorPayout,
+        status: 'pending',
+      });
 
-    // Create Click Pesa payment request
+    // Create Click Pesa payment request with user's currency
     const paymentRequest: PaymentRequest = {
       amount: feeCalculation.total,
-      currency: 'TZS',
+      currency: currency,
       orderId: `digital_product_${id}_${req.userId}`,
       customerPhone: customerPhone,
-      customerEmail: customerEmail || product.email,
-      customerName: customerName || product.display_name || 'Customer',
+      customerEmail: customerEmail || authUser?.user?.email || '',
+      customerName: customerName || product.creator?.display_name || 'Customer',
       description: `Purchase: ${product.title}`,
       callbackUrl: `${process.env.APP_URL || 'https://www.blinno.app'}/api/payments/webhook`,
     };
@@ -179,27 +218,29 @@ router.post('/:id/purchase', authenticate, async (req: AuthRequest, res) => {
     const clickPesaResponse = await clickPesa.createPayment(paymentRequest);
 
     if (!clickPesaResponse.success) {
-      await pool.query(
-        `UPDATE payments SET status = 'failed', error_message = $1 WHERE id = $2`,
-        [clickPesaResponse.error || 'Payment creation failed', payment.id]
-      );
+      await supabase
+        .from('payments')
+        .update({
+          status: 'failed',
+          error_message: clickPesaResponse.error || 'Payment creation failed',
+        })
+        .eq('id', payment.id);
+
       return res.status(400).json({
         error: clickPesaResponse.error || 'Failed to create payment',
       });
     }
 
     // Update payment with Click Pesa details
-    await pool.query(
-      `UPDATE payments 
-       SET payment_id = $1, transaction_id = $2, checkout_url = $3, status = 'initiated'
-       WHERE id = $4`,
-      [
-        clickPesaResponse.paymentId,
-        clickPesaResponse.transactionId,
-        clickPesaResponse.checkoutUrl,
-        payment.id,
-      ]
-    );
+    await supabase
+      .from('payments')
+      .update({
+        payment_id: clickPesaResponse.paymentId,
+        transaction_id: clickPesaResponse.transactionId,
+        checkout_url: clickPesaResponse.checkoutUrl,
+        status: 'initiated',
+      })
+      .eq('id', payment.id);
 
     res.json({
       success: true,
@@ -218,16 +259,31 @@ router.post('/:id/purchase', authenticate, async (req: AuthRequest, res) => {
  */
 router.get('/my/purchases', authenticate, async (req: AuthRequest, res) => {
   try {
-    const result = await pool.query(
-      `SELECT dpp.*, dp.title, dp.description, dp.file_url, dp.preview_url, dp.category
-       FROM digital_product_purchases dpp
-       JOIN digital_products dp ON dpp.product_id = dp.id
-       WHERE dpp.buyer_id = $1 AND dpp.payment_status = 'paid'
-       ORDER BY dpp.created_at DESC`,
-      [req.userId]
-    );
+    const { data, error } = await supabase
+      .from('digital_product_purchases')
+      .select(`
+        *,
+        products:digital_products!inner(title, description, file_url, preview_url, category)
+      `)
+      .eq('buyer_id', req.userId)
+      .eq('payment_status', 'paid')
+      .order('created_at', { ascending: false });
 
-    res.json(result.rows);
+    if (error) {
+      throw error;
+    }
+
+    // Transform to match expected format
+    const transformed = (data || []).map((dpp: any) => ({
+      ...dpp,
+      title: dpp.products?.title,
+      description: dpp.products?.description,
+      file_url: dpp.products?.file_url,
+      preview_url: dpp.products?.preview_url,
+      category: dpp.products?.category,
+    }));
+
+    res.json(transformed);
   } catch (error: any) {
     console.error('Get my purchases error:', error);
     res.status(500).json({ error: 'Failed to get purchases' });
@@ -235,4 +291,3 @@ router.get('/my/purchases', authenticate, async (req: AuthRequest, res) => {
 });
 
 export default router;
-
