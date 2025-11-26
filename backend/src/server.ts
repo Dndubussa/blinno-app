@@ -48,7 +48,46 @@ import { initializeStorageBuckets } from './middleware/upload.js';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
+
+// Configure CORS with specific origins - production only
+const corsOptions = {
+  origin: [
+    'https://www.blinno.app',
+    'https://blinno.app'
+  ],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+// Apply different CORS settings based on environment
+const env = process.env.NODE_ENV || 'development';
+let corsConfig = corsOptions;
+
+if (env === 'development') {
+  corsConfig = {
+    origin: [
+      'https://www.blinno.app',
+      'https://blinno.app',
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'https://localhost:5173',
+      'https://localhost:3000',
+      'https://localhost:3001'
+    ],
+    credentials: true,
+    optionsSuccessStatus: 200
+  };
+} else {
+  // Additional security headers for production
+  app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    next();
+  });
+}
 
 // Rate limiting
 const limiter = rateLimit({
@@ -58,7 +97,7 @@ const limiter = rateLimit({
 });
 
 app.use(limiter);
-app.use(cors());
+app.use(cors(corsConfig));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 

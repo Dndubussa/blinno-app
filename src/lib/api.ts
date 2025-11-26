@@ -57,7 +57,7 @@ class ApiClient {
   }
 
   // Auth
-  async register(data: { email: string; password: string; displayName: string; role?: string }) {
+  async register(data: { email: string; password: string; displayName: string; role?: string; firstName?: string; middleName?: string; lastName?: string; phoneNumber?: string; country?: string }) {
     const result = await this.request<{ user: any; token: string }>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(data),

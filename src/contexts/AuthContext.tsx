@@ -10,10 +10,18 @@ interface User {
   email_verified?: boolean;
 }
 
+interface SignUpAdditionalData {
+  firstName?: string;
+  middleName?: string;
+  lastName?: string;
+  phoneNumber?: string;
+  country?: string;
+}
+
 interface AuthContextType {
   user: User | null;
   profile: any | null;
-  signUp: (email: string, password: string, displayName: string, role?: 'user' | 'creator' | 'freelancer' | 'seller' | 'lodging' | 'restaurant' | 'educator' | 'journalist' | 'artisan' | 'employer' | 'event_organizer' | 'musician') => Promise<{ error: any }>;
+  signUp: (email: string, password: string, displayName: string, role?: 'user' | 'creator' | 'freelancer' | 'seller' | 'lodging' | 'restaurant' | 'educator' | 'journalist' | 'artisan' | 'employer' | 'event_organizer' | 'musician', additionalData?: SignUpAdditionalData) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signInWithGoogle: () => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -80,7 +88,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, []);
 
-  const signUp = async (email: string, password: string, displayName: string, role: 'user' | 'creator' | 'freelancer' | 'seller' | 'lodging' | 'restaurant' | 'educator' | 'journalist' | 'artisan' | 'employer' | 'event_organizer' | 'musician' = 'user') => {
+  const signUp = async (email: string, password: string, displayName: string, role: 'user' | 'creator' | 'freelancer' | 'seller' | 'lodging' | 'restaurant' | 'educator' | 'journalist' | 'artisan' | 'employer' | 'event_organizer' | 'musician' = 'user', additionalData?: SignUpAdditionalData) => {
     try {
       // Sign up with Supabase
       const { data, error } = await supabase.auth.signUp({
@@ -88,7 +96,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         password,
         options: {
           data: {
-            display_name: displayName
+            display_name: displayName,
+            first_name: additionalData?.firstName,
+            middle_name: additionalData?.middleName,
+            last_name: additionalData?.lastName,
+            phone: additionalData?.phoneNumber,
+            country: additionalData?.country
           }
         }
       });
@@ -100,9 +113,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (data.user) {
         setUser({ id: data.user.id, email: data.user.email || '' });
         
-        // Register user with API to set role
+        // Register user with API to set role and additional data
         try {
-          await api.register({ email, password, displayName, role });
+          await api.register({ email, password, displayName, role, ...additionalData });
         } catch (apiError) {
           console.error('API registration error:', apiError);
         }

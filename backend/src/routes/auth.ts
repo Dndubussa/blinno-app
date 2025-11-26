@@ -8,7 +8,7 @@ const router = express.Router();
 // Register
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, displayName, role = 'user' } = req.body;
+    const { email, password, displayName, role = 'user', firstName, middleName, lastName, phoneNumber, country } = req.body;
 
     if (!email || !password || !displayName) {
       return res.status(400).json({ error: 'Email, password, and display name are required' });
@@ -33,12 +33,17 @@ router.post('/register', async (req, res) => {
 
     const userId = authData.user.id;
 
-    // Create profile
+    // Create profile with additional fields
     const { error: profileError } = await supabase
       .from('profiles')
       .insert({
         user_id: userId,
         display_name: displayName,
+        first_name: firstName,
+        middle_name: middleName,
+        last_name: lastName,
+        phone: phoneNumber,
+        location: country,
         is_creator: ['creator', 'freelancer', 'seller', 'lodging', 'restaurant', 'educator', 'journalist', 'artisan', 'employer', 'event_organizer'].includes(role),
       });
 

@@ -12,10 +12,13 @@ import { Loader2, User, Briefcase, Palette, Store, Home, UtensilsCrossed, Gradua
 import { Separator } from "@/components/ui/separator";
 import logo from "@/assets/logo.png";
 import { SEO } from "@/components/SEO";
+import { countries } from "@/lib/countries";
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedRole, setSelectedRole] = useState<'user' | 'creator' | 'freelancer' | 'seller' | 'lodging' | 'restaurant' | 'educator' | 'journalist' | 'artisan' | 'employer' | 'event_organizer'>('user');
+  const [selectedCountry, setSelectedCountry] = useState("");
+  const [selectedPhoneCode, setSelectedPhoneCode] = useState("+255"); // Default to Tanzania
   const { signUp, signIn, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -27,10 +30,21 @@ export default function Auth() {
     const formData = new FormData(e.currentTarget);
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
-    const displayName = formData.get("displayName") as string;
+    const firstName = formData.get("firstName") as string;
+    const middleName = formData.get("middleName") as string;
+    const lastName = formData.get("lastName") as string;
+    const displayName = `${firstName} ${middleName ? middleName + ' ' : ''}${lastName}`.trim();
     const role = selectedRole;
+    const phoneNumber = `${selectedPhoneCode}${formData.get("phoneNumber") as string}`;
+    const country = selectedCountry;
 
-    const { error } = await signUp(email, password, displayName, role);
+    const { error } = await signUp(email, password, displayName, role, {
+      firstName,
+      middleName,
+      lastName,
+      phoneNumber,
+      country
+    });
     
     if (error) {
       toast({
@@ -212,16 +226,38 @@ export default function Auth() {
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleSignUp} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-name">Display Name</Label>
-                      <Input
-                        id="signup-name"
-                        name="displayName"
-                        type="text"
-                        placeholder="Your name"
-                        required
-                      />
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-first-name">First Name</Label>
+                        <Input
+                          id="signup-first-name"
+                          name="firstName"
+                          type="text"
+                          placeholder="First name"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-middle-name">Middle Name</Label>
+                        <Input
+                          id="signup-middle-name"
+                          name="middleName"
+                          type="text"
+                          placeholder="Middle name"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-last-name">Last Name</Label>
+                        <Input
+                          id="signup-last-name"
+                          name="lastName"
+                          type="text"
+                          placeholder="Last name"
+                          required
+                        />
+                      </div>
                     </div>
+                    
                     <div className="space-y-2">
                       <Label htmlFor="signup-email">Email</Label>
                       <Input
@@ -232,6 +268,7 @@ export default function Auth() {
                         required
                       />
                     </div>
+                    
                     <div className="space-y-2">
                       <Label htmlFor="signup-password">Password</Label>
                       <Input
@@ -241,6 +278,51 @@ export default function Auth() {
                         required
                       />
                     </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-country">Country</Label>
+                        <Select value={selectedCountry} onValueChange={setSelectedCountry}>
+                          <SelectTrigger id="signup-country">
+                            <SelectValue placeholder="Select your country" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {countries.map((country) => (
+                              <SelectItem key={country.code} value={country.name}>
+                                {country.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-phone">Phone Number</Label>
+                        <div className="flex gap-2">
+                          <Select value={selectedPhoneCode} onValueChange={setSelectedPhoneCode}>
+                            <SelectTrigger className="w-[120px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {countries.map((country) => (
+                                <SelectItem key={country.code} value={country.phoneCode}>
+                                  {country.phoneCode}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Input
+                            id="signup-phone"
+                            name="phoneNumber"
+                            type="tel"
+                            placeholder="Phone number"
+                            className="flex-1"
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    
                     <div className="space-y-2">
                       <Label htmlFor="signup-role">I want to join as</Label>
                       <Select value={selectedRole} onValueChange={(value: 'user' | 'creator' | 'freelancer' | 'seller' | 'lodging' | 'restaurant' | 'educator' | 'journalist' | 'artisan' | 'employer' | 'event_organizer') => setSelectedRole(value)}>
@@ -320,6 +402,7 @@ export default function Auth() {
                         Choose how you want to use BLINNO
                       </p>
                     </div>
+                    
                     <Button type="submit" className="w-full" disabled={isLoading}>
                       {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       Sign Up
