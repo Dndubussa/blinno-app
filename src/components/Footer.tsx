@@ -115,6 +115,14 @@ export const Footer = () => {
                   Blog
                 </button>
               </li>
+              <li>
+                <button 
+                  onClick={() => navigate("/jobs")}
+                  className="text-muted-foreground hover:text-primary text-sm transition-colors text-left"
+                >
+                  Jobs & Opportunities
+                </button>
+              </li>
             </ul>
           </div>
 

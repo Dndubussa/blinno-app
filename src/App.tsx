@@ -37,6 +37,10 @@ import Analytics from "@/pages/Analytics";
 import TwoFactorAuth from "@/pages/TwoFactorAuth";
 import About from "@/pages/About";
 import HowItWorks from "@/pages/HowItWorks";
+import FeaturedCreators from "@/pages/FeaturedCreators";
+import SuccessStories from "@/pages/SuccessStories";
+import Jobs from "@/pages/Jobs";
+import Education from "@/pages/Education";
 import Earnings from "@/pages/Earnings";
 import NotFound from "@/pages/NotFound";
 import CourseViewer from "@/pages/CourseViewer";
@@ -106,6 +110,12 @@ function App() {
                 <Route path="/contact" element={<About />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/help" element={<HowItWorks />} />
+                <Route path="/how-it-works" element={<HowItWorks />} />
+                <Route path="/featured-creators" element={<FeaturedCreators />} />
+                <Route path="/success-stories" element={<SuccessStories />} />
+                <Route path="/blog" element={<Blog />} />
+                <Route path="/jobs" element={<Jobs />} />
+                <Route path="/education" element={<Education />} />
                 <Route path="/settings" element={<Dashboard />} />
                 <Route path="/earnings" element={<Earnings />} />
                 <Route path="/course/:courseId" element={<CourseViewer />} />
