@@ -26,12 +26,19 @@ const Index = () => {
 
   useEffect(() => {
     // If user is authenticated and not loading, redirect to their dashboard
+    // But only if their email is verified
     if (!loading && user && profile) {
-      const dashboardRoute = getDashboardRoute(profile.roles);
-      // Only redirect if we're on the homepage
-      if (window.location.pathname === '/') {
-        navigate(dashboardRoute, { replace: true });
+      // Check if user's email is verified
+      const isEmailVerified = user.email_verified;
+      
+      if (isEmailVerified) {
+        const dashboardRoute = getDashboardRoute(profile.roles);
+        // Only redirect if we're on the homepage
+        if (window.location.pathname === '/') {
+          navigate(dashboardRoute, { replace: true });
+        }
       }
+      // If email is not verified, stay on the homepage and show a message
     }
   }, [user, profile, loading, navigate]);
 

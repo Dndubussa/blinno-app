@@ -3,6 +3,7 @@ import { api } from "@/lib/api";
 import { useNavigate } from "react-router-dom";
 import { getDashboardRoute } from "@/lib/dashboardRoutes";
 import { supabase } from "@/integrations/supabase/client";
+import { useEmailVerification } from "@/hooks/useEmailVerification";
 
 interface User {
   id: string;
@@ -26,6 +27,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   loading: boolean;
+  refreshUser: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,6 +37,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [profile, setProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  
+  // Use the email verification hook to periodically check verification status
+  const { isEmailVerified } = useEmailVerification(user?.id || null);
 
   useEffect(() => {
     // Check for existing session
@@ -46,7 +51,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           // Get user profile from API
           const profileData = await api.getCurrentUser();
           if (profileData) {
-            setUser({ id: profileData.id || profileData.user_id, email: profileData.email });
+            setUser({ 
+              id: profileData.id || profileData.user_id, 
+              email: profileData.email,
+              email_verified: session.user.email_confirmed_at !== null
+            });
             setProfile(profileData);
           } else {
             // No valid session
@@ -72,7 +81,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        setUser({ id: session.user.id, email: session.user.email || '' });
+        setUser({ 
+          id: session.user.id, 
+          email: session.user.email || '',
+          email_verified: session.user.email_confirmed_at !== null
+        });
         // Fetch profile
         api.getCurrentUser().then(profileData => {
           setProfile(profileData);
@@ -88,7 +101,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, []);
 
-  const signUp = async (email: string, password: string, displayName: string, role: 'user' | 'creator' | 'freelancer' | 'seller' | 'lodging' | 'restaurant' | 'educator' | 'journalist' | 'artisan' | 'employer' | 'event_organizer' | 'musician' = 'user', additionalData?: SignUpAdditionalData) => {
+  // Effect to handle automatic redirect when email gets verified
+  useEffect(() => {
+    if (user && profile && isEmailVerified && !user.email_verified) {
+      // Update user object with verified status
+      setUser(prev => prev ? { ...prev, email_verified: true } : null);
+      
+      // Redirect to appropriate dashboard
+      const dashboardRoute = getDashboardRoute(profile.roles);
+      navigate(dashboardRoute, { replace: true });
+    }
+  }, [isEmailVerified, user, profile, navigate]);
+
+  const signUp = async (email: string, password: string, displayName: string, role: 'user' | 'creator' | 'freelancer' | 'seller' | 'lodging' | 'restaurant' | 'educator' | 'journalist' | 'artisan' | 'employer' | 'event_organizer' | 'musician', additionalData?: SignUpAdditionalData) => {
     try {
       // Sign up with Supabase
       const { data, error } = await supabase.auth.signUp({
@@ -97,11 +122,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         options: {
           data: {
             display_name: displayName,
-            first_name: additionalData?.firstName,
-            middle_name: additionalData?.middleName,
-            last_name: additionalData?.lastName,
-            phone: additionalData?.phoneNumber,
-            country: additionalData?.country
+            ...(additionalData && {
+              first_name: additionalData?.firstName,
+              middle_name: additionalData?.middleName,
+              last_name: additionalData?.lastName,
+              phone: additionalData?.phoneNumber,
+              country: additionalData?.country
+            })
           }
         }
       });
@@ -111,29 +138,39 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       if (data.user) {
-        setUser({ id: data.user.id, email: data.user.email || '' });
-        
+        setUser({ 
+          id: data.user.id, 
+          email: data.user.email || '',
+          email_verified: data.user.email_confirmed_at !== null
+        });
+      
         // Register user with API to set role and additional data
         try {
           await api.register({ email, password, displayName, role, ...additionalData });
         } catch (apiError) {
           console.error('API registration error:', apiError);
         }
-        
+      
         // Fetch profile
         const profileData = await api.getCurrentUser();
         setProfile(profileData);
-        
+      
         // Extract primary role from roles array (prefer non-'user' role, or use the sign-up role)
         let primaryRole: string | string[] = role;
         if (profileData?.roles && Array.isArray(profileData.roles)) {
           // Use the roles array directly, getDashboardRoute will handle it
           primaryRole = profileData.roles;
         }
-        
-        // Redirect to appropriate dashboard
-        const dashboardRoute = getDashboardRoute(primaryRole);
-        navigate(dashboardRoute, { replace: true });
+      
+        // Only redirect if email is verified
+        if (data.user.email_confirmed_at !== null) {
+          // Redirect to appropriate dashboard
+          const dashboardRoute = getDashboardRoute(primaryRole);
+          navigate(dashboardRoute, { replace: true });
+        } else {
+          // Stay on auth page and show email verification message
+          navigate('/auth', { replace: true });
+        }
         return { error: null };
       } else {
         return { error: { message: 'Failed to create user' } };
@@ -156,21 +193,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       if (data.user) {
-        setUser({ id: data.user.id, email: data.user.email || '' });
+        setUser({ 
+          id: data.user.id, 
+          email: data.user.email || '',
+          email_verified: data.user.email_confirmed_at !== null
+        });
         // Fetch profile
         const profileData = await api.getCurrentUser();
         setProfile(profileData);
-        
+      
         // Extract primary role from roles array
         let primaryRole: string | string[] | null = null;
         if (profileData?.roles && Array.isArray(profileData.roles)) {
           // Use the roles array directly, getDashboardRoute will handle it
           primaryRole = profileData.roles;
         }
-        
-        // Redirect to appropriate dashboard
-        const dashboardRoute = getDashboardRoute(primaryRole);
-        navigate(dashboardRoute, { replace: true });
+      
+        // Only redirect if email is verified
+        if (data.user.email_confirmed_at !== null) {
+          // Redirect to appropriate dashboard
+          const dashboardRoute = getDashboardRoute(primaryRole);
+          navigate(dashboardRoute, { replace: true });
+        } else {
+          // Stay on auth page and show email verification message
+          navigate('/auth', { replace: true });
+        }
         return { error: null };
       } else {
         return { error: { message: 'Failed to sign in' } };
@@ -208,8 +255,39 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     navigate("/");
   };
 
+  const refreshUser = async () => {
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error('Error refreshing user:', error);
+        return;
+      }
+      
+      if (user) {
+        setUser({
+          id: user.id,
+          email: user.email || '',
+          email_verified: user.email_confirmed_at !== null
+        });
+        
+        // Fetch updated profile
+        try {
+          const profileData = await api.getCurrentUser();
+          setProfile(profileData);
+        } catch (profileError) {
+          console.error('Error fetching profile:', profileError);
+        }
+      } else {
+        setUser(null);
+        setProfile(null);
+      }
+    } catch (error) {
+      console.error('Error in refreshUser:', error);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, profile, signUp, signIn, signInWithGoogle, signOut, loading }}>
+    <AuthContext.Provider value={{ user, profile, signUp, signIn, signInWithGoogle, signOut, loading, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

@@ -13,13 +13,15 @@ import { Separator } from "@/components/ui/separator";
 import logo from "@/assets/logo.png";
 import { SEO } from "@/components/SEO";
 import { countries } from "@/lib/countries";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedRole, setSelectedRole] = useState<'user' | 'creator' | 'freelancer' | 'seller' | 'lodging' | 'restaurant' | 'educator' | 'journalist' | 'artisan' | 'employer' | 'event_organizer'>('user');
   const [selectedCountry, setSelectedCountry] = useState("");
   const [selectedPhoneCode, setSelectedPhoneCode] = useState("+255"); // Default to Tanzania
-  const { signUp, signIn, signInWithGoogle } = useAuth();
+  const { signUp, signIn, signInWithGoogle, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -56,7 +58,7 @@ export default function Auth() {
     } else {
       toast({
         title: "Success",
-        description: "Account created successfully! Redirecting to your dashboard...",
+        description: "Account created successfully! Please check your email to verify your account before accessing the platform.",
       });
       // Navigation is handled by AuthContext.signUp
     }
@@ -80,10 +82,7 @@ export default function Auth() {
       });
       setIsLoading(false);
     } else {
-      toast({
-        title: "Success",
-        description: "Logged in successfully! Redirecting to your dashboard...",
-      });
+      // Check if user needs email verification
       // Navigation is handled by AuthContext.signIn
     }
   };
@@ -133,6 +132,18 @@ export default function Auth() {
       </header>
       <div className="container mx-auto px-4 pt-24 pb-12">
         <div className="max-w-md mx-auto">
+          {/* Email verification alert */}
+          {user && user.email_verified === false && (
+            <Alert className="mb-6">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Email Verification Required</AlertTitle>
+              <AlertDescription>
+                Please check your email ({user.email}) and click the verification link to activate your account. 
+                You will be automatically redirected to your dashboard once your email is verified.
+              </AlertDescription>
+            </Alert>
+          )}
+          
           <Tabs defaultValue="signin" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">Sign In</TabsTrigger>
