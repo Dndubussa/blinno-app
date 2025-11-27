@@ -122,56 +122,42 @@ export default function MusicianDashboard() {
 
   const fetchData = async () => {
     try {
-      // Mock data for demonstration
-      // In a real implementation, you would fetch from the API
-      const mockTracks: Track[] = [
-        {
-          id: "1",
-          title: "My First Track",
-          artist: profile?.display_name || "Unknown Artist",
-          genre: "Local Music",
-          duration: "3:45",
-          plays: 1250,
-          likes: 89,
-          image_url: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&h=400&fit=crop",
-          audio_url: "https://sample-videos.com/audio/mp3/crowd-cheering.mp3",
-          price: 0,
-          is_published: true,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: "2",
-          title: "Another Hit",
-          artist: profile?.display_name || "Unknown Artist",
-          genre: "Afrobeat",
-          duration: "4:12",
-          plays: 890,
-          likes: 45,
-          image_url: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop",
-          audio_url: "https://sample-videos.com/audio/mp3/crowd-cheering.mp3",
-          price: 500,
-          is_published: true,
-          created_at: new Date().toISOString()
-        }
-      ];
+      // Fetch real tracks from API
+      const tracksData = await api.getMyTracks();
+      setTracks(tracksData || []);
       
-      setTracks(mockTracks);
-      
-      // Mock stats
-      const mockStats: Stats = {
-        totalTracks: mockTracks.length,
-        totalPlays: mockTracks.reduce((sum, track) => sum + track.plays, 0),
-        totalEarnings: 25000,
-        followerCount: 1200
-      };
-      
-      setStats(mockStats);
+      // Fetch real stats from API
+      try {
+        const statsData = await api.getMyTrackStats();
+        setStats({
+          totalTracks: statsData.totalTracks || tracksData?.length || 0,
+          totalPlays: statsData.totalPlays || 0,
+          totalEarnings: statsData.totalEarnings || 0,
+          followerCount: statsData.followerCount || 0
+        });
+      } catch (statsError) {
+        // If stats endpoint doesn't exist, calculate from tracks
+        const calculatedStats: Stats = {
+          totalTracks: tracksData?.length || 0,
+          totalPlays: tracksData?.reduce((sum: number, track: Track) => sum + (track.plays || 0), 0) || 0,
+          totalEarnings: 0, // Would need separate calculation
+          followerCount: 0 // Would need separate API call
+        };
+        setStats(calculatedStats);
+      }
     } catch (error: any) {
       console.error('Error fetching data:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to load dashboard data",
         variant: "destructive"
+      });
+      setTracks([]);
+      setStats({
+        totalTracks: 0,
+        totalPlays: 0,
+        totalEarnings: 0,
+        followerCount: 0
       });
     }
   };
