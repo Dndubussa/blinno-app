@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { AnimatedSection } from "./AnimatedSection";
 import { Progress } from "@/components/ui/progress";
+import { MultiCurrencyPrice } from "@/components/MultiCurrencyPrice";
 
 interface VolumeRequirement {
   salesAmount: number;
