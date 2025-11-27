@@ -36,7 +36,7 @@ export const Footer = () => {
                 size="icon" 
                 variant="ghost" 
                 className="hover:text-primary"
-                onClick={() => window.open("https://facebook.com", "_blank")}
+                onClick={() => window.open("https://facebook.com/blinnoapp", "_blank")}
                 aria-label="Facebook"
               >
                 <Facebook className="h-4 w-4" />
@@ -45,7 +45,7 @@ export const Footer = () => {
                 size="icon" 
                 variant="ghost" 
                 className="hover:text-primary"
-                onClick={() => window.open("https://twitter.com", "_blank")}
+                onClick={() => window.open("https://twitter.com/blinnoapp", "_blank")}
                 aria-label="Twitter"
               >
                 <Twitter className="h-4 w-4" />
@@ -54,7 +54,7 @@ export const Footer = () => {
                 size="icon" 
                 variant="ghost" 
                 className="hover:text-primary"
-                onClick={() => window.open("https://instagram.com", "_blank")}
+                onClick={() => window.open("https://instagram.com/blinnoapp", "_blank")}
                 aria-label="Instagram"
               >
                 <Instagram className="h-4 w-4" />
@@ -63,7 +63,7 @@ export const Footer = () => {
                 size="icon" 
                 variant="ghost" 
                 className="hover:text-primary"
-                onClick={() => window.open("https://youtube.com", "_blank")}
+                onClick={() => window.open("https://youtube.com/@blinnoapp", "_blank")}
                 aria-label="YouTube"
               >
                 <Youtube className="h-4 w-4" />
