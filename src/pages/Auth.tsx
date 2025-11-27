@@ -290,7 +290,7 @@ export default function Auth() {
                       />
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="signup-country">Country</Label>
                         <Select value={selectedCountry} onValueChange={setSelectedCountry}>
@@ -327,7 +327,7 @@ export default function Auth() {
                             name="phoneNumber"
                             type="tel"
                             placeholder="Phone number"
-                            className="flex-1"
+                            className="flex-1 min-w-[120px]"
                             required
                           />
                         </div>
