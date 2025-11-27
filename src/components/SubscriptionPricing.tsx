@@ -175,6 +175,70 @@ export function SubscriptionPricing() {
             limits: { products: -1, portfolios: -1 },
           },
         },
+        subscription: {
+          free: {
+            name: 'Free',
+            monthlyPrice: 0,
+            features: [
+              'Basic profile',
+              '5 product listings',
+              'Standard support',
+              '8% marketplace transaction fees',
+              '6% digital product fees',
+              '10% service booking fees',
+              '12% commission work fees',
+              '3% tips/donations fees'
+            ],
+            limits: { products: 5, portfolios: 3 },
+          },
+          creator: {
+            name: 'Creator',
+            monthlyPrice: 15,
+            features: [
+              'Unlimited listings',
+              'Advanced analytics',
+              'Priority support',
+              'Featured listings',
+              'Reduced 5% marketplace fees',
+              '4% digital product fees',
+              '7% service booking fees',
+              '9% commission work fees',
+              '3% tips/donations fees'
+            ],
+            limits: { products: -1, portfolios: -1 },
+          },
+          professional: {
+            name: 'Professional',
+            monthlyPrice: 40,
+            features: [
+              'All Creator features',
+              'Marketing tools',
+              'API access',
+              'Custom branding',
+              'Reduced 4% marketplace fees',
+              '3% digital product fees',
+              '6% service booking fees',
+              '8% commission work fees',
+              '3% tips/donations fees'
+            ],
+            limits: { products: -1, portfolios: -1 },
+          },
+          enterprise: {
+            name: 'Enterprise',
+            monthlyPrice: 100,
+            features: [
+              'All Professional features',
+              'Custom integrations',
+              'Dedicated support',
+              'Best transaction rates (3% marketplace)',
+              'White-label options',
+              'Dedicated account manager',
+              'Priority feature requests',
+              'Custom API access'
+            ],
+            limits: { products: -1, portfolios: -1 },
+          },
+        },
       });
     } finally {
       setLoading(false);
