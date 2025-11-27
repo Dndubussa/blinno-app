@@ -655,12 +655,12 @@ export function SubscriptionPricing() {
           
           {/* Get Started Today Button */}
           <div className="mt-12 text-center">
-            <a 
-              href="/auth?tab=signup" 
+            <button 
+              onClick={() => navigate("/auth?tab=signup")}
               className="inline-block bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-8 rounded-lg transition-colors duration-300"
             >
               Get Started Today
-            </a>
+            </button>
             <p className="mt-4 text-muted-foreground">Join thousands of creators already monetizing their content</p>
           </div>
         </div>

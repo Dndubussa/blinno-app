@@ -1,6 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, CheckCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const creators = [
   {
@@ -33,6 +34,8 @@ const creators = [
 ];
 
 export const FeaturedCreators = () => {
+  const navigate = useNavigate();
+  
   return (
     <section className="container mx-auto px-4 py-16">
       <div className="mb-8">
@@ -91,12 +94,12 @@ export const FeaturedCreators = () => {
       
       {/* Get Started Today Button */}
       <div className="mt-12 text-center">
-        <a 
-          href="/auth?tab=signup" 
+        <button 
+          onClick={() => navigate("/auth?tab=signup")}
           className="inline-block bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-8 rounded-lg transition-colors duration-300"
         >
           Get Started Today
-        </a>
+        </button>
         <p className="mt-4 text-muted-foreground">Join thousands of creators already on BLINNO</p>
       </div>
     </section>

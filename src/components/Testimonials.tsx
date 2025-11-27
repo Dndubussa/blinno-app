@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/carousel";
 import { Star } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import type { CarouselApi } from "@/components/ui/carousel";
 
 const testimonials = [
@@ -50,6 +51,7 @@ const testimonials = [
 
 export const Testimonials = () => {
   const [api, setApi] = useState<CarouselApi>();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!api) return;
@@ -121,12 +123,12 @@ export const Testimonials = () => {
         
         {/* Get Started Today Button */}
         <div className="mt-16 text-center">
-          <a 
-            href="/auth?tab=signup" 
+          <button 
+            onClick={() => navigate("/auth?tab=signup")}
             className="inline-block bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-8 rounded-lg transition-colors duration-300"
           >
             Get Started Today
-          </a>
+          </button>
           <p className="mt-4 text-muted-foreground">Join thousands of successful creators on BLINNO</p>
         </div>
       </div>

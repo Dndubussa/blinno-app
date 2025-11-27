@@ -3,6 +3,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import creator1 from "@/assets/gallery/creator-1.jpg";
 import creator2 from "@/assets/gallery/creator-2.jpg";
 import creator3 from "@/assets/gallery/creator-3.jpg";
@@ -60,6 +61,7 @@ const categories = ["All", "Photography", "Fashion", "Art", "Music", "Food", "Te
 export const CreatorGallery = () => {
   const [selectedImage, setSelectedImage] = useState<typeof galleryItems[0] | null>(null);
   const [filter, setFilter] = useState("All");
+  const navigate = useNavigate();
 
   const filteredItems = filter === "All" 
     ? galleryItems 
@@ -141,12 +143,12 @@ export const CreatorGallery = () => {
       
       {/* Get Started Today Button */}
       <div className="mt-12 text-center">
-        <a 
-          href="/auth?tab=signup" 
+        <button 
+          onClick={() => navigate("/auth?tab=signup")}
           className="inline-block bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-8 rounded-lg transition-colors duration-300"
         >
           Get Started Today
-        </a>
+        </button>
         <p className="mt-4 text-muted-foreground">Showcase your creativity to a global audience</p>
       </div>
     </section>

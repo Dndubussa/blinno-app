@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useNavigate } from "react-router-dom";
 
 const regions = [
   { name: "All Regions", filter: "all" },
@@ -32,6 +33,7 @@ export const MapSection = () => {
   const [mapboxToken, setMapboxToken] = useState("");
   const [showTokenInput, setShowTokenInput] = useState(true);
   const markers = useRef<mapboxgl.Marker[]>([]);
+  const navigate = useNavigate();
 
   const initializeMap = (token: string) => {
     if (!mapContainer.current || map.current) return;
@@ -230,12 +232,12 @@ export const MapSection = () => {
       
       {/* Get Started Today Button */}
       <div className="mt-12 text-center">
-        <a 
-          href="/auth?tab=signup" 
+        <button 
+          onClick={() => navigate("/auth?tab=signup")}
           className="inline-block bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-8 rounded-lg transition-colors duration-300"
         >
           Get Started Today
-        </a>
+        </button>
         <p className="mt-4 text-muted-foreground">Join our global community of creators and businesses</p>
       </div>
     </section>

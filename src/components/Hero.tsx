@@ -3,9 +3,11 @@ import { Badge } from "@/components/ui/badge";
 import { Upload, Search, Globe } from "lucide-react";
 import heroImage from "@/assets/hero-creators.jpg";
 import { useParallax } from "@/hooks/use-parallax";
+import { useNavigate } from "react-router-dom";
 
 export const Hero = () => {
   const parallaxOffset = useParallax(0.5);
+  const navigate = useNavigate();
 
   return (
     <section className="relative min-h-[600px] flex items-center justify-center overflow-hidden">
@@ -58,7 +60,7 @@ export const Hero = () => {
               size="lg" 
               variant="default" 
               className="bg-accent hover:bg-accent/90 text-accent-foreground"
-              onClick={() => window.location.href = '/auth?tab=signup'}
+              onClick={() => navigate('/auth?tab=signup')}
             >
               Get Started Today
             </Button>
