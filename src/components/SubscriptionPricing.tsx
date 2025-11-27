@@ -118,61 +118,62 @@ export function SubscriptionPricing() {
       // Fallback to default tiers if API fails
       setTiers({
         percentage: {
-        basic: {
-          name: 'Basic',
-          feeRate: 0.08,
-          volumeRequirement: null,
-          features: [
-            'Basic profile',
-            '5 product listings',
-            'Standard support',
-            '8% marketplace transaction fees',
-            '6% digital product fees',
-            '10% service booking fees',
-            '12% commission work fees',
-            '3% tips/donations fees'
-          ],
-          limits: { products: 5, portfolios: 3 },
-        },
-        premium: {
-          name: 'Premium',
-          feeRate: 0.06,
-          volumeRequirement: {
-            salesAmount: 500,
-            transactionCount: 50,
+          basic: {
+            name: 'Basic',
+            feeRate: 0.08,
+            volumeRequirement: null,
+            features: [
+              'Basic profile',
+              '5 product listings',
+              'Standard support',
+              '8% marketplace transaction fees',
+              '6% digital product fees',
+              '10% service booking fees',
+              '12% commission work fees',
+              '3% tips/donations fees'
+            ],
+            limits: { products: 5, portfolios: 3 },
           },
-          features: [
-            'Unlimited listings',
-            'Advanced analytics',
-            'Priority support',
-            'Featured listings',
-            'Reduced 6% marketplace fees',
-            '5% digital product fees',
-            '8% service booking fees',
-            '10% commission work fees',
-            '3% tips/donations fees'
-          ],
-          limits: { products: -1, portfolios: -1 },
-        },
-        pro: {
-          name: 'Professional',
-          feeRate: 0.05,
-          volumeRequirement: {
-            salesAmount: 2000,
-            transactionCount: 200,
+          premium: {
+            name: 'Premium',
+            feeRate: 0.06,
+            volumeRequirement: {
+              salesAmount: 500,
+              transactionCount: 50,
+            },
+            features: [
+              'Unlimited listings',
+              'Advanced analytics',
+              'Priority support',
+              'Featured listings',
+              'Reduced 6% marketplace fees',
+              '5% digital product fees',
+              '8% service booking fees',
+              '10% commission work fees',
+              '3% tips/donations fees'
+            ],
+            limits: { products: -1, portfolios: -1 },
           },
-          features: [
-            'All Premium features',
-            'Marketing tools',
-            'API access',
-            'Custom branding',
-            'Reduced 5% marketplace fees',
-            '4% digital product fees',
-            '7% service booking fees',
-            '9% commission work fees',
-            '3% tips/donations fees'
-          ],
-          limits: { products: -1, portfolios: -1 },
+          pro: {
+            name: 'Professional',
+            feeRate: 0.05,
+            volumeRequirement: {
+              salesAmount: 2000,
+              transactionCount: 200,
+            },
+            features: [
+              'All Premium features',
+              'Marketing tools',
+              'API access',
+              'Custom branding',
+              'Reduced 5% marketplace fees',
+              '4% digital product fees',
+              '7% service booking fees',
+              '9% commission work fees',
+              '3% tips/donations fees'
+            ],
+            limits: { products: -1, portfolios: -1 },
+          },
         },
       });
     } finally {
