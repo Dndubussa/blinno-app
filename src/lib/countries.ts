@@ -176,6 +176,7 @@ export const countries: Country[] = [
   { name: "Switzerland", code: "CH", phoneCode: "+41" },
   { name: "Syria", code: "SY", phoneCode: "+963" },
   { name: "Tajikistan", code: "TJ", phoneCode: "+992" },
+  { name: "Tanzania", code: "TZ", phoneCode: "+255" },
   { name: "Thailand", code: "TH", phoneCode: "+66" },
   { name: "Timor-Leste", code: "TL", phoneCode: "+670" },
   { name: "Togo", code: "TG", phoneCode: "+228" },
