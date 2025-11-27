@@ -345,6 +345,7 @@ const ManageProducts = () => {
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="Books">Books</SelectItem>
                           <SelectItem value="Crafts">Crafts</SelectItem>
                           <SelectItem value="Fashion">Fashion</SelectItem>
                           <SelectItem value="Jewelry">Jewelry</SelectItem>
