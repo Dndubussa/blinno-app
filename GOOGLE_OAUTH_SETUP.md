@@ -22,8 +22,13 @@ Google OAuth allows users to sign in to the BLINNO platform using their Google a
 4. Click "Create Credentials" > "OAuth client ID"
 5. Select "Web application" as the application type
 6. Set the following URLs:
-   - **Authorized JavaScript origins**: `https://your-project-ref.supabase.co`
-   - **Authorized redirect URIs**: `https://your-project-ref.supabase.co/auth/v1/callback`
+   - **Authorized JavaScript origins**: 
+     - For production: `https://www.blinno.app`
+     - For development: `http://localhost:5173`
+   - **Authorized redirect URIs**: 
+     - For production: `https://www.blinno.app/auth/callback`
+     - For development: `http://localhost:5173/auth/callback`
+     - Also add: `https://your-project-ref.supabase.co/auth/v1/callback` (replace `your-project-ref` with your actual Supabase project reference)
 7. Click "Create" and save the Client ID and Client Secret
 
 ### 2. Configure Supabase Auth
@@ -33,7 +38,8 @@ Google OAuth allows users to sign in to the BLINNO platform using their Google a
 3. Find "Google" in the list of providers
 4. Toggle the provider to "Enabled"
 5. Enter the Google Client ID and Client Secret from step 1
-6. Save the configuration
+6. Make sure "Skip redirect callback check" is unchecked
+7. Save the configuration
 
 ### 3. Update Environment Variables
 
@@ -64,8 +70,9 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
 ### Common Issues
 
 1. **"redirect_uri_mismatch" Error**
-   - Ensure the redirect URI in Google Cloud Console matches exactly with what Supabase expects
-   - The redirect URI should be: `https://your-project-ref.supabase.co/auth/v1/callback`
+   - Ensure the redirect URI in Google Cloud Console matches exactly with what you're using
+   - The redirect URI should include: `https://your-project-ref.supabase.co/auth/v1/callback`
+   - Also add your application's callback URL: `https://www.blinno.app/auth/callback` or `http://localhost:5173/auth/callback`
 
 2. **OAuth Provider Not Enabled**
    - Check that Google OAuth is enabled in the Supabase dashboard
@@ -74,6 +81,11 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
 3. **CORS Issues**
    - Ensure your application domain is added to the authorized domains in Google Cloud Console
    - Check that your Supabase project URL is correctly configured
+
+4. **"invalid_request" Error**
+   - This typically means Google OAuth is not properly configured in Supabase
+   - Double-check the Client ID and Client Secret in Supabase Auth settings
+   - Ensure the redirect URIs in Google Cloud Console match what Supabase expects
 
 ### Debugging Steps
 

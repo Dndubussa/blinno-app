@@ -238,6 +238,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (error) {
         console.error('Google OAuth error:', error);
+        // Provide more specific error message for common issues
+        if (error.message.includes('invalid_request') || error.message.includes('OAuth')) {
+          return { 
+            error: { 
+              message: 'Google sign-in is not properly configured. Please contact the administrator to set up Google OAuth in the Supabase dashboard.' 
+            } 
+          };
+        }
         return { error: { message: error.message || 'Failed to sign in with Google. Please try again.' } };
       }
 
@@ -245,6 +253,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return { error: null };
     } catch (error: any) {
       console.error('Google OAuth exception:', error);
+      // Provide more specific error message for common issues
+      if (error.message && (error.message.includes('invalid_request') || error.message.includes('OAuth'))) {
+        return { 
+          error: { 
+            message: 'Google sign-in is not properly configured. Please contact the administrator to set up Google OAuth in the Supabase dashboard.' 
+          } 
+        };
+      }
       return { error: { message: error.message || 'An unexpected error occurred during Google sign-in. Please try again.' } };
     }
   };
