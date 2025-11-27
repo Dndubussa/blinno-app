@@ -27,8 +27,8 @@ export default function Blog() {
       category: "Marketing"
     },
     {
-      title: "Success Stories: Tanzanian Creators Going Global",
-      excerpt: "Inspiring stories of creators who expanded their reach beyond Tanzania using BLINNO.",
+      title: "Success Stories: Local Creators Going Global",
+      excerpt: "Inspiring stories of creators who expanded their reach worldwide using BLINNO.",
       author: "BLINNO Team",
       date: "2024-10-28",
       category: "Success Stories"

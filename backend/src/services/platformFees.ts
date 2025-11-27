@@ -10,7 +10,7 @@
  * - Subscriptions: 5%
  * - Tips/Donations: 3%
  * 
- * Payment Processing: 2.5% + TZS 500 fixed fee (paid by buyer)
+ * Payment Processing: 2.5% + USD 0.30 fixed fee (paid by buyer)
  */
 
 export interface FeeCalculation {
@@ -29,7 +29,7 @@ export interface FeeConfig {
   serviceBookingCommission: number;
   commissionWorkCommission: number;
   paymentProcessingFee: number; // Percentage
-  paymentProcessingFixedFee: number; // Fixed amount in TZS
+  paymentProcessingFixedFee: number; // Fixed amount in USD
 }
 
 // Default fee configuration
@@ -39,7 +39,7 @@ const DEFAULT_FEES: FeeConfig = {
   serviceBookingCommission: 0.10, // 10%
   commissionWorkCommission: 0.12, // 12%
   paymentProcessingFee: 0.025, // 2.5%
-  paymentProcessingFixedFee: 500, // TZS 500
+  paymentProcessingFixedFee: 0.30, // USD 0.30
 };
 
 // Percentage-based fee configuration based on user's tier
@@ -66,13 +66,13 @@ const PERCENTAGE_TIER_FEES = {
 
 // Currency-specific fixed fees (approximate values)
 const CURRENCY_FIXED_FEES = {
-  TZS: 500,    // Tanzanian Shilling
+  USD: 0.30,   // US Dollar
+  EUR: 0.25,   // Euro
+  GBP: 0.25,   // British Pound
+  // TZS: 500,    // Tanzanian Shilling (deprecated for worldwide platform)
   KES: 20,     // Kenyan Shilling
   UGX: 500,    // Ugandan Shilling
   RWF: 400,    // Rwandan Franc
-  USD: 0.20,   // US Dollar
-  EUR: 0.18,   // Euro
-  GBP: 0.15,   // British Pound
 };
 
 class PlatformFeeService {
@@ -92,7 +92,7 @@ class PlatformFeeService {
   /**
    * Calculate fees for marketplace/product sale
    */
-  calculateMarketplaceFee(amount: number, percentageTier?: keyof typeof PERCENTAGE_TIER_FEES, currency: string = 'TZS'): FeeCalculation {
+  calculateMarketplaceFee(amount: number, percentageTier?: keyof typeof PERCENTAGE_TIER_FEES, currency: string = 'USD'): FeeCalculation {
     // Use percentage tier rate if provided, otherwise use default
     const commissionRate = percentageTier 
       ? PERCENTAGE_TIER_FEES[percentageTier].marketplaceCommission
@@ -119,7 +119,7 @@ class PlatformFeeService {
   /**
    * Calculate fees for digital product sale
    */
-  calculateDigitalProductFee(amount: number, percentageTier?: keyof typeof PERCENTAGE_TIER_FEES, currency: string = 'TZS'): FeeCalculation {
+  calculateDigitalProductFee(amount: number, percentageTier?: keyof typeof PERCENTAGE_TIER_FEES, currency: string = 'USD'): FeeCalculation {
     // Use percentage tier rate if provided, otherwise use default
     const commissionRate = percentageTier 
       ? PERCENTAGE_TIER_FEES[percentageTier].digitalProductCommission
@@ -146,7 +146,7 @@ class PlatformFeeService {
   /**
    * Calculate fees for service booking
    */
-  calculateServiceBookingFee(amount: number, percentageTier?: keyof typeof PERCENTAGE_TIER_FEES, currency: string = 'TZS'): FeeCalculation {
+  calculateServiceBookingFee(amount: number, percentageTier?: keyof typeof PERCENTAGE_TIER_FEES, currency: string = 'USD'): FeeCalculation {
     // Use percentage tier rate if provided, otherwise use default
     const commissionRate = percentageTier 
       ? PERCENTAGE_TIER_FEES[percentageTier].serviceBookingCommission
@@ -173,7 +173,7 @@ class PlatformFeeService {
   /**
    * Calculate fees for commission work
    */
-  calculateCommissionFee(amount: number, percentageTier?: keyof typeof PERCENTAGE_TIER_FEES, currency: string = 'TZS'): FeeCalculation {
+  calculateCommissionFee(amount: number, percentageTier?: keyof typeof PERCENTAGE_TIER_FEES, currency: string = 'USD'): FeeCalculation {
     // Use percentage tier rate if provided, otherwise use default
     const commissionRate = percentageTier 
       ? PERCENTAGE_TIER_FEES[percentageTier].commissionWorkCommission
@@ -200,7 +200,7 @@ class PlatformFeeService {
   /**
    * Calculate fees for subscription payment
    */
-  calculateSubscriptionFee(amount: number, currency: string = 'TZS'): FeeCalculation {
+  calculateSubscriptionFee(amount: number, currency: string = 'USD'): FeeCalculation {
     // Lower fee for subscriptions (recurring revenue)
     const platformFee = amount * 0.05; // 5% for subscriptions
     const fixedFee = this.getFixedFeeForCurrency(currency);
@@ -223,7 +223,7 @@ class PlatformFeeService {
   /**
    * Calculate fees for tip/donation
    */
-  calculateTipFee(amount: number, currency: string = 'TZS'): FeeCalculation {
+  calculateTipFee(amount: number, currency: string = 'USD'): FeeCalculation {
     // Minimal fee for tips (encourage giving)
     const platformFee = amount * 0.03; // 3% for tips
     const fixedFee = this.getFixedFeeForCurrency(currency);

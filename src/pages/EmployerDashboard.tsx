@@ -167,7 +167,7 @@ export default function EmployerDashboard() {
         skillsRequired: skills,
         salaryMin: formData.get("salary_min") ? parseFloat(formData.get("salary_min") as string) : null,
         salaryMax: formData.get("salary_max") ? parseFloat(formData.get("salary_max") as string) : null,
-        salaryCurrency: formData.get("salary_currency") as string || 'TSh',
+        salaryCurrency: formData.get("salary_currency") as string || 'USD',
         isRemote: isRemote,
         applicationDeadline: formData.get("application_deadline") ? new Date(formData.get("application_deadline") as string).toISOString() : null,
         applicationUrl: formData.get("application_url") as string || null,
@@ -497,11 +497,11 @@ export default function EmployerDashboard() {
                             <Input id="location" name="location" placeholder="e.g., Dar es Salaam" />
                           </div>
                           <div>
-                            <Label htmlFor="salary_min">Min Salary (TSh)</Label>
+                            <Label htmlFor="salary_min">Min Salary (USD)</Label>
                             <Input id="salary_min" name="salary_min" type="number" />
                           </div>
                           <div>
-                            <Label htmlFor="salary_max">Max Salary (TSh)</Label>
+                            <Label htmlFor="salary_max">Max Salary (USD)</Label>
                             <Input id="salary_max" name="salary_max" type="number" />
                           </div>
                         </div>
@@ -522,12 +522,12 @@ export default function EmployerDashboard() {
                           </div>
                           <div>
                             <Label htmlFor="salary_currency">Currency</Label>
-                            <Select name="salary_currency" defaultValue="TSh">
+                            <Select name="salary_currency" defaultValue="USD">
                               <SelectTrigger>
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="TSh">TSh (Tanzanian Shilling)</SelectItem>
+                                <SelectItem value="USD">USD (US Dollar)</SelectItem>
                                 <SelectItem value="USD">USD (US Dollar)</SelectItem>
                               </SelectContent>
                             </Select>
@@ -595,7 +595,7 @@ export default function EmployerDashboard() {
                             <p className="text-muted-foreground">Salary</p>
                             <p>
                               {job.salary_min && job.salary_max 
-                                ? `${job.salary_min.toLocaleString()} - ${job.salary_max.toLocaleString()} ${job.salary_currency || 'TSh'}`
+                                ? `${job.salary_min.toLocaleString()} - ${job.salary_max.toLocaleString()} ${job.salary_currency || 'USD'}`
                                 : 'Not specified'}
                             </p>
                           </div>
@@ -769,7 +769,7 @@ export default function EmployerDashboard() {
                             name="phone"
                             type="tel"
                             defaultValue={profile?.phone || ""}
-                            placeholder="e.g., +255 123 456 789"
+                            placeholder="e.g., +1 (XXX) XXX-XXXX"
                           />
                         </div>
                       </div>

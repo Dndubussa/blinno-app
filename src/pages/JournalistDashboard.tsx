@@ -582,7 +582,7 @@ export default function JournalistDashboard() {
                             name="phone"
                             type="tel"
                             defaultValue={profile?.phone || ""}
-                            placeholder="e.g., +255 123 456 789"
+                            placeholder="e.g., +1 (XXX) XXX-XXXX"
                           />
                         </div>
                       </div>

@@ -97,10 +97,10 @@ export default function Analytics() {
   }
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("en-TZ", {
+    return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "TZS",
-      minimumFractionDigits: 0,
+      currency: "USD",
+      minimumFractionDigits: 2,
     }).format(price);
   };
 
@@ -237,7 +237,7 @@ export default function Analytics() {
                           type="monotone"
                           dataKey="value"
                           stroke="#8884d8"
-                          name="Revenue (TZS)"
+                          name="Revenue (USD)"
                         />
                       </LineChart>
                     </ResponsiveContainer>

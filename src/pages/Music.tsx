@@ -15,7 +15,7 @@ const tracks = [
     id: 1,
     title: "Waah!",
     artist: "Diamond Platnumz",
-    genre: "Bongo Flava",
+    genre: "Local Music",
     duration: "3:45",
     plays: "15M",
     likes: "2.5M",
@@ -27,7 +27,7 @@ const tracks = [
     id: 2,
     title: "Mwana",
     artist: "Ali Kiba",
-    genre: "Bongo Flava",
+    genre: "Local Music",
     duration: "4:12",
     plays: "8M",
     likes: "1.2M",
@@ -51,7 +51,7 @@ const tracks = [
     id: 4,
     title: "Kigoma",
     artist: "Alikiba & Abdukiba",
-    genre: "Bongo Flava",
+    genre: "Local Music",
     duration: "3:32",
     plays: "10M",
     likes: "1.5M",
@@ -109,9 +109,9 @@ const Music = () => {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Music - Discover Tanzanian Artists and Tracks"
-        description="Explore music from Tanzanian artists. Listen to bongo flava, taarab, and other local genres. Support local musicians and discover new sounds."
-        keywords={["Tanzanian music", "Bongo Flava", "Taarab", "Local artists", "Music streaming", "Diamond Platnumz", "Ali Kiba", "Harmonize"]}
+        title="Music - Discover Local Artists and Tracks"
+        description="Explore music from local artists. Listen to various genres and support musicians in your community."
+        keywords={["Local music", "Music", "Artists", "Music streaming"]}
       />
       
       <Header />
@@ -120,7 +120,7 @@ const Music = () => {
         <div className="container mx-auto px-4">
           <div className="mb-8">
             <h1 className="text-4xl font-bold text-foreground mb-2">Music</h1>
-            <p className="text-muted-foreground">Discover and stream the best Bongo Flava and Tanzanian music</p>
+            <p className="text-muted-foreground">Discover and stream the best local music</p>
           </div>
 
           {/* Search and Filters */}
@@ -146,7 +146,7 @@ const Music = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Genres</SelectItem>
-                    <SelectItem value="Bongo Flava">Bongo Flava</SelectItem>
+                    <SelectItem value="Local Music">Local Music</SelectItem>
                     <SelectItem value="Afrobeat">Afrobeat</SelectItem>
                     <SelectItem value="R&B">R&B</SelectItem>
                     <SelectItem value="Hip Hop">Hip Hop</SelectItem>

@@ -1,12 +1,6 @@
-# BLINNO Platform Information
-
-## Production Website
-
-**Official Website**: https://www.blinno.app
-
 ## Platform Overview
 
-BLINNO is a multi-sided marketplace SaaS platform for Tanzanian creators, businesses, and service providers.
+BLINNO is a multi-sided marketplace SaaS platform for creators, businesses, and service providers worldwide.
 
 ## Production URLs
 
@@ -88,4 +82,3 @@ Production must use HTTPS. Ensure SSL certificates are configured for:
 
 - **Website**: https://www.blinno.app
 - **Support**: Available through the platform
-

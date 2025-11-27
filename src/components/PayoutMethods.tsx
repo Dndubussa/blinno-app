@@ -72,13 +72,32 @@ export function PayoutMethods() {
     e.preventDefault();
     
     try {
-      await api.addPayoutMethod(formData);
+      // Map the frontend method type values to backend expected values
+      const methodTypeMap: Record<string, 'mobile_money' | 'bank_transfer'> = {
+        'mobile_money': 'mobile_money',
+        'bank_transfer': 'bank_transfer'
+      };
+      
+      const methodType = methodTypeMap[formData.methodType] || 'mobile_money';
+      
+      await api.addPayoutMethod({
+        methodType,
+        isDefault: formData.isDefault,
+        mobileOperator: formData.mobileOperator,
+        mobileNumber: formData.mobileNumber,
+        bankName: formData.bankName,
+        bankAddress: formData.bankAddress,
+        accountName: formData.accountName,
+        accountNumber: formData.accountNumber,
+        swiftCode: formData.swiftCode,
+      });
+      
       toast({
         title: "Success",
         description: "Payout method added successfully",
       });
       
-      // Reset form and refresh methods
+      // Reset form and refresh data
       setFormData({
         methodType: 'mobile_money',
         isDefault: false,
@@ -218,10 +237,10 @@ export function PayoutMethods() {
                           <SelectValue placeholder="Select operator" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="M-Pesa">M-Pesa</SelectItem>
-                          <SelectItem value="Mixx by Yas">Mixx by Yas</SelectItem>
-                          <SelectItem value="Airtel Money">Airtel Money</SelectItem>
-                          <SelectItem value="Halopesa">Halopesa</SelectItem>
+                          <SelectItem value="Mobile Money">Mobile Money</SelectItem>
+                          <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                          <SelectItem value="PayPal">PayPal</SelectItem>
+                          <SelectItem value="Stripe">Stripe</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -287,7 +306,7 @@ export function PayoutMethods() {
                         name="swiftCode"
                         value={formData.swiftCode}
                         onChange={handleInputChange}
-                        placeholder="e.g., CORPTZTZ"
+                        placeholder="e.g., SWIFTBIC"
                       />
                     </div>
                   </div>
@@ -299,7 +318,7 @@ export function PayoutMethods() {
                       name="bankAddress"
                       value={formData.bankAddress}
                       onChange={handleInputChange}
-                      placeholder="e.g., Dar es Salaam, Tanzania"
+                      placeholder="e.g., City, Country"
                     />
                   </div>
                 </>

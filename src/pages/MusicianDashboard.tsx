@@ -129,7 +129,7 @@ export default function MusicianDashboard() {
           id: "1",
           title: "My First Track",
           artist: profile?.display_name || "Unknown Artist",
-          genre: "Bongo Flava",
+          genre: "Local Music",
           duration: "3:45",
           plays: 1250,
           likes: 89,
@@ -203,7 +203,7 @@ export default function MusicianDashboard() {
   };
 
   const formatCurrency = (amount: number) => {
-    return formatCurrency(amount, 'TZS');
+    return formatCurrency(amount, 'USD');
   };
 
   if (checkingRole) {
@@ -397,12 +397,12 @@ export default function MusicianDashboard() {
                         <div className="grid grid-cols-2 gap-4">
                           <div>
                             <Label htmlFor="genre">Genre</Label>
-                            <Select name="genre" defaultValue="Bongo Flava">
+                            <Select name="genre" defaultValue="Local Music">
                               <SelectTrigger>
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="Bongo Flava">Bongo Flava</SelectItem>
+                                <SelectItem value="Local Music">Local Music</SelectItem>
                                 <SelectItem value="Afrobeat">Afrobeat</SelectItem>
                                 <SelectItem value="R&B">R&B</SelectItem>
                                 <SelectItem value="Hip Hop">Hip Hop</SelectItem>
@@ -412,7 +412,7 @@ export default function MusicianDashboard() {
                             </Select>
                           </div>
                           <div>
-                            <Label htmlFor="price">Price (TZS)</Label>
+                            <Label htmlFor="price">Price (USD)</Label>
                             <Input id="price" name="price" type="number" step="0.01" defaultValue="0" />
                           </div>
                         </div>

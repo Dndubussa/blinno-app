@@ -351,7 +351,7 @@ router.post('/payout-methods', authenticate, async (req: AuthRequest, res) => {
       }
       
       // Validate mobile operator
-      const validOperators = ['M-Pesa', 'Mixx by Yas', 'Airtel Money', 'Halopesa'];
+      const validOperators = ['Mobile Money', 'Bank Transfer', 'PayPal', 'Stripe'];
       if (!validOperators.includes(methodDetails.mobileOperator)) {
         return res.status(400).json({ error: 'Invalid mobile operator' });
       }

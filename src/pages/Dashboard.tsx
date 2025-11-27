@@ -28,7 +28,7 @@ const CATEGORIES = [
   "Education",
   "Jobs",
   "Artisans",
-  "Bongo Movies",
+  "Movies",
   "Community",
 ];
 
@@ -547,7 +547,7 @@ export default function Dashboard() {
                           name="phone"
                           type="tel"
                           defaultValue={profile?.phone || ""}
-                          placeholder="+255 XXX XXX XXX"
+                          placeholder="+1 (XXX) XXX-XXXX"
                         />
                       </div>
 

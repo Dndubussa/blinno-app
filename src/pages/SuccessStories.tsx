@@ -7,15 +7,15 @@ export default function SuccessStories() {
     {
       name: "Sarah M.",
       role: "Fashion Designer",
-      location: "Dar es Salaam",
-      quote: "BLINNO helped me reach customers across Tanzania and the diaspora. My sales have tripled since joining!",
+      location: "New York",
+      quote: "BLINNO helped me reach customers across the globe. My sales have tripled since joining!",
       rating: 5,
       achievement: "3x increase in sales"
     },
     {
       name: "John K.",
       role: "Music Producer",
-      location: "Arusha",
+      location: "Los Angeles",
       quote: "The platform connected me with artists and clients I never would have found otherwise. Game changer!",
       rating: 5,
       achievement: "50+ bookings in 3 months"
@@ -23,7 +23,7 @@ export default function SuccessStories() {
     {
       name: "Amina H.",
       role: "Event Organizer",
-      location: "Zanzibar",
+      location: "London",
       quote: "Managing events has never been easier. The booking system and payment integration are seamless.",
       rating: 5,
       achievement: "100+ successful events"
@@ -31,8 +31,8 @@ export default function SuccessStories() {
     {
       name: "David T.",
       role: "Freelance Developer",
-      location: "Diaspora",
-      quote: "As someone living abroad, BLINNO helps me stay connected to Tanzania and find clients back home.",
+      location: "Remote",
+      quote: "As someone working remotely, BLINNO helps me find clients and stay connected with the global creative community.",
       rating: 5,
       achievement: "Remote client base established"
     },

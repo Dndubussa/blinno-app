@@ -14,7 +14,7 @@ const galleryItems = [
   {
     id: 1,
     image: creator1,
-    title: "Tanzanian Landscapes",
+    title: "Local Landscapes",
     creator: "Sarah Mwangi",
     category: "Photography",
   },
@@ -42,7 +42,7 @@ const galleryItems = [
   {
     id: 5,
     image: creator5,
-    title: "Tanzanian Cuisine",
+    title: "Local Cuisine",
     creator: "Peter Moshi",
     category: "Food",
   },
@@ -72,7 +72,7 @@ export const CreatorGallery = () => {
           <span className="text-primary">Creator</span> Gallery
         </h2>
         <p className="text-xl text-muted-foreground mb-8">
-          Discover amazing work from Tanzanian creators
+          Discover amazing work from local creators
         </p>
 
         <div className="flex flex-wrap gap-2 justify-center mb-8">
@@ -138,6 +138,17 @@ export const CreatorGallery = () => {
           )}
         </DialogContent>
       </Dialog>
+      
+      {/* Get Started Today Button */}
+      <div className="mt-12 text-center">
+        <a 
+          href="/auth?tab=signup" 
+          className="inline-block bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-8 rounded-lg transition-colors duration-300"
+        >
+          Get Started Today
+        </a>
+        <p className="mt-4 text-muted-foreground">Showcase your creativity to a global audience</p>
+      </div>
     </section>
   );
 };

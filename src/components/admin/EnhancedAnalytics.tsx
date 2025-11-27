@@ -211,7 +211,7 @@ export function EnhancedAnalytics() {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Monthly Recurring Revenue</span>
                 <span className="font-medium">
-                  TZS {parseFloat(analytics.subscriptions.monthly_recurring_revenue.toString()).toLocaleString()}
+                  USD {parseFloat(analytics.subscriptions.monthly_recurring_revenue.toString()).toLocaleString()}
                 </span>
               </div>
             </div>
@@ -232,7 +232,7 @@ export function EnhancedAnalytics() {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Revenue</span>
                 <span className="font-medium">
-                  TZS {parseFloat(analytics.featuredListings.total_revenue.toString()).toLocaleString()}
+                  USD {parseFloat(analytics.featuredListings.total_revenue.toString()).toLocaleString()}
                 </span>
               </div>
             </div>

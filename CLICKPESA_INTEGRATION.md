@@ -1,10 +1,6 @@
-# Click Pesa Payment Gateway Integration
-
-This document describes the Click Pesa payment gateway integration for the BLINNO platform.
-
 ## Overview
 
-Click Pesa is a Tanzanian payment gateway that enables secure payments via mobile money (M-Pesa, Tigo Pesa, Airtel Money) and other payment methods. This integration allows users to pay for orders directly through the platform.
+Click Pesa is a payment gateway that enables secure payments via mobile money and other payment methods. This integration allows users to pay for orders directly through the platform.
 
 ## Setup Instructions
 
@@ -199,26 +195,6 @@ CREATE TABLE payments (
   order_id UUID REFERENCES orders(id),
   user_id UUID REFERENCES users(id),
   amount DECIMAL(10, 2),
-  currency TEXT DEFAULT 'TZS',
+  currency TEXT DEFAULT 'USD',
   status TEXT,
   payment_method TEXT DEFAULT 'clickpesa',
-  payment_id TEXT, -- Click Pesa payment ID
-  transaction_id TEXT,
-  checkout_url TEXT,
-  error_message TEXT,
-  created_at TIMESTAMPTZ,
-  updated_at TIMESTAMPTZ
-);
-```
-
-## Support
-
-For Click Pesa API issues:
-- Documentation: https://docs.clickpesa.com
-- Support: Contact Click Pesa support team
-
-For integration issues:
-- Check backend logs
-- Review API responses
-- Verify database records
-

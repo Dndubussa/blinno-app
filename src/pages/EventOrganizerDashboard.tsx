@@ -398,7 +398,7 @@ export default function EventOrganizerDashboard() {
                       <DollarSign className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">{stats.totalRevenue.toLocaleString()} TSh</div>
+                      <div className="text-2xl font-bold">{stats.totalRevenue.toLocaleString()} USD</div>
                       <p className="text-xs text-muted-foreground">From ticket sales</p>
                     </CardContent>
                   </Card>
@@ -535,7 +535,7 @@ export default function EventOrganizerDashboard() {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <Label htmlFor="ticket_price">Ticket Price (TSh)</Label>
+                            <Label htmlFor="ticket_price">Ticket Price (USD)</Label>
                             <Input id="ticket_price" name="ticket_price" type="number" step="0.01" />
                           </div>
                           <div>
@@ -789,7 +789,7 @@ export default function EventOrganizerDashboard() {
                             name="phone"
                             type="tel"
                             defaultValue={profile?.phone || ""}
-                            placeholder="e.g., +255 123 456 789"
+                            placeholder="e.g., +1 (XXX) XXX-XXXX"
                           />
                         </div>
                       </div>

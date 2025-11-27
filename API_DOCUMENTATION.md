@@ -268,9 +268,9 @@ Content-Type: application/json
 **Request Body:**
 ```json
 {
-  "currency": "TZS",
+  "currency": "USD",
   "language": "en",
-  "country": "TZ"
+  "country": "US"
 }
 ```
 
@@ -638,10 +638,10 @@ Content-Type: application/json
   "shippingAddress": {
     "name": "John Doe",
     "address": "123 Main St",
-    "city": "Dar es Salaam",
-    "region": "Dar es Salaam",
-    "postalCode": "12345",
-    "country": "TZ"
+    "city": "New York",
+    "region": "New York",
+    "postalCode": "10001",
+    "country": "US"
   }
 }
 ```
@@ -680,8 +680,8 @@ Content-Type: application/json
 **Request Body:**
 ```json
 {
-  "amount": 50000,
-  "currency": "TZS",
+  "amount": 500,
+  "currency": "USD",
   "orderId": "order-id"
 }
 ```

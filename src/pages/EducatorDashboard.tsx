@@ -259,10 +259,10 @@ export default function EducatorDashboard() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-TZ", {
+    return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "TZS",
-      minimumFractionDigits: 0,
+      currency: "USD",
+      minimumFractionDigits: 2,
     }).format(amount);
   };
 
@@ -471,7 +471,7 @@ export default function EducatorDashboard() {
                         </div>
                         <div className="grid grid-cols-3 gap-4">
                           <div>
-                            <Label htmlFor="price">Price (TZS)</Label>
+                            <Label htmlFor="price">Price (USD)</Label>
                             <Input id="price" name="price" type="number" step="0.01" defaultValue="0" />
                           </div>
                           <div>

@@ -1,6 +1,6 @@
 # BLINNO Platform
 
-A multi-sided marketplace SaaS platform for Tanzanian creators, businesses, and service providers.
+A multi-sided marketplace SaaS platform for creators, businesses, and service providers worldwide.
 
 ## Production Website
 

@@ -21,7 +21,7 @@ export default function MusicTest() {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    genre: "Bongo Flava",
+    genre: "Local Music",
     price: "0",
   });
 
@@ -67,7 +67,7 @@ export default function MusicTest() {
     setFormData({
       title: "",
       description: "",
-      genre: "Bongo Flava",
+      genre: "Local Music",
       price: "0",
     });
     
@@ -141,7 +141,7 @@ export default function MusicTest() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Bongo Flava">Bongo Flava</SelectItem>
+                        <SelectItem value="Local Music">Local Music</SelectItem>
                         <SelectItem value="Afrobeat">Afrobeat</SelectItem>
                         <SelectItem value="R&B">R&B</SelectItem>
                         <SelectItem value="Hip Hop">Hip Hop</SelectItem>
@@ -151,7 +151,7 @@ export default function MusicTest() {
                     </Select>
                   </div>
                   <div>
-                    <Label htmlFor="price">Price (TZS)</Label>
+                    <Label htmlFor="price">Price (USD)</Label>
                     <Input
                       id="price"
                       type="number"
@@ -236,7 +236,7 @@ export default function MusicTest() {
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-sm text-muted-foreground">{track.genre}</span>
                   <span className="text-sm font-medium">
-                    {track.price > 0 ? `TZS ${track.price}` : "Free"}
+                    {track.price > 0 ? `$${track.price}` : "Free"}
                   </span>
                 </div>
                 <Button 

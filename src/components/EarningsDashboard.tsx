@@ -79,7 +79,7 @@ export function EarningsDashboard() {
               <Wallet className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">TZS {earnings.totalEarnings.toLocaleString()}</div>
+              <div className="text-2xl font-bold">USD {earnings.totalEarnings.toLocaleString()}</div>
               <p className="text-xs text-muted-foreground">
                 All time earnings
               </p>
@@ -92,7 +92,7 @@ export function EarningsDashboard() {
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">TZS {earnings.pendingEarnings.toLocaleString()}</div>
+              <div className="text-2xl font-bold text-green-600">USD {earnings.pendingEarnings.toLocaleString()}</div>
               <p className="text-xs text-muted-foreground">
                 Ready for payout
               </p>
@@ -105,7 +105,7 @@ export function EarningsDashboard() {
               <CheckCircle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">TZS {earnings.paidOut.toLocaleString()}</div>
+              <div className="text-2xl font-bold">USD {earnings.paidOut.toLocaleString()}</div>
               <p className="text-xs text-muted-foreground">
                 Already transferred
               </p>
@@ -144,7 +144,7 @@ export function EarningsDashboard() {
                     <p className="text-sm text-muted-foreground">{item.count} transactions</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-medium">TZS {parseFloat(item.earnings.toString()).toLocaleString()}</p>
+                    <p className="font-medium">USD {parseFloat(item.earnings.toString()).toLocaleString()}</p>
                   </div>
                 </div>
               ))}

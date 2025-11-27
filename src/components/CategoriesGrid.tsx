@@ -23,7 +23,7 @@ import eventsImage from "@/assets/events.jpg";
 import lodgingImage from "@/assets/lodging.jpg";
 import educationImage from "@/assets/education.jpg";
 import musicImage from "@/assets/music-performance.jpg";
-import bongoMoviesImage from "@/assets/bongo-movies.jpg";
+import moviesImage from "@/assets/movies.jpg";
 import communityImage from "@/assets/community.jpg";
 
 // Map category IDs to their corresponding data
@@ -66,7 +66,7 @@ const categoryDataMap = {
   music: {
     icon: Music,
     title: "Music",
-    description: "Discover Bongo Flava",
+    description: "Discover Local Music",
     stats: "1K+ Tracks",
     href: "/music",
     backgroundImage: musicImage
@@ -113,11 +113,11 @@ const categoryDataMap = {
   },
   movies: {
     icon: Film,
-    title: "Bongo Movies",
-    description: "Watch Tanzanian films",
+    title: "Movies",
+    description: "Watch Local Films",
     stats: "500+ Movies",
     href: "/movies",
-    backgroundImage: bongoMoviesImage
+    backgroundImage: moviesImage
   },
   community: {
     icon: Heart,

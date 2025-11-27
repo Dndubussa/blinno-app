@@ -49,24 +49,24 @@ interface DisbursementResponse {
 
 // Supported currencies mapping
 const SUPPORTED_CURRENCIES = {
-  TZS: { name: 'Tanzanian Shilling', symbol: 'TSh', country: 'Tanzania' },
-  KES: { name: 'Kenyan Shilling', symbol: 'KSh', country: 'Kenya' },
-  UGX: { name: 'Ugandan Shilling', symbol: 'USh', country: 'Uganda' },
-  RWF: { name: 'Rwandan Franc', symbol: 'RWF', country: 'Rwanda' },
   USD: { name: 'US Dollar', symbol: '$', country: 'International' },
   EUR: { name: 'Euro', symbol: '€', country: 'Europe' },
   GBP: { name: 'British Pound', symbol: '£', country: 'UK' },
+  
+  KES: { name: 'Kenyan Shilling', symbol: 'KSh', country: 'Kenya' },
+  UGX: { name: 'Ugandan Shilling', symbol: 'USh', country: 'Uganda' },
+  RWF: { name: 'Rwandan Franc', symbol: 'RWF', country: 'Rwanda' },
 };
 
-// Currency conversion rates (relative to TZS)
+// Currency conversion rates (relative to USD)
 const CURRENCY_RATES = {
-  TZS: 1,
-  KES: 0.33,    // 1 TZS = 0.33 KES (approximate)
-  UGX: 0.25,    // 1 TZS = 0.25 UGX (approximate)
-  RWF: 0.85,    // 1 TZS = 0.85 RWF (approximate)
-  USD: 0.0004,  // 1 TZS = 0.0004 USD (approximate)
-  EUR: 0.00035, // 1 TZS = 0.00035 EUR (approximate)
-  GBP: 0.0003,  // 1 TZS = 0.0003 GBP (approximate)
+  USD: 1,
+  EUR: 0.85,    // 1 USD = 0.85 EUR (approximate)
+  GBP: 0.75,    // 1 USD = 0.75 GBP (approximate)
+  
+  KES: 110,     // 1 USD = 110 KES (approximate)
+  UGX: 3700,    // 1 USD = 3700 UGX (approximate)
+  RWF: 1100,    // 1 USD = 1100 RWF (approximate)
 };
 
 class ClickPesaService {
@@ -125,11 +125,11 @@ class ClickPesaService {
       return amount;
     }
 
-    // Convert to TZS first (base currency)
-    const amountInTZS = amount / (CURRENCY_RATES[fromCurrency as keyof typeof CURRENCY_RATES] || 1);
+    // Convert to USD first (base currency)
+    const amountInUSD = amount / (CURRENCY_RATES[fromCurrency as keyof typeof CURRENCY_RATES] || 1);
     
-    // Convert from TZS to target currency
-    const convertedAmount = amountInTZS * (CURRENCY_RATES[toCurrency as keyof typeof CURRENCY_RATES] || 1);
+    // Convert from USD to target currency
+    const convertedAmount = amountInUSD * (CURRENCY_RATES[toCurrency as keyof typeof CURRENCY_RATES] || 1);
     
     return Math.round(convertedAmount * 100) / 100; // Round to 2 decimal places
   }
@@ -148,15 +148,15 @@ class ClickPesaService {
     try {
       const token = await this.getAccessToken();
 
-      // For non-TZS currencies, we need to convert to TZS for Click Pesa processing
+      // For non-USD currencies, we need to convert to USD for Click Pesa processing
       // but keep the original currency for display purposes
       let amountForProcessing = payment.amount;
       let currencyForProcessing = payment.currency;
       
-      // If currency is not TZS, convert for processing but keep original for display
-      if (payment.currency !== 'TZS' && CURRENCY_RATES[payment.currency as keyof typeof CURRENCY_RATES]) {
-        amountForProcessing = this.convertCurrency(payment.amount, payment.currency, 'TZS');
-        currencyForProcessing = 'TZS';
+      // If currency is not USD, convert for processing but keep original for display
+      if (payment.currency !== 'USD' && CURRENCY_RATES[payment.currency as keyof typeof CURRENCY_RATES]) {
+        amountForProcessing = this.convertCurrency(payment.amount, payment.currency, 'USD');
+        currencyForProcessing = 'USD';
       }
 
       const response = await fetch(`${this.config.baseUrl}/api/v1/payments`, {
@@ -217,7 +217,7 @@ class ClickPesaService {
         },
         body: JSON.stringify({
           amount: disbursement.amount,
-          currency: disbursement.currency || 'TZS',
+          currency: disbursement.currency || 'USD',
           recipient_phone: disbursement.recipientPhone,
           recipient_email: disbursement.recipientEmail,
           recipient_name: disbursement.recipientName,

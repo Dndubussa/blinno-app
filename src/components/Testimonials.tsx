@@ -23,14 +23,14 @@ const testimonials = [
     role: "Music Producer",
     image: "/placeholder.svg",
     rating: 5,
-    text: "The platform made it easy to showcase my work and collaborate with other talented Tanzanian creators.",
+    text: "The platform made it easy to showcase my work and collaborate with other talented creators.",
   },
   {
     name: "Fatuma Juma",
     role: "Fashion Designer",
     image: "/placeholder.svg",
     rating: 5,
-    text: "I found amazing opportunities and connected with customers across Tanzania. This platform is a game-changer!",
+    text: "I found amazing opportunities and connected with customers worldwide. This platform is a game-changer!",
   },
   {
     name: "David Mollel",
@@ -69,7 +69,7 @@ export const Testimonials = () => {
             Success Stories
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Hear from Tanzanian creators who have transformed their careers with BLINNO
+            Hear from creators who have transformed their careers with BLINNO
           </p>
         </div>
 
@@ -118,6 +118,17 @@ export const Testimonials = () => {
           <CarouselPrevious className="-left-12" />
           <CarouselNext className="-right-12" />
         </Carousel>
+        
+        {/* Get Started Today Button */}
+        <div className="mt-16 text-center">
+          <a 
+            href="/auth?tab=signup" 
+            className="inline-block bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-8 rounded-lg transition-colors duration-300"
+          >
+            Get Started Today
+          </a>
+          <p className="mt-4 text-muted-foreground">Join thousands of successful creators on BLINNO</p>
+        </div>
       </div>
     </section>
   );

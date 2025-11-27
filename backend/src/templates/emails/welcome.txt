@@ -1,19 +1,8 @@
-Welcome to BLINNO!
-
-Hello {{user_name}}!
-
-Welcome to BLINNO, the platform that connects Tanzanian creators, events, marketplace, music, and more. We're thrilled to have you join our community of innovators and creators.
-
-Your journey to discover and showcase the best of Tanzania starts now. Here's what you can do:
-
-Explore the Marketplace
-Discover authentic Tanzanian products and services from local creators and entrepreneurs.
-
 Find Events
 Stay updated on cultural festivals, business conferences, workshops, and community gatherings.
 
 Discover Music
-Listen to bongo flava, taarab, and other local genres from Tanzanian artists.
+Listen to local genres and discover artists from around the world.
 
 Showcase Your Talent
 Create your profile and share your skills, products, or services with our community.
@@ -28,7 +17,7 @@ The BLINNO Team
 ---
 
 BLINNO - BLISSFUL INNOVATIONS
-Dar es Salaam, Tanzania
+Global Platform
 
 Unsubscribe: {{unsubscribe_url}}
 Email Preferences: {{preferences_url}}

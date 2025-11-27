@@ -162,7 +162,7 @@ INSERT INTO email_templates (name, subject, body_html, body_text, category, vari
         <div class="footer">
             <p>
                 BLINNO - BLISSFUL INNOVATIONS<br>
-                Dar es Salaam, Tanzania
+                Global Platform
             </p>
             
             <p>© 2025 BLINNO. All rights reserved.</p>

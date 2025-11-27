@@ -414,9 +414,9 @@ export default function FreelancerDashboard() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-TZ", {
+    return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "TZS",
+      currency: "USD",
       minimumFractionDigits: 0,
     }).format(amount);
   };
@@ -446,7 +446,7 @@ export default function FreelancerDashboard() {
       if (amount < 10000) {
         toast({
           title: "Error",
-          description: "Minimum payout amount is TZS 10,000",
+          description: "Minimum payout amount is USD 10,000",
           variant: "destructive",
         });
         return;
@@ -640,7 +640,7 @@ export default function FreelancerDashboard() {
                         <Input id="budget" name="budget" type="number" step="0.01" />
                       </div>
                       <div>
-                        <Label htmlFor="hourly_rate">Hourly Rate (TZS)</Label>
+                        <Label htmlFor="hourly_rate">Hourly Rate (USD)</Label>
                         <Input id="hourly_rate" name="hourly_rate" type="number" step="0.01" />
                       </div>
                     </div>
@@ -892,11 +892,11 @@ export default function FreelancerDashboard() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="hourly_rate">Hourly Rate (TZS)</Label>
+                        <Label htmlFor="hourly_rate">Hourly Rate (USD)</Label>
                         <Input id="hourly_rate" name="hourly_rate" type="number" step="0.01" />
                       </div>
                       <div>
-                        <Label htmlFor="fixed_price">Fixed Price (TZS)</Label>
+                        <Label htmlFor="fixed_price">Fixed Price (USD)</Label>
                         <Input id="fixed_price" name="fixed_price" type="number" step="0.01" />
                       </div>
                     </div>
@@ -1073,7 +1073,7 @@ export default function FreelancerDashboard() {
                 <CardContent>
                   {!balance || (balance.available_balance || 0) < 10000 ? (
                     <p className="text-center text-muted-foreground py-4">
-                      Minimum payout amount is TZS 10,000. Available balance: {formatCurrency(balance?.available_balance || 0)}
+                      Minimum payout amount is USD 10,000. Available balance: {formatCurrency(balance?.available_balance || 0)}
                     </p>
                   ) : null}
 
@@ -1088,7 +1088,7 @@ export default function FreelancerDashboard() {
                       <CardContent>
                         <form onSubmit={handleRequestPayout} className="space-y-4">
                           <div>
-                            <Label htmlFor="payout-amount">Amount (TZS)</Label>
+                            <Label htmlFor="payout-amount">Amount (USD)</Label>
                             <Input
                               id="payout-amount"
                               name="amount"
@@ -1100,7 +1100,7 @@ export default function FreelancerDashboard() {
                               placeholder="10000"
                             />
                             <p className="text-xs text-muted-foreground mt-1">
-                              Minimum: TZS 10,000
+                              Minimum: USD 10,000
                             </p>
                           </div>
                           <div>
@@ -1281,7 +1281,7 @@ export default function FreelancerDashboard() {
                       name="phone"
                       type="tel"
                       defaultValue={profile?.phone || ""}
-                      placeholder="+255 XXX XXX XXX"
+                      placeholder="+1 (XXX) XXX-XXXX"
                     />
                   </div>
 

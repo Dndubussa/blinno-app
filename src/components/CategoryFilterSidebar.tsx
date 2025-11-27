@@ -15,7 +15,7 @@ const categories = [
   { id: "restaurants", label: "Restaurants" },
   { id: "lodging", label: "Lodging" },
   { id: "education", label: "Education" },
-  { id: "movies", label: "Bongo Movies" },
+  { id: "movies", label: "Movies" },
   { id: "community", label: "Community" },
   { id: "jobs", label: "Jobs" },
   { id: "artisans", label: "Artisans" },

@@ -16,18 +16,18 @@ export default function Jobs() {
       id: "1",
       title: "Senior Software Developer",
       company: "Tech Company",
-      location: "Dar es Salaam",
+      location: "Remote",
       type: "Full-time",
-      salary: "TZS 2,000,000 - 3,000,000",
+      salary: "$50,000 - $80,000",
       posted: "2 days ago"
     },
     {
       id: "2",
       title: "Marketing Manager",
       company: "Creative Agency",
-      location: "Arusha",
+      location: "New York",
       type: "Full-time",
-      salary: "TZS 1,500,000 - 2,500,000",
+      salary: "$40,000 - $65,000",
       posted: "5 days ago"
     },
     {
@@ -36,7 +36,7 @@ export default function Jobs() {
       company: "Design Studio",
       location: "Remote",
       type: "Part-time",
-      salary: "TZS 800,000 - 1,200,000",
+      salary: "$25,000 - $40,000",
       posted: "1 week ago"
     },
   ];

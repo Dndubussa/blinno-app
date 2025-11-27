@@ -18,7 +18,7 @@ export const DiasporaBanner = () => {
             </Badge>
           </div>
           <p className="text-muted-foreground">
-            Connect with home from anywhere in the world. Support Tanzanian creators, discover events, and shop authentic products through our worldwide platform - proudly Tanzanian owned.
+            Connect with home from anywhere in the world. Support local creators, discover events, and shop authentic products through our worldwide platform.
           </p>
         </div>
       </div>

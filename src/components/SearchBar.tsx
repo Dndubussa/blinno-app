@@ -22,9 +22,9 @@ const searchData = {
     { name: "David Mollel - Event Organizer", type: "Creator" },
   ],
   content: [
-    { name: "Latest Bongo Movies", type: "Content" },
-    { name: "Tanzanian Art Exhibition", type: "Content" },
-    { name: "Dar es Salaam Food Festival", type: "Content" },
+    { name: "Latest Movies", type: "Content" },
+    { name: "Local Art Exhibition", type: "Content" },
+    { name: "City Food Festival", type: "Content" },
   ],
 };
 

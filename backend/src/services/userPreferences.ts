@@ -15,10 +15,10 @@ export interface UserPreferences {
 
 // Default user preferences
 const DEFAULT_PREFERENCES: UserPreferences = {
-  currency: 'TZS',
+  currency: 'USD',
   language: 'en',
-  timezone: 'Africa/Dar_es_Salaam',
-  country: 'TZ',
+  timezone: 'UTC',
+  country: 'US',
 };
 
 class UserPreferencesService {

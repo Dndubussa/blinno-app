@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Upload, Search, Globe } from "lucide-react";
-import heroImage from "@/assets/hero-tanzanian-creators.jpg";
+import heroImage from "@/assets/hero-creators.jpg";
 import { useParallax } from "@/hooks/use-parallax";
 
 export const Hero = () => {
@@ -42,7 +42,7 @@ export const Hero = () => {
             <span className="text-foreground">, Create & Connect</span>
           </h1>
           <p className="text-xl text-muted-foreground mb-8">
-            Discover, Create & Connect with All Things Tanzanian - Worldwide Platform, Tanzanian Owned
+            Discover, Create & Connect with Local Creators and Businesses Worldwide
           </p>
 
           <div className="flex flex-wrap gap-4 justify-center mb-8">
@@ -54,6 +54,14 @@ export const Hero = () => {
               <Upload className="mr-2 h-5 w-5" />
               Submit Content
             </Button>
+            <Button 
+              size="lg" 
+              variant="default" 
+              className="bg-accent hover:bg-accent/90 text-accent-foreground"
+              onClick={() => window.location.href = '/auth?tab=signup'}
+            >
+              Get Started Today
+            </Button>
           </div>
 
           <div className="flex flex-wrap gap-4 justify-center text-sm">
@@ -62,7 +70,7 @@ export const Hero = () => {
               🌍 Worldwide Platform
             </Badge>
             <Badge variant="outline" className="bg-background/50 border-primary/30 text-foreground">
-              🇹🇿 100% Tanzanian-Owned
+              🌟 100% Creator-Owned
             </Badge>
             <Badge variant="outline" className="bg-background/50 border-primary/30 text-foreground">
               ✓ Verified Creators

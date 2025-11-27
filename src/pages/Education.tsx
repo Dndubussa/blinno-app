@@ -1,10 +1,11 @@
-import { PageLayout } from "@/components/PageLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { BookOpen, Users, Clock, Star, ExternalLink } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import React from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Users, Clock, Star, BookOpen, ExternalLink } from "lucide-react";
+import { PageLayout } from "@/components/PageLayout";
 
 export default function Education() {
   const { user } = useAuth();
@@ -19,7 +20,7 @@ export default function Education() {
       students: 245,
       duration: "8 weeks",
       rating: 4.8,
-      price: "TZS 150,000",
+      price: "$1,500",
       category: "Marketing"
     },
     {
@@ -29,7 +30,7 @@ export default function Education() {
       students: 189,
       duration: "12 weeks",
       rating: 4.9,
-      price: "TZS 200,000",
+      price: "$2,000",
       category: "Technology"
     },
     {
@@ -39,7 +40,7 @@ export default function Education() {
       students: 312,
       duration: "6 weeks",
       rating: 4.7,
-      price: "TZS 120,000",
+      price: "$1,200",
       category: "Business"
     },
   ];
@@ -131,11 +132,10 @@ export default function Education() {
                   Go to Educator Dashboard
                 </Button>
               )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </PageLayout>
   );
 }
-

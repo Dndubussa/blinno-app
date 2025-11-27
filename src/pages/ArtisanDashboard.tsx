@@ -382,7 +382,7 @@ export default function ArtisanDashboard() {
                       <DollarSign className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">{stats.totalEarnings.toLocaleString()} TSh</div>
+                      <div className="text-2xl font-bold">{stats.totalEarnings.toLocaleString()} USD</div>
                       <p className="text-xs text-muted-foreground">Lifetime earnings</p>
                     </CardContent>
                   </Card>
@@ -486,19 +486,19 @@ export default function ArtisanDashboard() {
                         <div className="grid grid-cols-3 gap-4">
                           {pricingType === 'hourly' && (
                             <div>
-                              <Label htmlFor="hourly_rate">Hourly Rate (TSh)</Label>
+                              <Label htmlFor="hourly_rate">Hourly Rate (USD)</Label>
                               <Input id="hourly_rate" name="hourly_rate" type="number" step="0.01" />
                             </div>
                           )}
                           {pricingType === 'daily' && (
                             <div>
-                              <Label htmlFor="daily_rate">Daily Rate (TSh)</Label>
+                              <Label htmlFor="daily_rate">Daily Rate (USD)</Label>
                               <Input id="daily_rate" name="daily_rate" type="number" step="0.01" />
                             </div>
                           )}
                           {pricingType === 'fixed' && (
                             <div>
-                              <Label htmlFor="fixed_price">Fixed Price (TSh)</Label>
+                              <Label htmlFor="fixed_price">Fixed Price (USD)</Label>
                               <Input id="fixed_price" name="fixed_price" type="number" step="0.01" />
                             </div>
                           )}
@@ -549,9 +549,9 @@ export default function ArtisanDashboard() {
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Pricing:</span>
                             <span className="font-medium">
-                              {service.pricing_type === 'hourly' && service.hourly_rate && `${service.hourly_rate.toLocaleString()} TSh/hour`}
-                              {service.pricing_type === 'daily' && service.daily_rate && `${service.daily_rate.toLocaleString()} TSh/day`}
-                              {service.pricing_type === 'fixed' && service.fixed_price && `${service.fixed_price.toLocaleString()} TSh`}
+                              {service.pricing_type === 'hourly' && service.hourly_rate && `${service.hourly_rate.toLocaleString()} USD/hour`}
+                              {service.pricing_type === 'daily' && service.daily_rate && `${service.daily_rate.toLocaleString()} USD/day`}
+                              {service.pricing_type === 'fixed' && service.fixed_price && `${service.fixed_price.toLocaleString()} USD`}
                               {service.pricing_type === 'negotiable' && 'Negotiable'}
                             </span>
                           </div>
@@ -723,7 +723,7 @@ export default function ArtisanDashboard() {
                             name="phone"
                             type="tel"
                             defaultValue={profile?.phone || ""}
-                            placeholder="e.g., +255 123 456 789"
+                            placeholder="e.g., +1 (XXX) XXX-XXXX"
                           />
                         </div>
                       </div>

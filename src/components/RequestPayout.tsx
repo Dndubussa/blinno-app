@@ -24,6 +24,9 @@ interface EarningsSummary {
   paidOut: number;
   pendingCount: number;
   paidCount: number;
+  byType: Array<{ transaction_type: string; earnings: number; count: number }>;
+  payoutHistory: any[];
+  totalTransactions?: number;
 }
 
 export function RequestPayout() {
@@ -121,9 +124,10 @@ export function RequestPayout() {
     setProcessing(true);
     
     try {
-      await api.requestPayout({
+      await api.createPayoutRequest({
+        methodId: selectedMethod,
         amount: amountValue,
-        paymentMethodId: selectedMethod
+        currency: 'USD'
       });
       
       toast({
@@ -165,15 +169,15 @@ export function RequestPayout() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div className="border rounded-lg p-4">
                 <div className="text-sm text-muted-foreground">Total Earnings</div>
-                <div className="text-2xl font-bold">TZS {earnings.totalEarnings.toLocaleString()}</div>
+                <div className="text-2xl font-bold">USD {earnings.totalEarnings.toLocaleString()}</div>
               </div>
               <div className="border rounded-lg p-4">
                 <div className="text-sm text-muted-foreground">Available for Payout</div>
-                <div className="text-2xl font-bold text-green-600">TZS {earnings.pendingEarnings.toLocaleString()}</div>
+                <div className="text-2xl font-bold text-green-600">USD {earnings.pendingEarnings.toLocaleString()}</div>
               </div>
               <div className="border rounded-lg p-4">
                 <div className="text-sm text-muted-foreground">Already Paid Out</div>
-                <div className="text-2xl font-bold">TZS {earnings.paidOut.toLocaleString()}</div>
+                <div className="text-2xl font-bold">USD {earnings.paidOut.toLocaleString()}</div>
               </div>
             </div>
           )}
@@ -182,7 +186,7 @@ export function RequestPayout() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="amount">Amount (TZS)</Label>
+                  <Label htmlFor="amount">Amount (USD)</Label>
                   <Input
                     id="amount"
                     type="number"
@@ -194,7 +198,7 @@ export function RequestPayout() {
                     required
                   />
                   <p className="text-sm text-muted-foreground">
-                    Minimum payout: TZS 10,000
+                    Minimum payout: USD 10,000
                   </p>
                 </div>
 

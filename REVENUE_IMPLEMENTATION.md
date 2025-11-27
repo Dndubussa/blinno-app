@@ -13,7 +13,7 @@
   - Commissions: 12%
   - Subscriptions: 5%
   - Tips: 3%
-- Payment processing fee: 2.5% + TZS 500 fixed
+- Payment processing fee: 2.5% + USD 0.30 fixed
 - Returns detailed fee breakdown for each transaction
 
 ### 2. Database Schema for Revenue Tracking
@@ -47,9 +47,9 @@
 **File**: `backend/src/routes/subscriptions.ts`
 
 **Subscription Tiers**:
-- **Free**: TZS 0/month (Basic features, 5 product limit)
-- **Creator**: TZS 15,000/month (Unlimited listings, analytics)
-- **Professional**: TZS 40,000/month (All Creator + Marketing tools)
+- **Free**: USD 0/month (Basic features, 5 product limit)
+- **Creator**: USD 150/month (Unlimited listings, analytics)
+- **Professional**: USD 400/month (All Creator + Marketing tools)
 - **Enterprise**: Custom pricing (All features + Custom integrations)
 
 **Endpoints**:
@@ -63,10 +63,10 @@
 **File**: `backend/src/routes/featured.ts`
 
 **Placement Types & Pricing**:
-- Homepage: TZS 30,000/week
-- Category: TZS 15,000/week
-- Search: TZS 10,000/week
-- Event Page: TZS 20,000/week
+- Homepage: USD 300/week
+- Category: USD 150/week
+- Search: USD 100/week
+- Event Page: USD 200/week
 
 **Endpoints**:
 - `POST /api/featured` - Create featured listing
@@ -105,12 +105,12 @@ Added methods for:
 
 | Transaction Type | Platform Fee | Payment Processing | Total Fee |
 |-----------------|--------------|-------------------|-----------|
-| Marketplace Sale | 8% | 2.5% + TZS 500 | ~10.5% + TZS 500 |
-| Digital Product | 6% | 2.5% + TZS 500 | ~8.5% + TZS 500 |
-| Service Booking | 10% | 2.5% + TZS 500 | ~12.5% + TZS 500 |
-| Commission Work | 12% | 2.5% + TZS 500 | ~14.5% + TZS 500 |
-| Subscription | 5% | 2.5% + TZS 500 | ~7.5% + TZS 500 |
-| Tip/Donation | 3% | 2.5% + TZS 500 | ~5.5% + TZS 500 |
+| Marketplace Sale | 8% | 2.5% + USD 0.30 | ~10.5% + USD 0.30 |
+| Digital Product | 6% | 2.5% + USD 0.30 | ~8.5% + USD 0.30 |
+| Service Booking | 10% | 2.5% + USD 0.30 | ~12.5% + USD 0.30 |
+| Commission Work | 12% | 2.5% + USD 0.30 | ~14.5% + USD 0.30 |
+| Subscription | 5% | 2.5% + USD 0.30 | ~7.5% + USD 0.30 |
+| Tip/Donation | 3% | 2.5% + USD 0.30 | ~5.5% + USD 0.30 |
 
 ---
 
@@ -167,7 +167,7 @@ psql -U postgres -d blinno -f backend/src/db/migrations/add_platform_fees.sql
 ```typescript
 import { platformFees } from './services/platformFees';
 
-const amount = 50000; // TZS 50,000
+const amount = 500; // USD 500
 const fees = platformFees.calculateMarketplaceFee(amount);
 // Returns: { subtotal: 50000, platformFee: 4000, paymentProcessingFee: 1750, ... }
 ```

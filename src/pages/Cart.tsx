@@ -40,7 +40,7 @@ const Cart = () => {
     street: "",
     city: "",
     postalCode: "",
-    country: "Tanzania",
+    country: "United States",
   });
 
   useEffect(() => {
@@ -122,7 +122,7 @@ const Cart = () => {
   };
 
   const formatPrice = (price: number) => {
-    return formatCurrency(price, 'TZS'); // Default to TZS, but could be dynamic
+    return formatCurrency(price, 'USD'); // Default to USD
   };
 
   const handleCheckout = async () => {
@@ -172,13 +172,13 @@ const Cart = () => {
       return;
     }
 
-    // Validate phone number (Tanzanian format)
-    const phoneRegex = /^(\+255|0)?[0-9]{9}$/;
+    // Validate phone number (generic international format)
+    const phoneRegex = /^\+?[1-9]\d{1,14}$/;
     const cleanPhone = customerPhone.replace(/\s+/g, "");
     if (!phoneRegex.test(cleanPhone)) {
       toast({
         title: "Invalid phone number",
-        description: "Please enter a valid Tanzanian phone number",
+        description: "Please enter a valid phone number",
         variant: "destructive",
       });
       return;
@@ -426,7 +426,7 @@ const Cart = () => {
               <Input
                 id="phone"
                 type="tel"
-                placeholder="+255 XXX XXX XXX or 0XXX XXX XXX"
+                placeholder="+1 (XXX) XXX-XXXX or XXX-XXX-XXXX"
                 value={customerPhone}
                 onChange={(e) => setCustomerPhone(e.target.value)}
               />

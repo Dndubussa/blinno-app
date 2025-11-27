@@ -1,6 +1,6 @@
 # BLINNO User Guide
 
-Welcome to BLINNO - the ultimate platform for Tanzanian creators, sellers, and service providers. This guide will help you navigate and make the most of our platform.
+Welcome to BLINNO - the ultimate platform for creators, sellers, and service providers worldwide. This guide will help you navigate and make the most of our platform.
 
 ## Table of Contents
 
@@ -377,7 +377,7 @@ BLINNO supports various payment methods:
 
 If you need additional help:
 - Email: support@blinno.app
-- Phone: +255 XXX XXX XXX
+- Phone: +1 (XXX) XXX-XXXX
 - Live Chat: Available on the website during business hours
 
 ## Security Best Practices
@@ -394,4 +394,4 @@ BLINNO is committed to protecting your privacy. For more information, please rev
 
 ---
 
-Thank you for choosing BLINNO! We're excited to help you connect, create, and succeed in the vibrant Tanzanian marketplace.
+Thank you for choosing BLINNO! We're excited to help you connect, create, and succeed in the global marketplace.

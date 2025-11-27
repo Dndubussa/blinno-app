@@ -29,7 +29,7 @@ export const Footer = () => {
               </span>
             </div>
             <p className="text-muted-foreground text-sm mb-4">
-              Your platform to discover, create, and connect with all things Tanzanian. Supporting local talent and culture worldwide through our globally accessible platform that's proudly 100% Tanzanian owned.
+              Your platform to discover, create, and connect with local creators and businesses. Supporting talent and culture worldwide through our globally accessible platform.
             </p>
             <div className="flex gap-3">
               <Button 
@@ -172,16 +172,16 @@ export const Footer = () => {
               <li className="flex items-start gap-2">
                 <MapPin className="h-4 w-4 text-primary mt-1 flex-shrink-0" />
                 <span className="text-muted-foreground text-sm">
-                  Dar es Salaam, Tanzania
+    Worldwide
                 </span>
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="h-4 w-4 text-primary flex-shrink-0" />
                 <a 
-                  href="tel:+255123456789"
+                  href="tel:+1234567890"
                   className="text-muted-foreground hover:text-primary text-sm transition-colors"
                 >
-                  +255 123 456 789
+                  +1 234 567 890
                 </a>
               </li>
               <li className="flex items-center gap-2">
@@ -196,7 +196,7 @@ export const Footer = () => {
               <li className="flex items-center gap-2">
                 <Globe className="h-4 w-4 text-primary flex-shrink-0" />
                 <span className="text-muted-foreground text-sm">
-                  Worldwide Platform
+                  Global Platform
                 </span>
               </li>
             </ul>
@@ -205,7 +205,7 @@ export const Footer = () => {
 
         <div className="border-t border-border mt-8 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-muted-foreground text-sm">
-            © 2024 BLINNO. All rights reserved. Worldwide Platform, 100% Tanzanian Owned.
+            © 2024 BLINNO. All rights reserved. Global Platform.
           </p>
           <div className="flex gap-6 text-sm">
             <button 

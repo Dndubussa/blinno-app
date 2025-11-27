@@ -88,13 +88,13 @@ const Services = () => {
   const formatPrice = (price: number | null, pricingType: string) => {
     if (!price) return "Price on request";
     
-    const formattedPrice = formatCurrency(price, 'TZS'); // Default to TZS, but could be dynamic
+    const formattedPrice = formatCurrency(price, 'USD'); // Default to USD
     
     switch (pricingType) {
       case 'hourly':
-        return formatCurrencyPerUnit(price, 'TZS', 'hour');
+        return formatCurrencyPerUnit(price, 'USD', 'hour');
       case 'daily':
-        return formatCurrencyPerUnit(price, 'TZS', 'day');
+        return formatCurrencyPerUnit(price, 'USD', 'day');
       default:
         return formattedPrice;
     }
@@ -160,9 +160,9 @@ const Services = () => {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Services - Book Local Providers in Tanzania"
-        description="Discover and book services from local providers in Tanzania. Find freelancers, artisans, restaurants, lodging, and event services from trusted Tanzanian professionals."
-        keywords={["Tanzanian services", "local providers", "freelancers", "artisans", "restaurants", "lodging", "event services", "book services Tanzania"]}
+        title="Services - Book Local Providers Worldwide"
+        description="Discover and book services from local providers around the world. Find freelancers, artisans, restaurants, lodging, and event services from trusted professionals."
+        keywords={["services", "local providers", "freelancers", "artisans", "restaurants", "lodging", "event services", "book services"]}
       />
       <Header />
       
@@ -170,7 +170,7 @@ const Services = () => {
         <div className="container mx-auto px-4">
           <div className="mb-8">
             <h1 className="text-4xl font-bold text-foreground mb-2">Services</h1>
-            <p className="text-muted-foreground">Discover and book services from local providers</p>
+            <p className="text-muted-foreground">Discover and book services from providers around the world</p>
           </div>
 
           {/* Search and Filters */}

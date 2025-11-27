@@ -162,7 +162,8 @@ const Marketplace = () => {
 
   const getUniqueLocations = () => {
     const locations = products
-      .map((p) => p.location)
+      .filter((p): p is Product => 'location' in p)
+      .map((p) => (p as Product).location)
       .filter((loc): loc is string => loc !== null);
     return Array.from(new Set(locations)).sort();
   };
@@ -170,10 +171,10 @@ const Marketplace = () => {
   const filteredProducts = products.filter((product) => {
     const matchesSearch =
       product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      ('display_name' in product && product.display_name?.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (product.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
     const matchesCategory = categoryFilter === "all" || product.category === categoryFilter;
-    const matchesLocation = locationFilter === "all" || product.location === locationFilter;
+    const matchesLocation = locationFilter === "all" || ('location' in product && product.location === locationFilter);
 
     return matchesSearch && matchesCategory && matchesLocation;
   });
@@ -194,13 +195,13 @@ const Marketplace = () => {
     generateProductSchema({
       name: product.title,
       description: product.description,
-      image: product.image_url,
+      image: 'image_url' in product ? (product as Product).image_url : undefined,
       price: product.price,
       currency: 'TZS',
-      in_stock: !('stock_quantity' in product) || product.stock_quantity > 0,
-      brand: product.display_name,
-      average_rating: product.rating,
-      review_count: product.reviews_count,
+      in_stock: !('stock_quantity' in product) || ('stock_quantity' in product && (product as Product).stock_quantity > 0),
+      brand: 'display_name' in product ? (product as Product).display_name : undefined,
+      average_rating: 'rating' in product ? (product as Product).rating : undefined,
+      review_count: 'reviews_count' in product ? (product as Product).reviews_count : undefined,
       url: 'type' in product && product.type === 'course' 
         ? `https://www.blinno.app/course/${product.id}` 
         : `https://www.blinno.app/product/${product.id}`
@@ -210,9 +211,9 @@ const Marketplace = () => {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Marketplace - Authentic Tanzanian Products & Courses"
-        description="Shop authentic Tanzanian products and online courses from local sellers. Discover handmade crafts, traditional goods, and educational content from Tanzanian creators."
-        keywords={["Tanzanian marketplace", "local products", "handmade crafts", "Tanzanian courses", "online shopping Tanzania", "authentic products", "local sellers", "Tanzanian creators"]}
+        title="Marketplace - Authentic Local Products & Courses"
+        description="Shop authentic local products and online courses from sellers worldwide. Discover handmade crafts, traditional goods, and educational content from creators around the globe."
+        keywords={["marketplace", "local products", "handmade crafts", "courses", "online shopping", "authentic products", "sellers", "creators"]}
         schemaMarkup={productSchemas.length > 0 ? productSchemas : undefined}
       />
       <Header />
@@ -221,7 +222,7 @@ const Marketplace = () => {
         <div className="container mx-auto px-4">
           <div className="mb-8">
             <h1 className="text-4xl font-bold text-foreground mb-2">Marketplace</h1>
-            <p className="text-muted-foreground">Shop authentic Tanzanian products and courses from local sellers</p>
+            <p className="text-muted-foreground">Shop authentic local products and courses from sellers worldwide</p>
           </div>
 
           {/* Search and Filters */}
@@ -379,7 +380,7 @@ const Marketplace = () => {
                 >
                   <div className="relative">
                     <img 
-                      src={item.image_url || "https://via.placeholder.com/400x300?text=No+Image"} 
+                      src={'image_url' in item ? item.image_url || "https://via.placeholder.com/400x300?text=No+Image" : "https://via.placeholder.com/400x300?text=No+Image"} 
                       alt={item.title}
                       className="w-full h-64 object-cover"
                       onError={(e) => {
@@ -407,7 +408,7 @@ const Marketplace = () => {
                         {item.title}
                       </h3>
                       
-                      {item.rating && item.rating > 0 && (
+                      {'rating' in item && item.rating && item.rating > 0 && (
                         <div className="flex items-center gap-2 mb-3">
                           <div className="flex items-center gap-1">
                             <Star className="h-4 w-4 fill-amber-500 text-amber-500 flex-shrink-0" />
@@ -415,7 +416,7 @@ const Marketplace = () => {
                               {item.rating.toFixed(1)}
                             </span>
                           </div>
-                          {item.reviews_count && item.reviews_count > 0 && (
+                          {'reviews_count' in item && item.reviews_count && item.reviews_count > 0 && (
                             <span className="text-sm text-muted-foreground">
                               ({item.reviews_count} reviews)
                             </span>
@@ -425,13 +426,13 @@ const Marketplace = () => {
 
                       <div className="space-y-2 mb-4">
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <span className="truncate">By {item.display_name || "Unknown Seller"}</span>
+                          <span className="truncate">By {('display_name' in item && (item as Product).display_name) || "Unknown Seller"}</span>
                         </div>
                         
-                        {item.location && (
+                        {'location' in item && (item as Product).location && (
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <MapPin className="h-4 w-4 flex-shrink-0" />
-                            <span className="truncate">{item.location}</span>
+                            <span className="truncate">{(item as Product).location}</span>
                           </div>
                         )}
 

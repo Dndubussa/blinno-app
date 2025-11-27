@@ -57,9 +57,9 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="BLISSFUL INNOVATIONS - Discover, Create & Connect with All Things Tanzanian"
-        description="BLINNO connects Tanzanian creators, events, marketplace, music, and more. Discover 15,000+ creators, 500+ events, 2,000+ products across Tanzania."
-        keywords={["Tanzania", "creators", "events", "marketplace", "music", "local business", "Tanzanian culture", "Dar es Salaam", "Mwanza", "Zanzibar"]}
+        title="BLISSFUL INNOVATIONS - Discover, Create & Connect with Local Creators and Businesses"
+        description="BLINNO connects local creators, events, marketplace, music, and more. Discover thousands of creators, events, and products worldwide."
+        keywords={["creators", "events", "marketplace", "music", "local business", "culture"]}
       />
       
       <Header />
@@ -99,6 +99,17 @@ const Index = () => {
             <AnimatedSection delay={300}>
               <CategoriesGrid selectedCategories={selectedCategories} />
             </AnimatedSection>
+            
+            {/* Get Started Today Button */}
+            <div className="mt-12 text-center">
+              <a 
+                href="/auth?tab=signup" 
+                className="inline-block bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-8 rounded-lg transition-colors duration-300"
+              >
+                Get Started Today
+              </a>
+              <p className="mt-4 text-muted-foreground">Join our global community of creators and businesses</p>
+            </div>
           </div>
         </div>
       </div>

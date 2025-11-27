@@ -270,10 +270,10 @@ export default function RestaurantDashboard() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-TZ", {
+    return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "TZS",
-      minimumFractionDigits: 0,
+      currency: "USD",
+      minimumFractionDigits: 2,
     }).format(amount);
   };
 

@@ -100,7 +100,7 @@ export const Header = () => {
             </Button>
             <Button variant="ghost" size="sm" className="hidden md:flex items-center gap-2">
               <MapPin className="h-4 w-4" />
-              <span>Tanzania</span>
+              <span>Worldwide</span>
             </Button>
             
             {user ? (
@@ -139,15 +139,26 @@ export const Header = () => {
                 </Button>
               </>
             ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-2"
-                onClick={() => navigate("/auth")}
-              >
-                <User className="h-4 w-4" />
-                <span>Sign In</span>
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                  onClick={() => navigate("/auth")}
+                >
+                  <User className="h-4 w-4" />
+                  <span>Sign In</span>
+                </Button>
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="flex items-center gap-2"
+                  onClick={() => navigate("/auth", { state: { tab: "signup" } })}
+                >
+                  <User className="h-4 w-4" />
+                  <span>Sign Up</span>
+                </Button>
+              </div>
             )}
           </div>
         </div>

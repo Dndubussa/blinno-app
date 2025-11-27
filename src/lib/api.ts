@@ -416,6 +416,12 @@ class ApiClient {
     });
   }
 
+  async setDefaultPayoutMethod(methodId: string) {
+    return this.request<any>(`/revenue/payout-methods/${methodId}/default`, {
+      method: 'POST',
+    });
+  }
+
   // Payout Requests
   async getRequestPayout() {
     return this.request<any[]>('/revenue/payout-requests');
@@ -446,7 +452,7 @@ class ApiClient {
 
   // Earnings
   async getEarnings() {
-    return this.request<any[]>('/revenue/earnings');
+    return this.request<any>('/revenue/earnings');
   }
 
   async getEarningDetails(earningId: string) {

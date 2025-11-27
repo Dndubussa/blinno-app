@@ -57,7 +57,7 @@
 
 ### 4. Keyword Optimization
 - Relevant keywords for each page
-- Local SEO focus on Tanzania-related terms
+- Broad keyword targeting for global audience
 
 ### 5. Technical SEO
 - XML sitemap for better crawling
@@ -73,8 +73,8 @@
 
 ### Medium-term (1-2 months)
 1. Implement canonical URLs to prevent duplicate content issues
-2. Add hreflang tags for local language support
-3. Create location-specific landing pages for major Tanzanian cities
+2. Add hreflang tags for international language support
+3. Create location-specific landing pages for major cities
 
 ### Long-term (3-6 months)
 1. Implement advanced SEO analytics and reporting
@@ -102,7 +102,7 @@
 3. Mobile-responsive design
 4. Fast loading times
 5. Secure HTTPS implementation
-6. Local SEO optimization for Tanzania
+6. International SEO optimization
 7. Social media optimization
 
 ## Areas for Improvement

@@ -9,20 +9,20 @@ import { Input } from "@/components/ui/input";
 
 const regions = [
   { name: "All Regions", filter: "all" },
-  { name: "Dar es Salaam", filter: "dar" },
-  { name: "Arusha", filter: "arusha" },
-  { name: "Zanzibar", filter: "zanzibar" },
-  { name: "Mwanza", filter: "mwanza" },
-  { name: "Dodoma", filter: "dodoma" }
+  { name: "North America", filter: "north-america" },
+  { name: "Europe", filter: "europe" },
+  { name: "Asia", filter: "asia" },
+  { name: "Africa", filter: "africa" },
+  { name: "South America", filter: "south-america" }
 ];
 
 const locations = [
-  { name: "Kariakoo Market", type: "marketplace", region: "dar", coords: [39.2675, -6.8161], description: "Largest market in East Africa" },
-  { name: "Serengeti National Park", type: "event", region: "arusha", coords: [34.8333, -2.3333], description: "Wildlife events & tours" },
-  { name: "Stone Town", type: "event", region: "zanzibar", coords: [39.1925, -6.1639], description: "Cultural heritage site" },
-  { name: "Nyerere Square", type: "music", region: "dar", coords: [39.2833, -6.8167], description: "Live music venue" },
-  { name: "Mount Kilimanjaro", type: "event", region: "arusha", coords: [37.3556, -3.0674], description: "Hiking expeditions" },
-  { name: "Forodhani Gardens", type: "marketplace", region: "zanzibar", coords: [39.1947, -6.1619], description: "Night food market" }
+  { name: "New York Creative Hub", type: "marketplace", region: "north-america", coords: [-74.0060, 40.7128], description: "Major creative marketplace" },
+  { name: "London Art District", type: "event", region: "europe", coords: [-0.1276, 51.5074], description: "Cultural events & exhibitions" },
+  { name: "Tokyo Innovation Center", type: "event", region: "asia", coords: [139.6917, 35.6895], description: "Tech and creative events" },
+  { name: "Paris Music Venue", type: "music", region: "europe", coords: [2.3522, 48.8566], description: "Live music performances" },
+  { name: "Cape Town Gallery", type: "marketplace", region: "africa", coords: [18.4241, -33.9249], description: "Art and craft marketplace" },
+  { name: "São Paulo Creative Space", type: "event", region: "south-america", coords: [-46.6333, -23.5505], description: "Creative workshops" }
 ];
 
 export const MapSection = () => {
@@ -41,8 +41,8 @@ export const MapSection = () => {
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/dark-v11',
-      center: [35.7516, -6.3690],
-      zoom: 6,
+      center: [0, 20], // Center of the world map
+      zoom: 2,
       pitch: 45,
     });
 
@@ -138,8 +138,8 @@ export const MapSection = () => {
   return (
     <section className="container mx-auto px-4 py-16">
       <div className="mb-8">
-        <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-2">Explore Tanzania</h2>
-        <p className="text-muted-foreground">Interactive map of locations, events, and businesses across Tanzania</p>
+        <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-2">Explore Our Platform</h2>
+        <p className="text-muted-foreground">Interactive map of locations, events, and businesses worldwide</p>
       </div>
 
       {showTokenInput ? (
@@ -227,6 +227,17 @@ export const MapSection = () => {
           </div>
         </>
       )}
+      
+      {/* Get Started Today Button */}
+      <div className="mt-12 text-center">
+        <a 
+          href="/auth?tab=signup" 
+          className="inline-block bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-8 rounded-lg transition-colors duration-300"
+        >
+          Get Started Today
+        </a>
+        <p className="mt-4 text-muted-foreground">Join our global community of creators and businesses</p>
+      </div>
     </section>
   );
 };

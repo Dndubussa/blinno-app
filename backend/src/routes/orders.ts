@@ -425,7 +425,7 @@ router.post('/shipping-addresses', authenticate, async (req: AuthRequest, res) =
         city,
         region: region || null,
         postal_code: postal_code || null,
-        country: country || 'Tanzania',
+        country: country || 'Global',
         is_default: is_default || false,
       })
       .select()

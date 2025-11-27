@@ -9,8 +9,8 @@ export interface SEOData {
 }
 
 export const defaultSEO: SEOData = {
-  title: "BLISSFUL INNOVATIONS Discover, Create & Connect with All Things Tanzanian",
-  description: "BLINNO connects Tanzanian creators, events, marketplace, music, and more. Discover 15,000+ creators, 500+ events, 2,000+ products across Tanzania.",
+  title: "BLISSFUL INNOVATIONS Discover, Create & Connect with Local Creators",
+  description: "BLINNO connects local creators, events, marketplace, music, and more. Discover thousands of creators, events, and products worldwide.",
   image: "https://lovable.dev/opengraph-image-p98pqg.png",
   type: "website"
 };

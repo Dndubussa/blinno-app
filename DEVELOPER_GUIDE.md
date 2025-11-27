@@ -20,7 +20,7 @@ This guide provides comprehensive information for developers working on the BLIN
 
 ## Project Overview
 
-BLINNO is a comprehensive SaaS platform connecting Tanzanian creators, sellers, and service providers with customers. The platform includes features for marketplace, services, events, music, education, and more.
+BLINNO is a comprehensive SaaS platform connecting creators, sellers, and service providers with customers worldwide. The platform includes features for marketplace, services, events, music, education, and more.
 
 ## Technology Stack
 
@@ -638,7 +638,7 @@ All pull requests must:
 
 ### Pull Request Template
 
-```markdown
+```
 ## Description
 Brief description of changes
 

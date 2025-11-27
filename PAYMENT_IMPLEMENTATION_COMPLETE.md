@@ -131,16 +131,16 @@ All payment types follow the same pattern:
 
 | Transaction Type | Platform Fee | Processing Fee | Total Fee |
 |-----------------|--------------|----------------|-----------|
-| Marketplace | 8% | 2.5% + 500 TZS | ~10.5% + 500 |
-| Digital Products | 6% | 2.5% + 500 TZS | ~8.5% + 500 |
-| Service Bookings | 10% | 2.5% + 500 TZS | ~12.5% + 500 |
-| Commissions | 12% | 2.5% + 500 TZS | ~14.5% + 500 |
-| Performance Bookings | 12% | 2.5% + 500 TZS | ~14.5% + 500 |
-| Subscriptions | 5% | 2.5% + 500 TZS | ~7.5% + 500 |
-| Tips | 3% | 2.5% + 500 TZS | ~5.5% + 500 |
-| Featured Listings | 0% | 2.5% + 500 TZS | ~2.5% + 500 |
-| Lodging Bookings | 10% | 2.5% + 500 TZS | ~12.5% + 500 |
-| Restaurant Orders | 8% | 2.5% + 500 TZS | ~10.5% + 500 |
+| Marketplace | 8% | 2.5% + USD 0.30 | ~10.5% + 0.30 |
+| Digital Products | 6% | 2.5% + USD 0.30 | ~8.5% + 0.30 |
+| Service Bookings | 10% | 2.5% + USD 0.30 | ~12.5% + 0.30 |
+| Commissions | 12% | 2.5% + USD 0.30 | ~14.5% + 0.30 |
+| Performance Bookings | 12% | 2.5% + USD 0.30 | ~14.5% + 0.30 |
+| Subscriptions | 5% | 2.5% + USD 0.30 | ~7.5% + 0.30 |
+| Tips | 3% | 2.5% + USD 0.30 | ~5.5% + 0.30 |
+| Featured Listings | 0% | 2.5% + USD 0.30 | ~2.5% + 0.30 |
+| Lodging Bookings | 10% | 2.5% + USD 0.30 | ~12.5% + 0.30 |
+| Restaurant Orders | 8% | 2.5% + USD 0.30 | ~10.5% + 0.30 |
 
 ## 🔧 Technical Implementation
 

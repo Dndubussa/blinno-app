@@ -58,7 +58,7 @@ const testData = {
     user_name: 'John Doe',
     action_description: 'Change password',
     timestamp: '2025-11-26 14:30:00 UTC',
-    location: 'Dar es Salaam, Tanzania',
+    location: 'Global Platform',
     reauth_url: 'https://www.blinno.app/reauthenticate?token=rea123'
   },
   order_confirmation: {
@@ -66,10 +66,10 @@ const testData = {
     order_id: 'ORD-12345',
     order_date: '2025-11-26',
     order_items: [
-      { name: 'Handmade Basket', quantity: 2, price: '25,000 TZS' },
-      { name: 'Tanzanian Coffee', quantity: 1, price: '15,000 TZS' }
+      { name: 'Handmade Basket', quantity: 2, price: '$25.00' },
+      { name: 'Artisan Coffee', quantity: 1, price: '$15.00' }
     ],
-    order_total: '65,000 TZS',
+    order_total: '$65.00',
     order_url: 'https://www.blinno.app/orders/ORD-12345'
   },
   payment_confirmation: {
@@ -78,14 +78,14 @@ const testData = {
     payment_date: '2025-11-26',
     payment_method: 'Mobile Money',
     transaction_id: 'TXN-98765',
-    amount: '65,000 TZS',
+    amount: '$65.00',
     order_url: 'https://www.blinno.app/orders/ORD-12345'
   },
   subscription_confirmation: {
     user_name: 'John Doe',
     plan_name: 'Creator',
     billing_cycle: 'Monthly',
-    amount: '15,000 TZS',
+    amount: '$8.00',
     start_date: '2025-11-26',
     next_billing_date: '2025-12-26',
     payment_method: 'Credit Card',

@@ -52,7 +52,7 @@
 React Helmet Async is the modern version of React Helmet that works with React 18's concurrent mode.
 
 ### 2. Create SEO Service
-```typescript
+```
 // src/lib/seo.ts
 interface SEOData {
   title: string;
@@ -64,8 +64,8 @@ interface SEOData {
 }
 
 export const defaultSEO: SEOData = {
-  title: "BLISSFUL INNOVATIONS Discover, Create & Connect with All Things Tanzanian",
-  description: "BLINNO connects Tanzanian creators, events, marketplace, music, and more. Discover 15,000+ creators, 500+ events, 2,000+ products across Tanzania.",
+  title: "BLISSFUL INNOVATIONS Discover, Create & Connect with Local Creators and Businesses",
+  description: "BLINNO connects local creators, events, marketplace, music, and more. Discover thousands of creators, events, and products worldwide.",
   image: "https://lovable.dev/opengraph-image-p98pqg.png",
   type: "website"
 };
@@ -79,7 +79,7 @@ export function generateSEOData(pageData: Partial<SEOData>): SEOData {
 ```
 
 ### 3. Create SEO Component
-```typescript
+```
 // src/components/SEO.tsx
 import { Helmet } from 'react-helmet-async';
 import { defaultSEO } from '@/lib/seo';
@@ -129,7 +129,7 @@ export function SEO({
 ```
 
 ### 4. Update App.tsx to Include Helmet Provider
-```typescript
+```
 // src/App.tsx
 import { HelmetProvider } from 'react-helmet-async';
 
@@ -144,7 +144,7 @@ function App() {
 
 ### 5. Implement SEO on Key Pages
 Example for the Music page:
-```typescript
+```
 // src/pages/Music.tsx
 import { SEO } from '@/components/SEO';
 
@@ -152,15 +152,16 @@ export default function Music() {
   return (
     <>
       <SEO
-        title="Music - Discover Tanzanian Artists and Tracks"
-        description="Explore music from Tanzanian artists. Listen to bongo flava, taarab, and other local genres. Support local musicians and discover new sounds."
-        keywords={['Tanzanian music', 'Bongo Flava', 'Taarab', 'Local artists', 'Music streaming']}
+        title="Music - Discover Local Artists and Tracks"
+        description="Explore music from local artists. Listen to various genres and support musicians from around the world. Discover new sounds and artists."
+        keywords={['music', 'local artists', 'music streaming', 'discover music']}
       />
       {/* existing page content */}
     </>
   );
 }
 ```
+
 
 ## SEO Features to Implement
 
@@ -182,10 +183,10 @@ export default function Music() {
 - Improve page loading speed
 - Fix any crawl errors
 
-### 4. Local SEO for Tanzania
-- Include Tanzania-related keywords
+### 4. International SEO
+- Include global keywords
 - Add location-based content
-- Implement hreflang tags for local languages
+- Implement hreflang tags for multiple languages
 - Create location-specific landing pages
 
 ## Expected Impact
@@ -219,7 +220,7 @@ export default function Music() {
 ### Long-term
 1. SEO analytics integration
 2. Advanced canonicalization
-3. International SEO (Swahili language support)
+3. International SEO (multi-language support)
 
 ## Success Metrics
 

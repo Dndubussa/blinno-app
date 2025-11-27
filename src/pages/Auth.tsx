@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,10 +20,23 @@ export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedRole, setSelectedRole] = useState<'user' | 'creator' | 'freelancer' | 'seller' | 'lodging' | 'restaurant' | 'educator' | 'journalist' | 'artisan' | 'employer' | 'event_organizer'>('user');
   const [selectedCountry, setSelectedCountry] = useState("");
-  const [selectedPhoneCode, setSelectedPhoneCode] = useState("+255"); // Default to Tanzania
+  const [selectedPhoneCode, setSelectedPhoneCode] = useState("+1"); // Default to US
   const { signUp, signIn, signInWithGoogle, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+  
+  const [activeTab, setActiveTab] = useState("signin");
+  
+  useEffect(() => {
+    // Check if we should default to signup tab
+    const searchParams = new URLSearchParams(location.search);
+    const tabParam = searchParams.get("tab");
+    
+    if (tabParam === "signup") {
+      setActiveTab("signup");
+    }
+  }, [location]);
 
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -106,8 +119,8 @@ export default function Auth() {
     <div className="min-h-screen bg-background">
       <SEO
         title="Sign In or Sign Up - BLINNO Platform"
-        description="Join BLINNO to connect with Tanzanian creators, discover events, shop authentic products, and explore music. Create an account or sign in to access your dashboard."
-        keywords={["BLINNO login", "Tanzanian platform", "sign in", "sign up", "create account", "Tanzania creators", "authentic products", "local events"]}
+        description="Join BLINNO to connect with local creators, discover events, shop authentic products, and explore music. Create an account or sign in to access your dashboard."
+        keywords={["BLINNO login", "platform", "sign in", "sign up", "create account", "local creators", "authentic products", "local events"]}
       />
       {/* Minimal Auth Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
@@ -145,7 +158,7 @@ export default function Auth() {
             </Alert>
           )}
           
-          <Tabs defaultValue="signin" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">Sign In</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>

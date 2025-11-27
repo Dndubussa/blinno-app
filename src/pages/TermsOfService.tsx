@@ -24,7 +24,7 @@ export default function TermsOfService() {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold mb-4">2. Description of Service</h2>
               <p className="mb-4">
-                BLINNO is a platform that connects creators, sellers, service providers, and users across Tanzania and the diaspora. 
+                BLINNO is a platform that connects creators, sellers, service providers, and users worldwide. 
                 The Platform provides:
               </p>
               <ul className="list-disc pl-6 mb-4 space-y-2">
@@ -117,7 +117,7 @@ export default function TermsOfService() {
                 <li>Performance bookings: 12% platform fee + payment processing fees</li>
               </ul>
               <p className="mb-4">
-                Fees are subject to change with 30 days' notice. Payment processing fees are 2.5% + 500 TZS per transaction.
+                Fees are subject to change with 30 days' notice. Payment processing fees are 2.5% + USD 0.30 per transaction.
               </p>
 
               <h3 className="text-xl font-semibold mb-3">6.3 Refunds</h3>
@@ -181,8 +181,8 @@ export default function TermsOfService() {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold mb-4">11. Governing Law</h2>
               <p className="mb-4">
-                These terms are governed by the laws of the United Republic of Tanzania. Any disputes shall be resolved in 
-                the courts of Tanzania.
+                These terms are governed by the laws of the United States. Any disputes shall be resolved in 
+                the courts of the United States.
               </p>
             </section>
 

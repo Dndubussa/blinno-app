@@ -13,10 +13,10 @@ export default function About() {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold mb-4">Our Mission</h2>
               <p className="mb-4">
-                BLINNO is a comprehensive platform designed to connect, showcase, and empower Tanzanian creators, 
+                BLINNO is a comprehensive platform designed to connect, showcase, and empower creators, 
                 entrepreneurs, and talent both locally and across the diaspora. We believe in the power of community 
                 and the importance of supporting local businesses, artists, and innovators. As a worldwide platform 
-                that's 100% Tanzanian owned, we bridge the gap between local talent and global audiences.
+                we bridge the gap between local talent and global audiences.
               </p>
             </section>
 
@@ -38,11 +38,11 @@ export default function About() {
               <div className="grid md:grid-cols-2 gap-4 mb-4">
                 <div>
                   <h3 className="text-xl font-semibold mb-2">Community First</h3>
-                  <p>We prioritize building a supportive and inclusive community for all Tanzanians, both locally and worldwide.</p>
+                  <p>We prioritize building a supportive and inclusive community for all creators, both locally and worldwide.</p>
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold mb-2">Empowerment</h3>
-                  <p>We provide tools and opportunities for creators and businesses to thrive globally while maintaining our Tanzanian roots.</p>
+                  <p>We provide tools and opportunities for creators and businesses to thrive globally.</p>
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold mb-2">Innovation</h3>
@@ -58,13 +58,13 @@ export default function About() {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold mb-4">Global Reach, Local Impact</h2>
               <p className="mb-4">
-                While BLINNO is a worldwide platform accessible from anywhere in the globe, we remain 100% Tanzanian owned and operated.
-                Our mission is to showcase Tanzanian talent to the world while ensuring that the benefits of this global exposure
-                directly support our local creators and businesses.
+                BLINNO is a worldwide platform accessible from anywhere in the globe.
+                Our mission is to showcase local talent to the world while ensuring that the benefits of this global exposure
+                directly support our creators and businesses.
               </p>
               <p>
                 Whether you're a creator looking to showcase your work, a business owner seeking to expand your reach, 
-                or someone looking to discover amazing Tanzanian talent, BLINNO is here for you - connecting local talent with global opportunities.
+                or someone looking to discover amazing talent, BLINNO is here for you - connecting local talent with global opportunities.
               </p>
             </section>
           </CardContent>

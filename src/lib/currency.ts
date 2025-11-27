@@ -4,10 +4,10 @@
 
 // Supported currencies and their locales
 const CURRENCY_LOCALES: Record<string, string> = {
-  TZS: 'en-TZ',
-  KES: 'en-KE',
-  UGX: 'en-UG',
-  RWF: 'en-RW',
+  // TZS: 'en-TZ', // Removed for worldwide platform
+  // KES: 'en-KE', // Removed for worldwide platform
+  // UGX: 'en-UG', // Removed for worldwide platform
+  // RWF: 'en-RW', // Removed for worldwide platform
   USD: 'en-US',
   EUR: 'en-EU',
   GBP: 'en-GB',
@@ -15,10 +15,10 @@ const CURRENCY_LOCALES: Record<string, string> = {
 
 // Default currency symbols
 const CURRENCY_SYMBOLS: Record<string, string> = {
-  TZS: 'TSh',
-  KES: 'KSh',
-  UGX: 'USh',
-  RWF: 'RWF',
+  // TZS: 'TSh', // Removed for worldwide platform
+  // KES: 'KSh', // Removed for worldwide platform
+  // UGX: 'USh', // Removed for worldwide platform
+  // RWF: 'RWF', // Removed for worldwide platform
   USD: '$',
   EUR: '€',
   GBP: '£',
@@ -31,10 +31,10 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
  * @param locale - Optional locale override
  * @returns Formatted currency string
  */
-export function formatPrice(price: number, currency: string = 'TZS', locale?: string): string {
+export function formatPrice(price: number, currency: string = 'USD', locale?: string): string {
   try {
     // Use provided locale or default to currency-based locale
-    const formatLocale = locale || CURRENCY_LOCALES[currency] || 'en-TZ';
+    const formatLocale = locale || CURRENCY_LOCALES[currency] || 'en-US';
     
     // Format with Intl.NumberFormat
     return new Intl.NumberFormat(formatLocale, {
@@ -72,7 +72,7 @@ export function getSupportedCurrencies(): string[] {
  * @returns Locale string
  */
 export function getCurrencyLocale(currency: string): string {
-  return CURRENCY_LOCALES[currency] || 'en-TZ';
+  return CURRENCY_LOCALES[currency] || 'en-US';
 }
 
 /**
@@ -82,7 +82,7 @@ export function getCurrencyLocale(currency: string): string {
  * @param unit - The unit (e.g., 'hour', 'day')
  * @returns Formatted price per unit
  */
-export function formatPricePerUnit(price: number, currency: string = 'TZS', unit: string = 'hour'): string {
+export function formatPricePerUnit(price: number, currency: string = 'USD', unit: string = 'hour'): string {
   const formattedPrice = formatPrice(price, currency);
   return `${formattedPrice}/${unit}`;
 }

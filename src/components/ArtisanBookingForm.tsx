@@ -125,7 +125,7 @@ export function ArtisanBookingForm({
               type="tel"
               value={paymentData.customerPhone}
               onChange={handlePaymentChange}
-              placeholder="e.g., +255XXXXXXXXX"
+              placeholder="e.g., +1XXXXXXXXXX"
               required
             />
           </div>

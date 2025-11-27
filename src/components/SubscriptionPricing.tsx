@@ -193,13 +193,13 @@ export function SubscriptionPricing() {
       return;
     }
 
-    // Validate phone number (Tanzanian format)
-    const phoneRegex = /^(\+255|0)?[0-9]{9}$/;
+    // Validate phone number (International format)
+    const phoneRegex = /^\+?[0-9]{7,15}$/;
     const cleanPhone = customerPhone.replace(/\s+/g, "");
     if (!phoneRegex.test(cleanPhone)) {
       toast({
         title: "Invalid phone number",
-        description: "Please enter a valid Tanzanian phone number",
+        description: "Please enter a valid international phone number",
         variant: "destructive",
       });
       return;
@@ -234,9 +234,9 @@ export function SubscriptionPricing() {
 
   const formatPrice = (price: number) => {
     if (price === 0) return "Free";
-    return new Intl.NumberFormat("en-TZ", {
+    return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "TZS",
+      currency: "USD",
       minimumFractionDigits: 0,
     }).format(price);
   };
@@ -419,7 +419,7 @@ export function SubscriptionPricing() {
                     <strong>Transaction Fees:</strong> 8% on marketplace sales • 6% on digital products • 
                     10% on service bookings • 12% on commissions • 3% on tips
                     <br />
-                    <strong>Payment Processing:</strong> 2.5% + TZS 500 per transaction (paid by buyer)
+                    <strong>Payment Processing:</strong> 2.5% + USD 0.30 per transaction (paid by buyer)
                   </p>
                 </div>
               </div>
@@ -543,7 +543,7 @@ export function SubscriptionPricing() {
                 </p>
                 <div className="mt-4 p-4 bg-primary/5 rounded-lg max-w-3xl mx-auto">
                   <p className="text-sm text-muted-foreground">
-                    <strong>Payment Processing:</strong> 2.5% + TZS 500 per transaction (paid by buyer)
+                    <strong>Payment Processing:</strong> 2.5% + USD 0.30 per transaction (paid by buyer)
                   </p>
                 </div>
               </div>
@@ -652,6 +652,17 @@ export function SubscriptionPricing() {
               </a>
             </p>
           </div>
+          
+          {/* Get Started Today Button */}
+          <div className="mt-12 text-center">
+            <a 
+              href="/auth?tab=signup" 
+              className="inline-block bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-8 rounded-lg transition-colors duration-300"
+            >
+              Get Started Today
+            </a>
+            <p className="mt-4 text-muted-foreground">Join thousands of creators already monetizing their content</p>
+          </div>
         </div>
       </section>
 
@@ -686,7 +697,7 @@ export function SubscriptionPricing() {
               <Input
                 id="sub-phone"
                 type="tel"
-                placeholder="+255 XXX XXX XXX or 0XXX XXX XXX"
+                placeholder="+1 (XXX) XXX-XXXX or XXX-XXX-XXXX"
                 value={customerPhone}
                 onChange={(e) => setCustomerPhone(e.target.value)}
               />

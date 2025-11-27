@@ -198,7 +198,7 @@ export const generateEventSchema = (event: any): EventSchema => {
         addressLocality: event.city || undefined,
         addressRegion: event.region || undefined,
         postalCode: event.postal_code || undefined,
-        addressCountry: event.country || "TZ"
+        addressCountry: event.country || "US"
       }
     },
     image: event.image_url || event.image || "",
@@ -207,7 +207,7 @@ export const generateEventSchema = (event: any): EventSchema => {
       offers: {
         "@type": "Offer",
         price: event.price,
-        priceCurrency: event.currency || "TZS",
+        priceCurrency: event.currency || "USD",
         availability: "https://schema.org/InStock",
         url: event.url || undefined
       }
@@ -257,7 +257,7 @@ export const generateOrganizationSchema = (org: any): OrganizationSchema => {
         addressLocality: org.address.city || undefined,
         addressRegion: org.address.region || undefined,
         postalCode: org.address.postal_code || undefined,
-        addressCountry: org.address.country || "TZ"
+        addressCountry: org.address.country || "US"
       }
     } : undefined),
     ...(org.phone ? {
