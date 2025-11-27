@@ -829,6 +829,10 @@ export function SubscriptionPricing() {
                 );
               })}
             </div>
+          ) : (
+            <div className="flex justify-center items-center py-12">
+              <p className="text-muted-foreground">Loading subscription tiers...</p>
+            </div>
           )}
 
           <div className="mt-12 text-center">
