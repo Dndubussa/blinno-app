@@ -770,9 +770,12 @@ export function SubscriptionPricing() {
           <div className="mt-12 text-center">
             <p className="text-sm text-muted-foreground">
               All tiers include secure payment processing via Click Pesa.{" "}
-              <a href="/terms" className="text-primary hover:underline">
+              <button
+                onClick={() => navigate("/terms")}
+                className="text-primary hover:underline bg-transparent border-none p-0 cursor-pointer"
+              >
                 View terms and conditions
-              </a>
+              </button>
             </p>
           </div>
           
