@@ -424,13 +424,13 @@ export function SubscriptionPricing() {
   };
 
   // Convert tiers object to array for rendering based on selected model
-  const percentageTierList = pricingModel === 'percentage' && displayTiers.percentage ? [
+  const percentageTierList = pricingModel === 'percentage' && displayTiers?.percentage ? [
     { key: "basic" as const, ...displayTiers.percentage.basic },
     { key: "premium" as const, ...displayTiers.percentage.premium },
     { key: "pro" as const, ...displayTiers.percentage.pro },
   ] : [];
 
-  const subscriptionTierList = pricingModel === 'subscription' && displayTiers.subscription ? [
+  const subscriptionTierList = pricingModel === 'subscription' && displayTiers?.subscription ? [
     { key: "free" as const, ...displayTiers.subscription.free },
     { key: "creator" as const, ...displayTiers.subscription.creator },
     { key: "professional" as const, ...displayTiers.subscription.professional },
@@ -653,7 +653,7 @@ export function SubscriptionPricing() {
                 );
               })}
             </div>
-          ) : (
+          ) : subscriptionTierList.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
               {subscriptionTierList.map((tier) => {
                 const Icon = tierIcons[tier.key];

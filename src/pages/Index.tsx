@@ -7,7 +7,6 @@ import { Hero } from "@/components/Hero";
 import { DiasporaBanner } from "@/components/DiasporaBanner";
 import { FeaturedCreators } from "@/components/FeaturedCreators";
 import { CategoriesGrid } from "@/components/CategoriesGrid";
-import { CreatorGallery } from "@/components/CreatorGallery";
 import { Footer } from "@/components/Footer";
 import { SearchBar } from "@/components/SearchBar";
 import { Testimonials } from "@/components/Testimonials";
@@ -114,10 +113,6 @@ const Index = () => {
             </div>
           </div>
         </section>
-
-        <AnimatedSection delay={100}>
-          <CreatorGallery />
-        </AnimatedSection>
 
         <AnimatedSection delay={200}>
           <Testimonials />
