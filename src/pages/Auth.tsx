@@ -48,6 +48,16 @@ export default function Auth() {
     }
   }, [location]);
 
+  // Auto-fill phone code when country is selected
+  useEffect(() => {
+    if (selectedCountry) {
+      const country = countries.find(c => c.name === selectedCountry);
+      if (country) {
+        setSelectedPhoneCode(country.phoneCode);
+      }
+    }
+  }, [selectedCountry]);
+
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
