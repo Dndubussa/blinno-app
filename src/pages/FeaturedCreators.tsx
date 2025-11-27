@@ -137,7 +137,7 @@ export default function FeaturedCreators() {
               Want to be featured? Build your profile, create quality content, and engage with the community. 
               Featured creators are selected based on activity, quality, and community engagement.
             </p>
-            <Button onClick={() => navigate("/auth")}>
+            <Button onClick={() => navigate("/auth?tab=signup")}>
               Get Started
             </Button>
           </CardContent>
