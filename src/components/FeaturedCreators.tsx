@@ -4,58 +4,31 @@ import { MapPin, CheckCircle } from "lucide-react";
 
 const creators = [
   {
-    name: "Alex Johnson",
-    category: "Music",
-    location: "New York",
-    followers: "15M+",
+    name: "Paul Clement",
+    category: "Gospel Musician",
+    location: "Nairobi, Kenya",
+    followers: "150K+",
     verified: true,
-    image: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop",
-    badge: "🎵 Top Artist"
+    image: "/Paul%20Clement.jpg",
+    badge: "🎵 Gospel"
   },
   {
-    name: "Maria Rodriguez",
-    category: "Fashion Designer",
-    location: "Los Angeles",
-    followers: "250K+",
+    name: "Joel Lwaga",
+    category: "Gospel Musician",
+    location: "Dar es Salaam, Tanzania",
+    followers: "120K+",
     verified: true,
-    image: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=400&h=400&fit=crop",
-    badge: "👗 Featured"
+    image: "/Joel%20Lwaga.jpg",
+    badge: "🎵 Worship"
   },
   {
-    name: "James Wilson",
-    category: "Music & Activism",
-    location: "London",
-    followers: "800K+",
+    name: "Godfrey Steven",
+    category: "Gospel Musician",
+    location: "Kampala, Uganda",
+    followers: "100K+",
     verified: true,
-    image: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=400&fit=crop",
-    badge: "🎤 Legend"
-  },
-  {
-    name: "Emma Thompson",
-    category: "Entrepreneur",
-    location: "Paris",
-    followers: "180K+",
-    verified: true,
-    image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=400&fit=crop",
-    badge: "💼 Business"
-  },
-  {
-    name: "David Kim",
-    category: "Music",
-    location: "Seoul",
-    followers: "5M+",
-    verified: true,
-    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop",
-    badge: "🎵 Top Artist"
-  },
-  {
-    name: "Sarah Chen",
-    category: "Actress & Influencer",
-    location: "Tokyo",
-    followers: "3M+",
-    verified: true,
-    image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop",
-    badge: "🎬 Featured"
+    image: "/Godfrey%20Steven.jpg",
+    badge: "🎵 Praise"
   }
 ];
 
@@ -76,6 +49,10 @@ export const FeaturedCreators = () => {
                   src={creator.image} 
                   alt={creator.name}
                   className="w-full h-64 object-cover"
+                  onError={(e) => {
+                    // Fallback if image doesn't load
+                    e.currentTarget.src = '/placeholder.svg';
+                  }}
                 />
                 <div className="absolute top-4 right-4">
                   <Badge className="bg-accent text-accent-foreground">
