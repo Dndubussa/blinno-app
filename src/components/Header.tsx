@@ -5,6 +5,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { api } from "@/lib/api";
 import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 import { NotificationBell } from "@/components/NotificationBell";
