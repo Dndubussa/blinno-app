@@ -1,0 +1,210 @@
+{
+  "common": {
+    "home": "Nyumbani",
+    "marketplace": "Soko",
+    "services": "Huduma",
+    "events": "Matukio",
+    "music": "Muziki",
+    "signIn": "Ingia",
+    "signUp": "Jisajili",
+    "signOut": "Toka",
+    "dashboard": "Dashibodi",
+    "cart": "Kikapu",
+    "orders": "Maagizo",
+    "profile": "Wasifu",
+    "settings": "Mipangilio",
+    "loading": "Inapakia...",
+    "error": "Hitilafu",
+    "success": "Mafanikio",
+    "save": "Hifadhi",
+    "cancel": "Ghairi",
+    "delete": "Futa",
+    "edit": "Hariri",
+    "view": "Angalia",
+    "search": "Tafuta",
+    "filter": "Chuja",
+    "close": "Funga",
+    "submit": "Wasilisha",
+    "back": "Rudi",
+    "next": "Ifuatayo",
+    "previous": "Iliyotangulia",
+    "confirm": "Thibitisha",
+    "yes": "Ndiyo",
+    "no": "Hapana"
+  },
+  "header": {
+    "title": "BLINNO",
+    "navigation": {
+      "home": "Nyumbani",
+      "marketplace": "Soko",
+      "services": "Huduma",
+      "events": "Matukio",
+      "music": "Muziki"
+    },
+    "userMenu": {
+      "dashboard": "Dashibodi",
+      "profile": "Wasifu",
+      "settings": "Mipangilio",
+      "signOut": "Toka"
+    }
+  },
+  "homepage": {
+    "hero": {
+      "title": "Unganisha, Unda, na Kustawi",
+      "subtitle": "Jukwaa la mwisho kwa waundaji, biashara, na watoa huduma katika Afrika na zaidi",
+      "cta": "Anza"
+    },
+    "categories": {
+      "title": "Gundua Kategoria",
+      "subtitle": "Tafuta unachotafuta"
+    },
+    "howToGetStarted": {
+      "title": "Jinsi ya Kuanza",
+      "step1": "Unda Akaunti",
+      "step1Desc": "Jisajili na uchague jukumu lako",
+      "step2": "Kamilisha Wasifu",
+      "step2Desc": "Ongeza taarifa zako na mapendeleo",
+      "step3": "Anza Kuunda",
+      "step3Desc": "Orodhesha bidhaa, huduma, au maudhui",
+      "step4": "Unganisha",
+      "step4Desc": "Shirikiana na wateja na waundaji",
+      "step5": "Kua",
+      "step5Desc": "Jenga uwepo wako na upate mapato"
+    },
+    "pricing": {
+      "title": "Chagua Mpango Wako",
+      "subtitle": "Bei rahisi kwa kila mtu"
+    }
+  },
+  "auth": {
+    "signIn": {
+      "title": "Ingia",
+      "email": "Barua pepe",
+      "password": "Nenosiri",
+      "forgotPassword": "Umesahau nenosiri?",
+      "noAccount": "Huna akaunti?",
+      "signUpLink": "Jisajili"
+    },
+    "signUp": {
+      "title": "Unda Akaunti",
+      "email": "Barua pepe",
+      "password": "Nenosiri",
+      "confirmPassword": "Thibitisha Nenosiri",
+      "role": "Chagua Jukumu Lako",
+      "hasAccount": "Tayari una akaunti?",
+      "signInLink": "Ingia"
+    }
+  },
+  "marketplace": {
+    "title": "Soko",
+    "subtitle": "Gundua bidhaa za ajabu",
+    "addToCart": "Ongeza kwenye Kikapu",
+    "viewDetails": "Angalia Maelezo",
+    "price": "Bei",
+    "outOfStock": "Hakuna Akiba",
+    "inStock": "Ipo Akiba"
+  },
+  "cart": {
+    "title": "Kikapu cha Ununuzi",
+    "empty": "Kikapu chako ni tupu",
+    "subtotal": "Jumla ndogo",
+    "total": "Jumla",
+    "checkout": "Maliza Ununuzi",
+    "remove": "Ondoa",
+    "quantity": "Kiasi"
+  },
+  "orders": {
+    "title": "Maagizo Yangu",
+    "empty": "Hakuna maagizo yaliyopatikana",
+    "status": {
+      "pending": "Inasubiri",
+      "confirmed": "Imethibitishwa",
+      "shipped": "Imetumwa",
+      "delivered": "Imeletwa",
+      "cancelled": "Imeghairiwa"
+    },
+    "orderNumber": "Agizo #",
+    "total": "Jumla",
+    "tracking": "Ufuatiliaji",
+    "viewDetails": "Angalia Maelezo",
+    "cancelOrder": "Ghairi Agizo",
+    "confirmDelivery": "Thibitisha Uwasilishaji"
+  },
+  "services": {
+    "title": "Huduma",
+    "subtitle": "Tafuta huduma za kitaalamu",
+    "book": "Hifadhi Huduma",
+    "priceOnRequest": "Bei kwa ombi",
+    "hourly": "saa",
+    "daily": "siku"
+  },
+  "lodging": {
+    "title": "Malazi",
+    "subtitle": "Gundua malazi na hifadhi kukaa kwako",
+    "pricePerNight": "Bei kwa Usiku",
+    "nights": "Idadi ya Usiku",
+    "totalCost": "Gharama ya Jumla",
+    "bookStay": "Hifadhi Kukaa",
+    "requestBooking": "Omba Hifadhi"
+  },
+  "artisan": {
+    "title": "Huduma za Fundi",
+    "subtitle": "Gundua wafundi wenye ujuzi na hifadhi huduma zao",
+    "bookService": "Hifadhi Huduma",
+    "location": "Eneo",
+    "pricing": "Bei",
+    "fixed": "thabiti"
+  },
+  "dashboard": {
+    "title": "Dashibodi",
+    "overview": "Muhtasari",
+    "products": "Bidhaa",
+    "orders": "Maagizo",
+    "earnings": "Mapato",
+    "analytics": "Uchambuzi",
+    "settings": "Mipangilio"
+  },
+  "settings": {
+    "title": "Mipangilio",
+    "profile": "Wasifu",
+    "currency": "Sarafu",
+    "language": "Lugha",
+    "preferences": "Mapendeleo",
+    "currencySettings": {
+      "title": "Mipangilio ya Sarafu",
+      "description": "Chagua sarafu unayopendelea kwa kuonyesha bei",
+      "preferredCurrency": "Sarafu Inayopendelewa"
+    },
+    "languageSettings": {
+      "title": "Mipangilio ya Lugha",
+      "description": "Chagua lugha unayopendelea",
+      "preferredLanguage": "Lugha Inayopendelewa"
+    }
+  },
+  "pricing": {
+    "subscription": {
+      "title": "Bei ya Ujaji",
+      "monthly": "mwezi",
+      "free": "Bure",
+      "freeForever": "Bure milele",
+      "reducedFees": "Ada za muamala zimepunguzwa",
+      "currentPlan": "Mpango wa Sasa",
+      "selectPlan": "Chagua Mpango"
+    },
+    "percentage": {
+      "title": "Bei ya Asilimia",
+      "transactionFee": "ada ya muamala",
+      "noMonthlyFees": "Hakuna ada za kila mwezi • Lipa tu unapouza",
+      "volumeRequirement": "Mahitaji ya Kiasi",
+      "notMet": "Mahitaji ya Kiasi Hayajafikiwa"
+    }
+  },
+  "errors": {
+    "generic": "Kitu kimekwenda vibaya",
+    "network": "Hitilafu ya mtandao. Tafadhali angalia muunganisho wako.",
+    "unauthorized": "Huna ruhusa ya kufanya kitendo hiki",
+    "notFound": "Rasilimali haijapatikana",
+    "validation": "Tafadhali angalia ingizo lako na ujaribu tena"
+  }
+}
+

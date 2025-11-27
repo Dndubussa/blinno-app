@@ -79,7 +79,7 @@ const productSchema = generateProductSchema({
   description: product.description,
   image: product.image_url,
   price: product.price,
-  currency: 'TZS',
+  currency: 'USD',
   in_stock: product.stock_quantity > 0,
   brand: product.seller_name,
   average_rating: product.rating,
@@ -118,7 +118,7 @@ const eventSchema = generateEventSchema({
   image: event.image_url,
   description: event.description,
   price: event.ticket_price,
-  currency: 'TZS',
+  currency: 'USD',
   performer: {
     name: event.performer_name
   }

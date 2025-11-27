@@ -57,9 +57,9 @@ describe('Profiles Routes', () => {
       };
 
       const mockPreferences = {
-        currency: 'TZS',
+        currency: 'USD',
         language: 'en',
-        country: 'TZ'
+        country: 'US'
       };
 
       (supabase.auth.admin.getUserById as jest.Mock).mockResolvedValueOnce({ data: mockAuthUser, error: null });
@@ -113,7 +113,7 @@ describe('Profiles Routes', () => {
       };
 
       const mockPreferences = {
-        currency: 'TZS',
+        currency: 'USD',
         language: 'en',
         country: 'TZ'
       };

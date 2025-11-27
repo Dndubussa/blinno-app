@@ -218,7 +218,7 @@ class NotificationService {
     const messages: { [key: string]: { title: string; message: string } } = {
       received: {
         title: 'Payment Received',
-        message: `Your payment of ${amount} TZS has been received successfully.`,
+        message: `Your payment of ${amount} USD has been received successfully.`,
       },
       failed: {
         title: 'Payment Failed',
@@ -226,7 +226,7 @@ class NotificationService {
       },
       refunded: {
         title: 'Payment Refunded',
-        message: `A refund of ${amount} TZS has been processed.`,
+        message: `A refund of ${amount} USD has been processed.`,
       },
     };
 

@@ -1,0 +1,210 @@
+{
+  "common": {
+    "home": "Accueil",
+    "marketplace": "Marché",
+    "services": "Services",
+    "events": "Événements",
+    "music": "Musique",
+    "signIn": "Se connecter",
+    "signUp": "S'inscrire",
+    "signOut": "Se déconnecter",
+    "dashboard": "Tableau de bord",
+    "cart": "Panier",
+    "orders": "Commandes",
+    "profile": "Profil",
+    "settings": "Paramètres",
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "success": "Succès",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "view": "Voir",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "close": "Fermer",
+    "submit": "Soumettre",
+    "back": "Retour",
+    "next": "Suivant",
+    "previous": "Précédent",
+    "confirm": "Confirmer",
+    "yes": "Oui",
+    "no": "Non"
+  },
+  "header": {
+    "title": "BLINNO",
+    "navigation": {
+      "home": "Accueil",
+      "marketplace": "Marché",
+      "services": "Services",
+      "events": "Événements",
+      "music": "Musique"
+    },
+    "userMenu": {
+      "dashboard": "Tableau de bord",
+      "profile": "Profil",
+      "settings": "Paramètres",
+      "signOut": "Se déconnecter"
+    }
+  },
+  "homepage": {
+    "hero": {
+      "title": "Connectez, Créez et Prospérez",
+      "subtitle": "La plateforme ultime pour les créateurs, les entreprises et les prestataires de services à travers l'Afrique et au-delà",
+      "cta": "Commencer"
+    },
+    "categories": {
+      "title": "Explorer les Catégories",
+      "subtitle": "Découvrez ce que vous cherchez"
+    },
+    "howToGetStarted": {
+      "title": "Comment Commencer",
+      "step1": "Créer un Compte",
+      "step1Desc": "Inscrivez-vous et choisissez votre rôle",
+      "step2": "Compléter le Profil",
+      "step2Desc": "Ajoutez vos informations et préférences",
+      "step3": "Commencer à Créer",
+      "step3Desc": "Listez des produits, services ou contenus",
+      "step4": "Connecter",
+      "step4Desc": "Interagissez avec les clients et créateurs",
+      "step5": "Grandir",
+      "step5Desc": "Construisez votre présence et gagnez"
+    },
+    "pricing": {
+      "title": "Choisissez Votre Plan",
+      "subtitle": "Tarification flexible pour tous"
+    }
+  },
+  "auth": {
+    "signIn": {
+      "title": "Se connecter",
+      "email": "Email",
+      "password": "Mot de passe",
+      "forgotPassword": "Mot de passe oublié?",
+      "noAccount": "Vous n'avez pas de compte?",
+      "signUpLink": "S'inscrire"
+    },
+    "signUp": {
+      "title": "Créer un Compte",
+      "email": "Email",
+      "password": "Mot de passe",
+      "confirmPassword": "Confirmer le Mot de passe",
+      "role": "Sélectionnez Votre Rôle",
+      "hasAccount": "Vous avez déjà un compte?",
+      "signInLink": "Se connecter"
+    }
+  },
+  "marketplace": {
+    "title": "Marché",
+    "subtitle": "Découvrez des produits incroyables",
+    "addToCart": "Ajouter au Panier",
+    "viewDetails": "Voir les Détails",
+    "price": "Prix",
+    "outOfStock": "Rupture de Stock",
+    "inStock": "En Stock"
+  },
+  "cart": {
+    "title": "Panier d'Achat",
+    "empty": "Votre panier est vide",
+    "subtotal": "Sous-total",
+    "total": "Total",
+    "checkout": "Commander",
+    "remove": "Retirer",
+    "quantity": "Quantité"
+  },
+  "orders": {
+    "title": "Mes Commandes",
+    "empty": "Aucune commande trouvée",
+    "status": {
+      "pending": "En attente",
+      "confirmed": "Confirmée",
+      "shipped": "Expédiée",
+      "delivered": "Livrée",
+      "cancelled": "Annulée"
+    },
+    "orderNumber": "Commande #",
+    "total": "Total",
+    "tracking": "Suivi",
+    "viewDetails": "Voir les Détails",
+    "cancelOrder": "Annuler la Commande",
+    "confirmDelivery": "Confirmer la Livraison"
+  },
+  "services": {
+    "title": "Services",
+    "subtitle": "Trouvez des services professionnels",
+    "book": "Réserver un Service",
+    "priceOnRequest": "Prix sur demande",
+    "hourly": "heure",
+    "daily": "jour"
+  },
+  "lodging": {
+    "title": "Hébergement",
+    "subtitle": "Découvrez des hébergements et réservez votre séjour",
+    "pricePerNight": "Prix par Nuit",
+    "nights": "Nombre de Nuits",
+    "totalCost": "Coût Total",
+    "bookStay": "Réserver un Séjour",
+    "requestBooking": "Demander une Réservation"
+  },
+  "artisan": {
+    "title": "Services d'Artisan",
+    "subtitle": "Découvrez des artisans qualifiés et réservez leurs services",
+    "bookService": "Réserver un Service",
+    "location": "Emplacement",
+    "pricing": "Tarification",
+    "fixed": "fixe"
+  },
+  "dashboard": {
+    "title": "Tableau de bord",
+    "overview": "Aperçu",
+    "products": "Produits",
+    "orders": "Commandes",
+    "earnings": "Gains",
+    "analytics": "Analyses",
+    "settings": "Paramètres"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "profile": "Profil",
+    "currency": "Devise",
+    "language": "Langue",
+    "preferences": "Préférences",
+    "currencySettings": {
+      "title": "Paramètres de Devise",
+      "description": "Choisissez votre devise préférée pour afficher les prix",
+      "preferredCurrency": "Devise Préférée"
+    },
+    "languageSettings": {
+      "title": "Paramètres de Langue",
+      "description": "Choisissez votre langue préférée",
+      "preferredLanguage": "Langue Préférée"
+    }
+  },
+  "pricing": {
+    "subscription": {
+      "title": "Tarification par Abonnement",
+      "monthly": "mois",
+      "free": "Gratuit",
+      "freeForever": "Gratuit pour toujours",
+      "reducedFees": "Frais de transaction réduits",
+      "currentPlan": "Plan Actuel",
+      "selectPlan": "Sélectionner un Plan"
+    },
+    "percentage": {
+      "title": "Tarification par Pourcentage",
+      "transactionFee": "frais de transaction",
+      "noMonthlyFees": "Pas de frais mensuels • Payez uniquement lorsque vous vendez",
+      "volumeRequirement": "Exigence de Volume",
+      "notMet": "Exigence de Volume Non Atteinte"
+    }
+  },
+  "errors": {
+    "generic": "Quelque chose s'est mal passé",
+    "network": "Erreur réseau. Veuillez vérifier votre connexion.",
+    "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action",
+    "notFound": "Ressource introuvable",
+    "validation": "Veuillez vérifier votre saisie et réessayer"
+  }
+}
+

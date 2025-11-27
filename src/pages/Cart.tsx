@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AuthContext } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 import { formatPrice as formatCurrency } from "@/lib/currency";
+import { MultiCurrencyPrice } from "@/components/MultiCurrencyPrice";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -255,19 +256,26 @@ const Cart = () => {
                   <Card key={item.id}>
                     <CardContent className="p-6">
                       <div className="flex gap-4">
-                        <img
-                          src={item.image_url || "https://via.placeholder.com/150?text=No+Image"}
-                          alt={item.title}
-                          className="w-24 h-24 object-cover rounded"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = "https://via.placeholder.com/150?text=No+Image";
-                          }}
-                        />
+                        <div className="relative w-24 h-24 flex-shrink-0 overflow-hidden rounded-md bg-muted">
+                          <img
+                            src={item.image_url || "https://via.placeholder.com/150?text=No+Image"}
+                            alt={item.title}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = "https://via.placeholder.com/150?text=No+Image";
+                            }}
+                          />
+                        </div>
                         <div className="flex-1">
                           <h3 className="font-bold text-lg mb-1">{item.title}</h3>
-                          <p className="text-muted-foreground text-sm mb-2">
-                            {formatPrice(parseFloat(item.price.toString()))} each
-                          </p>
+                          <div className="text-muted-foreground text-sm mb-2">
+                            <MultiCurrencyPrice 
+                              usdPrice={parseFloat(item.price.toString())} 
+                              size="sm"
+                            />
+                            <span className="text-xs"> each</span>
+                          </div>
                           <div className="flex items-center gap-4">
                             <div className="flex items-center gap-2">
                               <Button
@@ -288,9 +296,12 @@ const Cart = () => {
                                 <Plus className="h-4 w-4" />
                               </Button>
                             </div>
-                            <span className="font-bold">
-                              {formatPrice(parseFloat(item.price.toString()) * item.quantity)}
-                            </span>
+                            <div className="font-bold">
+                              <MultiCurrencyPrice 
+                                usdPrice={parseFloat(item.price.toString()) * item.quantity} 
+                                size="sm"
+                              />
+                            </div>
                             <Button
                               variant="ghost"
                               size="sm"
@@ -320,11 +331,11 @@ const Cart = () => {
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Subtotal</span>
-                        <span>{formatPrice(calculateTotal())}</span>
+                        <MultiCurrencyPrice usdPrice={calculateTotal()} size="sm" />
                       </div>
                       <div className="flex justify-between font-bold text-lg pt-2 border-t">
                         <span>Total</span>
-                        <span>{formatPrice(calculateTotal())}</span>
+                        <MultiCurrencyPrice usdPrice={calculateTotal()} size="md" />
                       </div>
                     </div>
 
@@ -416,7 +427,9 @@ const Cart = () => {
               <div className="bg-muted p-4 rounded-lg">
                 <div className="flex justify-between mb-2">
                   <span className="text-muted-foreground">Order Total:</span>
-                  <span className="font-bold text-lg">{formatPrice(parseFloat(currentOrder.total_amount))}</span>
+                  <div className="font-bold text-lg">
+                    <MultiCurrencyPrice usdPrice={parseFloat(currentOrder.total_amount)} size="lg" />
+                  </div>
                 </div>
                 <p className="text-sm text-muted-foreground">Order ID: {currentOrder.id.slice(0, 8)}...</p>
               </div>

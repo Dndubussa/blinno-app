@@ -101,7 +101,7 @@ export function PayoutHistory() {
                   <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="text-lg font-semibold">TZS {parseFloat(payout.amount.toString()).toLocaleString()}</h3>
+                        <h3 className="text-lg font-semibold">USD {parseFloat(payout.amount.toString()).toLocaleString()}</h3>
                         <Badge variant={getStatusBadgeVariant(payout.status)}>
                           {getStatusText(payout.status)}
                         </Badge>

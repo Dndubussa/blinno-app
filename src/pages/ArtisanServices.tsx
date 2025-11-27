@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArtisanBookingForm } from "@/components/ArtisanBookingForm";
 import { api } from '@/lib/api';
 import { useToast } from "@/components/ui/use-toast";
+import { MultiCurrencyPrice } from "@/components/MultiCurrencyPrice";
 
 interface ArtisanService {
   id: string;
@@ -125,13 +126,19 @@ export default function ArtisanServices() {
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-sm font-medium">Pricing:</span>
                   {service.pricing_type === 'hourly' && (
-                    <Badge variant="secondary">TZS {service.hourly_rate}/hour</Badge>
+                    <Badge variant="secondary">
+                      <MultiCurrencyPrice usdPrice={service.hourly_rate} size="sm" />/hour
+                    </Badge>
                   )}
                   {service.pricing_type === 'daily' && (
-                    <Badge variant="secondary">TZS {service.daily_rate}/day</Badge>
+                    <Badge variant="secondary">
+                      <MultiCurrencyPrice usdPrice={service.daily_rate} size="sm" />/day
+                    </Badge>
                   )}
                   {service.pricing_type === 'fixed' && (
-                    <Badge variant="secondary">TZS {service.fixed_price} (fixed)</Badge>
+                    <Badge variant="secondary">
+                      <MultiCurrencyPrice usdPrice={service.fixed_price} size="sm" /> (fixed)
+                    </Badge>
                   )}
                 </div>
                 <div className="flex flex-wrap gap-1">

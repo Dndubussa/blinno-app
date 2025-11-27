@@ -87,25 +87,25 @@ export function EnhancedAnalytics() {
   const statCards = [
     {
       title: "Total Revenue",
-      value: `TZS ${parseFloat(analytics.summary.total_revenue.toString()).toLocaleString()}`,
+      value: `USD ${parseFloat(analytics.summary.total_revenue.toString()).toLocaleString()}`,
       icon: DollarSign,
       description: "Platform gross revenue",
     },
     {
       title: "Platform Fees",
-      value: `TZS ${parseFloat(analytics.summary.total_platform_fees.toString()).toLocaleString()}`,
+      value: `USD ${parseFloat(analytics.summary.total_platform_fees.toString()).toLocaleString()}`,
       icon: TrendingUp,
       description: "Total platform fees collected",
     },
     {
       title: "Processing Fees",
-      value: `TZS ${parseFloat(analytics.summary.total_processing_fees.toString()).toLocaleString()}`,
+      value: `USD ${parseFloat(analytics.summary.total_processing_fees.toString()).toLocaleString()}`,
       icon: ShoppingCart,
       description: "Payment processing fees",
     },
     {
       title: "Creator Payouts",
-      value: `TZS ${parseFloat(analytics.summary.total_payouts.toString()).toLocaleString()}`,
+      value: `USD ${parseFloat(analytics.summary.total_payouts.toString()).toLocaleString()}`,
       icon: Package,
       description: "Total paid to creators",
     },
@@ -117,7 +117,7 @@ export function EnhancedAnalytics() {
     },
     {
       title: "MRR",
-      value: `TZS ${parseFloat(analytics.subscriptions.monthly_recurring_revenue.toString()).toLocaleString()}`,
+      value: `USD ${parseFloat(analytics.subscriptions.monthly_recurring_revenue.toString()).toLocaleString()}`,
       icon: Users,
       description: "Monthly recurring revenue",
     },
@@ -154,7 +154,7 @@ export function EnhancedAnalytics() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="transaction_type" />
                 <YAxis />
-                <Tooltip formatter={(value) => [`TZS ${parseFloat(value.toString()).toLocaleString()}`, 'Amount']} />
+                <Tooltip formatter={(value) => [`USD ${parseFloat(value.toString()).toLocaleString()}`, 'Amount']} />
                 <Bar dataKey="revenue" fill="#8884d8" name="Revenue" />
                 <Bar dataKey="fees" fill="#82ca9d" name="Fees" />
               </BarChart>

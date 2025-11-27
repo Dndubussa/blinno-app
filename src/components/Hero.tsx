@@ -12,10 +12,15 @@ export const Hero = () => {
   return (
     <section className="relative min-h-[600px] flex items-center justify-center overflow-hidden">
       <div 
-        className="absolute inset-0 bg-cover bg-center transition-transform duration-100"
+        className="absolute inset-0 bg-cover bg-center will-change-transform"
         style={{ 
           backgroundImage: `url(${heroImage})`,
-          transform: `translateY(${parallaxOffset}px)`
+          transform: `translate3d(0, ${parallaxOffset}px, 0)`,
+          backfaceVisibility: 'hidden',
+          WebkitBackfaceVisibility: 'hidden',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
         }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/70 to-background"></div>

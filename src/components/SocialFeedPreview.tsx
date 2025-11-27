@@ -126,7 +126,12 @@ export function SocialFeedPreview() {
                     <img
                       src={post.media_urls[0]}
                       alt="Post"
+                      loading="lazy"
                       className="w-full h-32 object-cover rounded-md"
+                      style={{
+                        backfaceVisibility: 'hidden',
+                        WebkitBackfaceVisibility: 'hidden'
+                      }}
                     />
                   </div>
                 )}

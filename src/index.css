@@ -2,6 +2,34 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Image layout improvements */
+@layer utilities {
+  /* Ensure images maintain aspect ratio */
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+  
+  /* Prevent image layout shift */
+  .image-container {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  /* Aspect ratio containers */
+  .aspect-image {
+    aspect-ratio: 4 / 3;
+  }
+  
+  .aspect-square-image {
+    aspect-ratio: 1 / 1;
+  }
+  
+  .aspect-video-image {
+    aspect-ratio: 16 / 9;
+  }
+}
+
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
 */
@@ -105,5 +133,41 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  /* Smooth scrolling performance */
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Prevent layout shifts for images */
+  img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  /* GPU acceleration for transforms */
+  .will-change-transform {
+    will-change: transform;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+
+  /* Prevent text selection during scroll animations */
+  .no-select {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+  /* Smooth transitions */
+  * {
+    -webkit-tap-highlight-color: transparent;
   }
 }

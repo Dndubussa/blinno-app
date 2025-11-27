@@ -47,11 +47,16 @@ export const FeaturedCreators = () => {
         {creators.map((creator) => (
           <Card key={creator.name} className="group overflow-hidden hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10">
             <CardContent className="p-0">
-              <div className="relative">
+              <div className="relative aspect-[4/3] overflow-hidden">
                 <img 
                   src={creator.image} 
                   alt={creator.name}
-                  className="w-full h-64 object-cover"
+                  loading="lazy"
+                  className="w-full h-full object-cover"
+                  style={{
+                    backfaceVisibility: 'hidden',
+                    WebkitBackfaceVisibility: 'hidden'
+                  }}
                   onError={(e) => {
                     // Fallback if image doesn't load
                     e.currentTarget.src = '/placeholder.svg';

@@ -179,7 +179,7 @@ router.post('/:id/payment', authenticate, async (req: AuthRequest, res) => {
 
     // Get user's preferred currency
     const userPrefs = await userPreferences.getUserPreferences(req.userId);
-    const currency = userPrefs.currency || 'TZS';
+    const currency = userPrefs.currency || 'USD';
 
     // Get commission details
     const { data: commission, error: commissionError } = await supabase

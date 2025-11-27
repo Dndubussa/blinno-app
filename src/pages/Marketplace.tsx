@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 import { formatPrice as formatCurrency } from "@/lib/currency";
+import { MultiCurrencyPrice } from "@/components/MultiCurrencyPrice";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -151,8 +152,9 @@ const Marketplace = () => {
     }
   };
 
+  // Keep formatPrice for backward compatibility, but use MultiCurrencyPrice component in UI
   const formatPrice = (price: number) => {
-    return formatCurrency(price, 'TZS'); // Default to TZS, but could be dynamic
+    return formatCurrency(price, 'USD'); // USD is the base currency
   };
 
   const getUniqueCategories = () => {
@@ -378,11 +380,11 @@ const Marketplace = () => {
                   key={item.id} 
                   className="overflow-hidden hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 flex flex-col"
                 >
-                  <div className="relative">
+                  <div className="relative aspect-[4/3] overflow-hidden bg-muted">
                     <img 
                       src={'image_url' in item ? item.image_url || "https://via.placeholder.com/400x300?text=No+Image" : "https://via.placeholder.com/400x300?text=No+Image"} 
                       alt={item.title}
-                      className="w-full h-64 object-cover"
+                      className="w-full h-full object-cover"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = "https://via.placeholder.com/400x300?text=No+Image";
                       }}
@@ -445,9 +447,13 @@ const Marketplace = () => {
                     </div>
 
                     <div className="flex items-center justify-between pt-4 mt-auto border-t border-border gap-3">
-                      <span className="text-xl font-bold text-primary whitespace-nowrap">
-                        {formatPrice(item.price)}
-                      </span>
+                      <div className="flex-1 min-w-0">
+                        <MultiCurrencyPrice 
+                          usdPrice={item.price} 
+                          size="lg"
+                          className="text-primary"
+                        />
+                      </div>
                       {"type" in item && item.type === "course" ? (
                         <Button 
                           size="sm" 

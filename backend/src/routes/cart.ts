@@ -2,6 +2,7 @@ import express from 'express';
 import { supabase } from '../config/supabase.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { platformFees } from '../services/platformFees.js';
+import { userPreferences } from '../services/userPreferences.js';
 
 const router = express.Router();
 
@@ -207,6 +208,10 @@ router.post('/checkout', authenticate, async (req: AuthRequest, res) => {
   try {
     const { shippingAddress, notes } = req.body;
 
+    // Get user's preferred currency
+    const userPrefs = await userPreferences.getUserPreferences(req.userId);
+    const currency = userPrefs.currency || 'USD';
+
     // Get cart items with product details
     const { data: cartItems, error: cartError } = await supabase
       .from('cart_items')
@@ -228,13 +233,13 @@ router.post('/checkout', authenticate, async (req: AuthRequest, res) => {
       return res.status(400).json({ error: 'Cart is empty' });
     }
 
-    // Calculate subtotal
+    // Calculate subtotal (products are stored in USD)
     const subtotal = cartItems.reduce((sum: number, item: any) => {
       return sum + (parseFloat(item.products?.price || 0) * item.quantity);
     }, 0);
 
-    // Calculate platform fees
-    const feeCalculation = platformFees.calculateMarketplaceFee(subtotal);
+    // Calculate platform fees using user's currency
+    const feeCalculation = platformFees.calculateMarketplaceFee(subtotal, undefined, undefined, currency);
 
     // Create order
     const { data: order, error: orderError } = await supabase

@@ -592,15 +592,15 @@ router.post('/request-payout', authenticate, async (req: AuthRequest, res) => {
 
     if (amount > available) {
       return res.status(400).json({ 
-        error: `Insufficient funds. Available: ${available} TZS` 
+        error: `Insufficient funds. Available: ${available} USD` 
       });
     }
 
-    // Check minimum payout amount (e.g., 10,000 TZS)
-    const MIN_PAYOUT = 10000;
+    // Check minimum payout amount (e.g., 100 USD)
+    const MIN_PAYOUT = 100;
     if (amount < MIN_PAYOUT) {
       return res.status(400).json({ 
-        error: `Minimum payout amount is ${MIN_PAYOUT} TZS` 
+        error: `Minimum payout amount is ${MIN_PAYOUT} USD` 
       });
     }
 
@@ -610,7 +610,7 @@ router.post('/request-payout', authenticate, async (req: AuthRequest, res) => {
       .insert({
         creator_id: req.userId,
         amount,
-        currency: 'TZS',
+        currency: 'USD',
         status: 'pending',
         payment_method: paymentMethod.method_type,
         payment_reference: JSON.stringify({
@@ -769,7 +769,7 @@ router.post('/payouts/:payoutId/complete', authenticate, requireRole('admin'), a
       // Process mobile money disbursement
       disbursementResponse = await clickPesa.createDisbursement({
         amount: parseFloat(payout.amount.toString()),
-        currency: 'TZS',
+        currency: 'USD',
         recipientPhone: paymentMethodDetails.mobileNumber,
         recipientName: paymentMethodDetails.accountName || 'Creator',
         description: `Payout for earnings on BLINNO platform`,
@@ -827,7 +827,6 @@ router.post('/payouts/:payoutId/complete', authenticate, requireRole('admin'), a
       payoutId,
       `Payout via ${payout.payment_method}`
     );
-
     // Get balance after payout
     const balanceAfter = await financialTracking.getUserBalance(payout.creator_id);
     const balanceAfterAmount = balanceAfter?.available_balance || 0;

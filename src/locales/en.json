@@ -1,0 +1,210 @@
+{
+  "common": {
+    "home": "Home",
+    "marketplace": "Marketplace",
+    "services": "Services",
+    "events": "Events",
+    "music": "Music",
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "signOut": "Sign Out",
+    "dashboard": "Dashboard",
+    "cart": "Cart",
+    "orders": "Orders",
+    "profile": "Profile",
+    "settings": "Settings",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "search": "Search",
+    "filter": "Filter",
+    "close": "Close",
+    "submit": "Submit",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "header": {
+    "title": "BLINNO",
+    "navigation": {
+      "home": "Home",
+      "marketplace": "Marketplace",
+      "services": "Services",
+      "events": "Events",
+      "music": "Music"
+    },
+    "userMenu": {
+      "dashboard": "Dashboard",
+      "profile": "Profile",
+      "settings": "Settings",
+      "signOut": "Sign Out"
+    }
+  },
+  "homepage": {
+    "hero": {
+      "title": "Connect, Create, and Thrive",
+      "subtitle": "The ultimate platform for creators, businesses, and service providers across Africa and beyond",
+      "cta": "Get Started"
+    },
+    "categories": {
+      "title": "Explore Categories",
+      "subtitle": "Discover what you're looking for"
+    },
+    "howToGetStarted": {
+      "title": "How to Get Started",
+      "step1": "Create Account",
+      "step1Desc": "Sign up and choose your role",
+      "step2": "Complete Profile",
+      "step2Desc": "Add your information and preferences",
+      "step3": "Start Creating",
+      "step3Desc": "List products, services, or content",
+      "step4": "Connect",
+      "step4Desc": "Engage with customers and creators",
+      "step5": "Grow",
+      "step5Desc": "Build your presence and earn"
+    },
+    "pricing": {
+      "title": "Choose Your Plan",
+      "subtitle": "Flexible pricing for everyone"
+    }
+  },
+  "auth": {
+    "signIn": {
+      "title": "Sign In",
+      "email": "Email",
+      "password": "Password",
+      "forgotPassword": "Forgot Password?",
+      "noAccount": "Don't have an account?",
+      "signUpLink": "Sign Up"
+    },
+    "signUp": {
+      "title": "Create Account",
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "role": "Select Your Role",
+      "hasAccount": "Already have an account?",
+      "signInLink": "Sign In"
+    }
+  },
+  "marketplace": {
+    "title": "Marketplace",
+    "subtitle": "Discover amazing products",
+    "addToCart": "Add to Cart",
+    "viewDetails": "View Details",
+    "price": "Price",
+    "outOfStock": "Out of Stock",
+    "inStock": "In Stock"
+  },
+  "cart": {
+    "title": "Shopping Cart",
+    "empty": "Your cart is empty",
+    "subtotal": "Subtotal",
+    "total": "Total",
+    "checkout": "Checkout",
+    "remove": "Remove",
+    "quantity": "Quantity"
+  },
+  "orders": {
+    "title": "My Orders",
+    "empty": "No orders found",
+    "status": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "shipped": "Shipped",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled"
+    },
+    "orderNumber": "Order #",
+    "total": "Total",
+    "tracking": "Tracking",
+    "viewDetails": "View Details",
+    "cancelOrder": "Cancel Order",
+    "confirmDelivery": "Confirm Delivery"
+  },
+  "services": {
+    "title": "Services",
+    "subtitle": "Find professional services",
+    "book": "Book Service",
+    "priceOnRequest": "Price on request",
+    "hourly": "hour",
+    "daily": "day"
+  },
+  "lodging": {
+    "title": "Lodging",
+    "subtitle": "Discover accommodations and book your stay",
+    "pricePerNight": "Price per Night",
+    "nights": "Number of Nights",
+    "totalCost": "Total Cost",
+    "bookStay": "Book Stay",
+    "requestBooking": "Request Booking"
+  },
+  "artisan": {
+    "title": "Artisan Services",
+    "subtitle": "Discover skilled artisans and book their services",
+    "bookService": "Book Service",
+    "location": "Location",
+    "pricing": "Pricing",
+    "fixed": "fixed"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "overview": "Overview",
+    "products": "Products",
+    "orders": "Orders",
+    "earnings": "Earnings",
+    "analytics": "Analytics",
+    "settings": "Settings"
+  },
+  "settings": {
+    "title": "Settings",
+    "profile": "Profile",
+    "currency": "Currency",
+    "language": "Language",
+    "preferences": "Preferences",
+    "currencySettings": {
+      "title": "Currency Settings",
+      "description": "Choose your preferred currency for displaying prices",
+      "preferredCurrency": "Preferred Currency"
+    },
+    "languageSettings": {
+      "title": "Language Settings",
+      "description": "Choose your preferred language",
+      "preferredLanguage": "Preferred Language"
+    }
+  },
+  "pricing": {
+    "subscription": {
+      "title": "Subscription-Based Pricing",
+      "monthly": "month",
+      "free": "Free",
+      "freeForever": "Free forever",
+      "reducedFees": "Reduced transaction fees",
+      "currentPlan": "Current Plan",
+      "selectPlan": "Select Plan"
+    },
+    "percentage": {
+      "title": "Percentage-Based Pricing",
+      "transactionFee": "transaction fee",
+      "noMonthlyFees": "No monthly fees • Pay only when you sell",
+      "volumeRequirement": "Volume Requirement",
+      "notMet": "Volume Requirement Not Met"
+    }
+  },
+  "errors": {
+    "generic": "Something went wrong",
+    "network": "Network error. Please check your connection.",
+    "unauthorized": "You are not authorized to perform this action",
+    "notFound": "Resource not found",
+    "validation": "Please check your input and try again"
+  }
+}
+

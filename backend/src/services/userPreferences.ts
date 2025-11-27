@@ -107,16 +107,17 @@ class UserPreferencesService {
    */
   detectCurrencyByCountry(countryCode: string): string {
     const currencyMap: Record<string, string> = {
-      'TZ': 'TZS',
-      'KE': 'KES',
-      'UG': 'UGX',
-      'RW': 'RWF',
-      'US': 'USD',
-      'GB': 'GBP',
-      'DE': 'EUR',
-      'FR': 'EUR',
-      'IT': 'EUR',
-      'ES': 'EUR',
+      'TZ': 'TZS',  // Tanzania
+      'KE': 'KES',  // Kenya
+      'UG': 'UGX',  // Uganda
+      'RW': 'RWF',  // Rwanda
+      'NG': 'NGN',  // Nigeria
+      'US': 'USD',  // United States
+      'GB': 'GBP',  // United Kingdom
+      'DE': 'EUR',  // Germany
+      'FR': 'EUR',  // France
+      'IT': 'EUR',  // Italy
+      'ES': 'EUR',  // Spain
     };
 
     return currencyMap[countryCode.toUpperCase()] || DEFAULT_PREFERENCES.currency;

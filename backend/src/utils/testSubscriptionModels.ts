@@ -18,7 +18,7 @@ async function testSubscriptionModels() {
         user_id: testUserId,
         tier: 'creator',
         pricing_model: 'subscription',
-        monthly_price: 15000,
+        monthly_price: 15,
         current_period_start: new Date().toISOString(),
         current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         status: 'active',

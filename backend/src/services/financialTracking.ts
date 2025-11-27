@@ -45,7 +45,7 @@ class FinancialTrackingService {
           pending_balance: 0,
           total_earned: 0,
           total_paid_out: 0,
-          currency: 'TZS'
+          currency: 'USD'
         })
         .select()
         .single();
@@ -142,7 +142,7 @@ class FinancialTrackingService {
         user_id: userId,
         transaction_type: transactionType,
         amount: amount,
-        currency: 'TZS',
+        currency: 'USD',
         balance_before: balanceBefore,
         balance_after: balanceAfter,
         status: 'completed',

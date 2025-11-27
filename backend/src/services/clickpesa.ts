@@ -52,10 +52,11 @@ const SUPPORTED_CURRENCIES = {
   USD: { name: 'US Dollar', symbol: '$', country: 'International' },
   EUR: { name: 'Euro', symbol: '€', country: 'Europe' },
   GBP: { name: 'British Pound', symbol: '£', country: 'UK' },
-  
+  TZS: { name: 'Tanzanian Shilling', symbol: 'TSh', country: 'Tanzania' },
   KES: { name: 'Kenyan Shilling', symbol: 'KSh', country: 'Kenya' },
   UGX: { name: 'Ugandan Shilling', symbol: 'USh', country: 'Uganda' },
   RWF: { name: 'Rwandan Franc', symbol: 'RWF', country: 'Rwanda' },
+  NGN: { name: 'Nigerian Naira', symbol: '₦', country: 'Nigeria' },
 };
 
 // Currency conversion rates (relative to USD)
@@ -63,10 +64,11 @@ const CURRENCY_RATES = {
   USD: 1,
   EUR: 0.85,    // 1 USD = 0.85 EUR (approximate)
   GBP: 0.75,    // 1 USD = 0.75 GBP (approximate)
-  
+  TZS: 2500,    // 1 USD = 2500 TZS (approximate)
   KES: 110,     // 1 USD = 110 KES (approximate)
   UGX: 3700,    // 1 USD = 3700 UGX (approximate)
   RWF: 1100,    // 1 USD = 1100 RWF (approximate)
+  NGN: 1500,    // 1 USD = 1500 NGN (approximate)
 };
 
 class ClickPesaService {
@@ -148,15 +150,18 @@ class ClickPesaService {
     try {
       const token = await this.getAccessToken();
 
-      // For non-USD currencies, we need to convert to USD for Click Pesa processing
-      // but keep the original currency for display purposes
+      // Use the user's currency directly for processing
+      // ClickPesa should handle the currency conversion if needed
       let amountForProcessing = payment.amount;
       let currencyForProcessing = payment.currency;
       
-      // If currency is not USD, convert for processing but keep original for display
-      if (payment.currency !== 'USD' && CURRENCY_RATES[payment.currency as keyof typeof CURRENCY_RATES]) {
-        amountForProcessing = this.convertCurrency(payment.amount, payment.currency, 'USD');
-        currencyForProcessing = 'USD';
+      // If currency is not supported by ClickPesa, convert to USD
+      // Otherwise, process in the user's preferred currency
+      if (!SUPPORTED_CURRENCIES[payment.currency as keyof typeof SUPPORTED_CURRENCIES]) {
+        if (CURRENCY_RATES[payment.currency as keyof typeof CURRENCY_RATES]) {
+          amountForProcessing = this.convertCurrency(payment.amount, payment.currency, 'USD');
+          currencyForProcessing = 'USD';
+        }
       }
 
       const response = await fetch(`${this.config.baseUrl}/api/v1/payments`, {

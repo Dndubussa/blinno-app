@@ -17,110 +17,199 @@ const clickPesa = new ClickPesaService({
   baseUrl: process.env.CLICKPESA_BASE_URL || 'https://sandbox.clickpesa.com',
 });
 
-// Platform subscription tiers
-const SUBSCRIPTION_TIERS = {
-  free: {
-    name: 'Free',
-    monthlyPrice: 0,
-    features: [
-      'Basic profile', 
-      '5 product listings', 
-      'Standard support',
-      '8% marketplace fees',
-      '6% digital product fees',
-      '10% service booking fees',
-      '12% commission work fees'
-    ],
-    limits: { products: 5, portfolios: 3 },
-  },
-  creator: {
-    name: 'Creator',
-    monthlyPrice: 15000, // TZS 15,000
-    features: [
-      'Unlimited listings', 
-      'Advanced analytics', 
-      'Priority support', 
-      'Featured listings',
-      'Reduced 5% subscription fees',
-      'Standard transaction fees'
-    ],
-    limits: { products: -1, portfolios: -1 }, // -1 = unlimited
-  },
-  professional: {
-    name: 'Professional',
-    monthlyPrice: 40000, // TZS 40,000
-    features: [
-      'All Creator features', 
-      'Marketing tools', 
-      'API access', 
-      'Custom branding',
-      'Lower 5% subscription fees',
-      'Priority transaction processing'
-    ],
-    limits: { products: -1, portfolios: -1 },
-  },
-  enterprise: {
-    name: 'Enterprise',
-    monthlyPrice: 0, // Custom pricing
-    features: [
-      'All Professional features', 
-      'Custom integrations', 
-      'Dedicated support',
-      'Custom fee structure',
-      'White-label options',
-      'Dedicated account manager'
-    ],
-    limits: { products: -1, portfolios: -1 },
-  },
-};
-
-// Percentage-based pricing tiers
+// Percentage-based pricing tiers with volume requirements (SaaS model - no monthly subscriptions)
 const PERCENTAGE_TIERS = {
   basic: {
     name: 'Basic',
-    feeRate: 0.08, // 8%
+    feeRate: 0.08, // 8% transaction fee (primary rate shown)
+    volumeRequirement: null, // No volume requirement
     features: [
       'Basic profile',
       '5 product listings',
       'Standard support',
-      '8% marketplace fees',
+      '8% marketplace transaction fees',
       '6% digital product fees',
       '10% service booking fees',
-      '12% commission work fees'
+      '12% commission work fees',
+      '3% tips/donations fees'
     ],
     limits: { products: 5, portfolios: 3 },
   },
   premium: {
     name: 'Premium',
-    feeRate: 0.05, // 5%
+    feeRate: 0.06, // 6% transaction fee (primary rate shown)
+    volumeRequirement: {
+      salesAmount: 500, // $500/month in sales
+      transactionCount: 50, // OR 50 transactions/month
+    },
+    features: [
+      'Unlimited listings',
+      'Advanced analytics',
+      'Priority support',
+      'Featured listings',
+      'Reduced 6% marketplace fees',
+      '5% digital product fees',
+      '8% service booking fees',
+      '10% commission work fees',
+      '3% tips/donations fees'
+    ],
+    limits: { products: -1, portfolios: -1 },
+  },
+  pro: {
+    name: 'Professional',
+    feeRate: 0.05, // 5% transaction fee (primary rate shown) - increased from 3% for profitability
+    volumeRequirement: {
+      salesAmount: 2000, // $2,000/month in sales
+      transactionCount: 200, // OR 200 transactions/month
+    },
+    features: [
+      'All Premium features',
+      'Marketing tools',
+      'API access',
+      'Custom branding',
+      'Reduced 5% marketplace fees',
+      '4% digital product fees',
+      '7% service booking fees',
+      '9% commission work fees',
+      '3% tips/donations fees'
+    ],
+    limits: { products: -1, portfolios: -1 },
+  },
+};
+
+// Subscription-based pricing tiers (monthly fee + reduced transaction fees)
+const SUBSCRIPTION_TIERS = {
+  free: {
+    name: 'Free',
+    monthlyPrice: 0,
+    features: [
+      'Basic profile',
+      '5 product listings',
+      'Standard support',
+      '8% marketplace transaction fees',
+      '6% digital product fees',
+      '10% service booking fees',
+      '12% commission work fees',
+      '3% tips/donations fees'
+    ],
+    limits: { products: 5, portfolios: 3 },
+    // Transaction fees same as percentage-based basic tier
+    feeReduction: 0, // No reduction
+  },
+  creator: {
+    name: 'Creator',
+    monthlyPrice: 15, // USD 15/month
     features: [
       'Unlimited listings',
       'Advanced analytics',
       'Priority support',
       'Featured listings',
       'Reduced 5% marketplace fees',
-      '6% digital product fees',
-      '8% service booking fees',
-      '10% commission work fees'
+      '4% digital product fees',
+      '7% service booking fees',
+      '9% commission work fees',
+      '3% tips/donations fees'
     ],
     limits: { products: -1, portfolios: -1 },
+    feeReduction: 0.03, // 3% reduction (5% vs 8% base)
   },
-  pro: {
+  professional: {
     name: 'Professional',
-    feeRate: 0.03, // 3%
+    monthlyPrice: 40, // USD 40/month
     features: [
-      'All Premium features',
+      'All Creator features',
       'Marketing tools',
       'API access',
       'Custom branding',
-      'Reduced 3% marketplace fees',
-      '4% digital product fees',
+      'Reduced 4% marketplace fees',
+      '3% digital product fees',
       '6% service booking fees',
-      '8% commission work fees'
+      '8% commission work fees',
+      '3% tips/donations fees'
     ],
     limits: { products: -1, portfolios: -1 },
+    feeReduction: 0.04, // 4% reduction (4% vs 8% base)
+  },
+  enterprise: {
+    name: 'Enterprise',
+    monthlyPrice: 100, // USD 100/month
+    features: [
+      'All Professional features',
+      'Custom integrations',
+      'Dedicated support',
+      'Best transaction rates (3% marketplace)',
+      'White-label options',
+      'Dedicated account manager',
+      'Priority feature requests',
+      'Custom API access'
+    ],
+    limits: { products: -1, portfolios: -1 },
+    feeReduction: 0.05, // 5% reduction (3% vs 8% base) - best rates
   },
 };
+
+// Minimum platform fee per transaction (ensures profitability on small sales)
+const MINIMUM_PLATFORM_FEE = 0.25; // $0.25 USD
+
+/**
+ * Get user's monthly sales volume for tier eligibility
+ */
+async function getUserMonthlyVolume(userId: string): Promise<{ salesAmount: number; transactionCount: number }> {
+  try {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    
+    // Get all completed transactions this month
+    const { data: transactions, error } = await supabase
+      .from('platform_fees')
+      .select('subtotal, transaction_type')
+      .eq('user_id', userId)
+      .eq('status', 'collected')
+      .gte('created_at', startOfMonth.toISOString());
+
+    if (error) {
+      console.error('Error fetching user volume:', error);
+      return { salesAmount: 0, transactionCount: 0 };
+    }
+
+    const salesAmount = (transactions || []).reduce((sum, t) => sum + parseFloat(t.subtotal.toString()), 0);
+    const transactionCount = (transactions || []).length;
+
+    return { salesAmount, transactionCount };
+  } catch (error) {
+    console.error('Error calculating user volume:', error);
+    return { salesAmount: 0, transactionCount: 0 };
+  }
+}
+
+/**
+ * Check if user is eligible for a tier based on volume requirements
+ */
+async function checkTierEligibility(userId: string, tierKey: keyof typeof PERCENTAGE_TIERS): Promise<{ eligible: boolean; reason?: string; currentVolume?: { salesAmount: number; transactionCount: number } }> {
+  const tier = PERCENTAGE_TIERS[tierKey];
+  
+  // Basic tier has no requirements
+  if (tierKey === 'basic' || !tier.volumeRequirement) {
+    return { eligible: true };
+  }
+
+  const volume = await getUserMonthlyVolume(userId);
+  const requirement = tier.volumeRequirement!;
+
+  // Check if user meets either sales amount OR transaction count requirement
+  const meetsSalesAmount = volume.salesAmount >= requirement.salesAmount;
+  const meetsTransactionCount = volume.transactionCount >= requirement.transactionCount;
+
+  if (meetsSalesAmount || meetsTransactionCount) {
+    return { eligible: true, currentVolume: volume };
+  }
+
+  return {
+    eligible: false,
+    reason: `Requires $${requirement.salesAmount} in monthly sales OR ${requirement.transactionCount} transactions/month`,
+    currentVolume: volume,
+  };
+}
 
 /**
  * Get current subscription
@@ -138,11 +227,12 @@ router.get('/me', authenticate, async (req: AuthRequest, res) => {
       .single();
 
     if (error && error.code === 'PGRST116') {
-      // Return free tier as default
+      // Return basic tier as default (percentage-based)
       return res.json({
-        tier: 'free',
-        pricing_model: 'subscription',
-        ...SUBSCRIPTION_TIERS.free,
+        tier: 'percentage',
+        pricing_model: 'percentage',
+        percentage_tier: 'basic',
+        ...PERCENTAGE_TIERS.basic,
         status: 'active',
       });
     }
@@ -151,11 +241,41 @@ router.get('/me', authenticate, async (req: AuthRequest, res) => {
       throw error;
     }
 
-    const tierKey = subscription.tier as keyof typeof SUBSCRIPTION_TIERS;
-    const tierInfo = SUBSCRIPTION_TIERS[tierKey] || SUBSCRIPTION_TIERS.free;
+    // Handle percentage-based subscriptions
+    if (subscription.pricing_model === 'percentage' && subscription.percentage_tier) {
+      const tierKey = subscription.percentage_tier as keyof typeof PERCENTAGE_TIERS;
+      const tierInfo = PERCENTAGE_TIERS[tierKey] || PERCENTAGE_TIERS.basic;
+      
+      // Get current volume for tier eligibility display
+      const volume = await getUserMonthlyVolume(req.userId!);
+      const eligibility = await checkTierEligibility(req.userId!, tierKey);
+      
+      return res.json({
+        ...subscription,
+        ...tierInfo,
+        currentVolume: volume,
+        tierEligible: eligibility.eligible,
+      });
+    }
 
-    res.json({
+    // Handle subscription-based subscriptions
+    if (subscription.pricing_model === 'subscription' && subscription.tier) {
+      const tierKey = subscription.tier as keyof typeof SUBSCRIPTION_TIERS;
+      const tierInfo = SUBSCRIPTION_TIERS[tierKey] || SUBSCRIPTION_TIERS.free;
+      
+      return res.json({
+        ...subscription,
+        ...tierInfo,
+      });
+    }
+
+    // Default to basic percentage tier
+    const tierInfo = PERCENTAGE_TIERS.basic;
+    return res.json({
       ...subscription,
+      tier: 'percentage',
+      pricing_model: 'percentage',
+      percentage_tier: 'basic',
       ...tierInfo,
     });
   } catch (error: any) {
@@ -165,23 +285,49 @@ router.get('/me', authenticate, async (req: AuthRequest, res) => {
 });
 
 /**
- * Subscribe to a tier
+ * Subscribe to a tier (supports both percentage-based and subscription-based)
  */
 router.post('/subscribe', authenticate, async (req: AuthRequest, res) => {
   try {
-    const { tier } = req.body;
+    const { tier, pricingModel } = req.body;
+
+    // Determine pricing model from tier prefix or explicit parameter
+    let model: 'percentage' | 'subscription' = pricingModel || 'percentage';
+    let tierKey: string = tier;
+
+    if (tier && tier.startsWith('percentage-')) {
+      model = 'percentage';
+      tierKey = tier.replace('percentage-', '');
+    } else if (tier && tier.startsWith('subscription-')) {
+      model = 'subscription';
+      tierKey = tier.replace('subscription-', '');
+    }
 
     // Handle percentage-based tiers
-    if (tier && tier.startsWith('percentage-')) {
-      const percentageTierKey = tier.replace('percentage-', '') as keyof typeof PERCENTAGE_TIERS;
+    if (model === 'percentage') {
+      const percentageTierKey = tierKey as keyof typeof PERCENTAGE_TIERS;
       
       if (!PERCENTAGE_TIERS[percentageTierKey]) {
-        return res.status(400).json({ error: 'Invalid percentage tier' });
+        return res.status(400).json({ 
+          error: 'Invalid percentage tier. Available: basic, premium, pro' 
+        });
       }
 
       const tierInfo = PERCENTAGE_TIERS[percentageTierKey];
 
-      // For percentage-based tiers, we just update the user's subscription record
+      // Check tier eligibility based on volume requirements
+      const eligibility = await checkTierEligibility(req.userId!, percentageTierKey);
+      
+      if (!eligibility.eligible) {
+        return res.status(403).json({
+          error: 'Tier eligibility requirement not met',
+          message: eligibility.reason,
+          currentVolume: eligibility.currentVolume,
+          requirement: tierInfo.volumeRequirement,
+        });
+      }
+
+      // For percentage-based tiers, no payment required
       const { data, error } = await supabase
         .from('platform_subscriptions')
         .upsert({
@@ -191,7 +337,7 @@ router.post('/subscribe', authenticate, async (req: AuthRequest, res) => {
           percentage_tier: percentageTierKey,
           monthly_price: 0,
           current_period_start: new Date().toISOString(),
-          current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          current_period_end: null,
           status: 'active',
           payment_status: 'paid',
         }, { onConflict: 'user_id' })
@@ -203,126 +349,140 @@ router.post('/subscribe', authenticate, async (req: AuthRequest, res) => {
       }
 
       return res.json({ 
-        message: 'Subscribed to percentage-based tier', 
+        message: `Subscribed to ${tierInfo.name} tier (percentage-based)`, 
         tier: 'percentage', 
         percentage_tier: percentageTierKey,
         pricing_model: 'percentage',
+        ...tierInfo,
+        currentVolume: eligibility.currentVolume,
         requiresPayment: false 
       });
     }
 
     // Handle subscription-based tiers
-    if (!tier || !SUBSCRIPTION_TIERS[tier as keyof typeof SUBSCRIPTION_TIERS]) {
-      return res.status(400).json({ error: 'Invalid subscription tier' });
-    }
+    if (model === 'subscription') {
+      const subscriptionTierKey = tierKey as keyof typeof SUBSCRIPTION_TIERS;
+      
+      if (!SUBSCRIPTION_TIERS[subscriptionTierKey]) {
+        return res.status(400).json({ 
+          error: 'Invalid subscription tier. Available: free, creator, professional, enterprise' 
+        });
+      }
 
-    const tierInfo = SUBSCRIPTION_TIERS[tier as keyof typeof SUBSCRIPTION_TIERS];
+      const tierInfo = SUBSCRIPTION_TIERS[subscriptionTierKey];
 
-    if (tier === 'free') {
-      // Free tier - just update or create
-      const { data, error } = await supabase
+      // Free tier - no payment required
+      if (subscriptionTierKey === 'free') {
+        const { data, error } = await supabase
+          .from('platform_subscriptions')
+          .upsert({
+            user_id: req.userId,
+            tier: subscriptionTierKey,
+            pricing_model: 'subscription',
+            monthly_price: 0,
+            current_period_start: new Date().toISOString(),
+            current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            status: 'active',
+            payment_status: 'paid',
+          }, { onConflict: 'user_id' })
+          .select()
+          .single();
+
+        if (error) {
+          throw error;
+        }
+
+        return res.json({ 
+          message: `Subscribed to ${tierInfo.name} tier`, 
+          tier: subscriptionTierKey,
+          pricing_model: 'subscription',
+          ...tierInfo,
+          requiresPayment: false 
+        });
+      }
+
+      // Enterprise tier - requires payment like other paid tiers
+
+      // Paid tiers require payment
+      const now = new Date();
+      const periodEnd = new Date(now);
+      periodEnd.setMonth(periodEnd.getMonth() + 1);
+
+      // Calculate subscription fee
+      const feeCalculation = platformFees.calculateSubscriptionFee(tierInfo.monthlyPrice);
+      const transactionId = `subscription_${req.userId}_${Date.now()}`;
+
+      // Create subscription record (pending payment)
+      const { data: subscription, error: subError } = await supabase
         .from('platform_subscriptions')
         .upsert({
           user_id: req.userId,
-          tier: tier,
+          tier: subscriptionTierKey,
           pricing_model: 'subscription',
           monthly_price: tierInfo.monthlyPrice,
-          current_period_start: new Date().toISOString(),
-          current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          status: 'active',
-          payment_status: 'paid',
+          current_period_start: now.toISOString(),
+          current_period_end: periodEnd.toISOString(),
+          status: 'pending',
+          payment_status: 'pending',
         }, { onConflict: 'user_id' })
         .select()
         .single();
 
-      if (error) {
-        throw error;
+      if (subError || !subscription) {
+        throw subError;
       }
 
-      return res.json({ 
-        message: 'Subscribed to free tier', 
-        tier, 
+      // Record platform fee for subscription
+      await supabase
+        .from('platform_fees')
+        .insert({
+          transaction_id: transactionId,
+          transaction_type: 'subscription',
+          user_id: req.userId,
+          subtotal: tierInfo.monthlyPrice,
+          platform_fee: feeCalculation.platformFee,
+          payment_processing_fee: feeCalculation.paymentProcessingFee,
+          total_fees: feeCalculation.totalFees,
+          creator_payout: feeCalculation.creatorPayout,
+          status: 'pending',
+        });
+
+      // Create payment record
+      const { data: payment, error: paymentError } = await supabase
+        .from('payments')
+        .insert({
+          order_id: transactionId,
+          user_id: req.userId,
+          amount: feeCalculation.total,
+          currency: 'USD',
+          status: 'pending',
+          payment_method: 'clickpesa',
+        })
+        .select()
+        .single();
+
+      if (paymentError || !payment) {
+        throw paymentError;
+      }
+
+      return res.json({
+        message: 'Subscription created, payment required',
+        tier: subscriptionTierKey,
         pricing_model: 'subscription',
-        requiresPayment: false 
+        monthlyPrice: tierInfo.monthlyPrice,
+        totalAmount: feeCalculation.total,
+        feeBreakdown: feeCalculation,
+        subscriptionId: subscription.id,
+        paymentId: payment.id,
+        ...tierInfo,
+        requiresPayment: true,
       });
     }
 
-    // Paid tiers require payment
-    const now = new Date();
-    const periodEnd = new Date(now);
-    periodEnd.setMonth(periodEnd.getMonth() + 1);
-
-    // Calculate subscription fee
-    const feeCalculation = platformFees.calculateSubscriptionFee(tierInfo.monthlyPrice);
-    const transactionId = `subscription_${req.userId}_${Date.now()}`;
-
-    // Create subscription record (pending payment)
-    const { data: subscription, error: subError } = await supabase
-      .from('platform_subscriptions')
-      .upsert({
-        user_id: req.userId,
-        tier: tier,
-        pricing_model: 'subscription',
-        monthly_price: tierInfo.monthlyPrice,
-        current_period_start: now.toISOString(),
-        current_period_end: periodEnd.toISOString(),
-        status: 'pending',
-        payment_status: 'pending',
-      }, { onConflict: 'user_id' })
-      .select()
-      .single();
-
-    if (subError || !subscription) {
-      throw subError;
-    }
-
-    // Record platform fee for subscription
-    await supabase
-      .from('platform_fees')
-      .insert({
-        transaction_id: transactionId,
-        transaction_type: 'subscription',
-        user_id: req.userId,
-        subtotal: tierInfo.monthlyPrice,
-        platform_fee: feeCalculation.platformFee,
-        payment_processing_fee: feeCalculation.paymentProcessingFee,
-        total_fees: feeCalculation.totalFees,
-        creator_payout: feeCalculation.creatorPayout,
-        status: 'pending',
-      });
-
-    // Create payment record
-    const { data: payment, error: paymentError } = await supabase
-      .from('payments')
-      .insert({
-        order_id: transactionId,
-        user_id: req.userId,
-        amount: feeCalculation.total,
-        currency: 'TZS',
-        status: 'pending',
-        payment_method: 'clickpesa',
-      })
-      .select()
-      .single();
-
-    if (paymentError || !payment) {
-      throw paymentError;
-    }
-
-    res.json({
-      message: 'Subscription created, payment required',
-      tier,
-      pricing_model: 'subscription',
-      monthlyPrice: tierInfo.monthlyPrice,
-      totalAmount: feeCalculation.total,
-      feeBreakdown: feeCalculation,
-      subscriptionId: subscription.id,
-      paymentId: payment.id,
-      requiresPayment: true,
-    });
+    return res.status(400).json({ error: 'Invalid pricing model' });
   } catch (error: any) {
     console.error('Subscribe error:', error);
-    res.status(500).json({ error: 'Failed to create subscription' });
+    res.status(500).json({ error: 'Failed to create subscription', details: error.message });
   }
 });
 
@@ -344,7 +504,7 @@ router.post('/payment', authenticate, async (req: AuthRequest, res) => {
 
     // Get user's preferred currency
     const userPrefs = await userPreferences.getUserPreferences(req.userId);
-    const currency = userPrefs.currency || 'TZS';
+    const currency = userPrefs.currency || 'USD';
 
     // Get payment details
     const { data: payment, error: paymentError } = await supabase
@@ -449,17 +609,145 @@ router.post('/cancel', authenticate, async (req: AuthRequest, res) => {
 });
 
 /**
- * Get all subscription tiers (public)
+ * Get all subscription tiers (public) - Both percentage-based and subscription-based
  */
 router.get('/tiers', async (req, res) => {
   try {
+    // Return both pricing models
+    const percentageTiers = Object.entries(PERCENTAGE_TIERS).reduce((acc, [key, tier]) => {
+      acc[key] = {
+        ...tier,
+        volumeRequirement: tier.volumeRequirement || null,
+      };
+      return acc;
+    }, {} as any);
+
+    const subscriptionTiers = Object.entries(SUBSCRIPTION_TIERS).reduce((acc, [key, tier]) => {
+      acc[key] = tier;
+      return acc;
+    }, {} as any);
+    
     res.json({
-      subscription: SUBSCRIPTION_TIERS,
-      percentage: PERCENTAGE_TIERS
+      percentage: percentageTiers,
+      subscription: subscriptionTiers,
     });
   } catch (error: any) {
     console.error('Get tiers error:', error);
     res.status(500).json({ error: 'Failed to get tiers' });
+  }
+});
+
+/**
+ * Get user's volume stats for tier eligibility
+ */
+router.get('/volume', authenticate, async (req: AuthRequest, res) => {
+  try {
+    if (!req.userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const volume = await getUserMonthlyVolume(req.userId);
+    
+    // Check eligibility for each tier
+    const eligibility = {
+      basic: await checkTierEligibility(req.userId, 'basic'),
+      premium: await checkTierEligibility(req.userId, 'premium'),
+      pro: await checkTierEligibility(req.userId, 'pro'),
+    };
+
+    res.json({
+      currentVolume: volume,
+      eligibility,
+      minimumFee: MINIMUM_PLATFORM_FEE,
+    });
+  } catch (error: any) {
+    console.error('Get volume error:', error);
+    res.status(500).json({ error: 'Failed to get volume stats' });
+  }
+});
+
+/**
+ * Check and automatically upgrade/downgrade user's tier based on volume
+ * This should be called periodically (e.g., daily or after transactions)
+ */
+router.post('/check-tier-eligibility', authenticate, async (req: AuthRequest, res) => {
+  try {
+    if (!req.userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    // Get current subscription
+    const { data: subscription, error: subError } = await supabase
+      .from('platform_subscriptions')
+      .select('*')
+      .eq('user_id', req.userId)
+      .single();
+
+    if (subError && subError.code !== 'PGRST116') {
+      throw subError;
+    }
+
+    const currentTier = subscription?.percentage_tier || 'basic';
+    const volume = await getUserMonthlyVolume(req.userId);
+
+    // Check which tier the user is eligible for (highest first)
+    let eligibleTier: keyof typeof PERCENTAGE_TIERS = 'basic';
+    
+    if (await checkTierEligibility(req.userId, 'pro').then(r => r.eligible)) {
+      eligibleTier = 'pro';
+    } else if (await checkTierEligibility(req.userId, 'premium').then(r => r.eligible)) {
+      eligibleTier = 'premium';
+    }
+
+    // If user is eligible for a higher tier, upgrade them
+    // If user doesn't meet requirements for current tier, downgrade to basic
+    const tierOrder = { basic: 1, premium: 2, pro: 3 };
+    const shouldUpgrade = tierOrder[eligibleTier] > tierOrder[currentTier as keyof typeof tierOrder];
+    const shouldDowngrade = tierOrder[eligibleTier] < tierOrder[currentTier as keyof typeof tierOrder];
+
+    if (shouldUpgrade || shouldDowngrade) {
+      const newTier = eligibleTier;
+      const { data: updated, error: updateError } = await supabase
+        .from('platform_subscriptions')
+        .upsert({
+          user_id: req.userId,
+          tier: 'percentage',
+          pricing_model: 'percentage',
+          percentage_tier: newTier,
+          monthly_price: 0,
+          current_period_start: new Date().toISOString(),
+          current_period_end: null,
+          status: 'active',
+          payment_status: 'paid',
+        }, { onConflict: 'user_id' })
+        .select()
+        .single();
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      return res.json({
+        message: shouldUpgrade ? 'Tier upgraded automatically' : 'Tier downgraded automatically',
+        previousTier: currentTier,
+        newTier: newTier,
+        reason: shouldUpgrade 
+          ? 'Volume requirements met for higher tier'
+          : 'Volume requirements not met for current tier',
+        currentVolume: volume,
+        subscription: updated,
+      });
+    }
+
+    res.json({
+      message: 'Tier remains unchanged',
+      currentTier,
+      eligibleTier,
+      currentVolume: volume,
+    });
+  } catch (error: any) {
+    console.error('Check tier eligibility error:', error);
+    res.status(500).json({ error: 'Failed to check tier eligibility', details: error.message });
   }
 });
 

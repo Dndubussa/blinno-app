@@ -329,7 +329,7 @@ router.post('/orders/:id/payment', authenticate, async (req: AuthRequest, res) =
         order_id: id,
         user_id: req.userId,
         amount: feeCalculation.total,
-        currency: 'TZS',
+        currency: 'USD',
         status: 'pending',
         payment_method: 'clickpesa',
         payment_type: 'restaurant_order',
@@ -360,7 +360,7 @@ router.post('/orders/:id/payment', authenticate, async (req: AuthRequest, res) =
     // Create Click Pesa payment request
     const paymentRequest: PaymentRequest = {
       amount: feeCalculation.total,
-      currency: 'TZS',
+      currency: 'USD',
       orderId: id,
       customerPhone: customerPhone,
       customerEmail: customerEmail || order.user?.email || '',
@@ -427,7 +427,7 @@ router.post('/reservations/:id/payment', authenticate, async (req: AuthRequest, 
 
     // Get user's preferred currency
     const userPrefs = await userPreferences.getUserPreferences(req.userId);
-    const currency = userPrefs.currency || 'TZS';
+    const currency = userPrefs.currency || 'USD';
 
     // Get reservation details
     const { data: reservation, error: reservationError } = await supabase

@@ -43,6 +43,7 @@ const DEFAULT_FEES: FeeConfig = {
 };
 
 // Percentage-based fee configuration based on user's tier
+// Updated with profitable rates and volume-based structure
 const PERCENTAGE_TIER_FEES = {
   basic: {
     marketplaceCommission: 0.08, // 8%
@@ -51,28 +52,60 @@ const PERCENTAGE_TIER_FEES = {
     commissionWorkCommission: 0.12, // 12%
   },
   premium: {
-    marketplaceCommission: 0.05, // 5%
-    digitalProductCommission: 0.06, // 6%
+    marketplaceCommission: 0.06, // 6% (increased from 5% for profitability)
+    digitalProductCommission: 0.05, // 5% (reduced from 6%)
     serviceBookingCommission: 0.08, // 8%
     commissionWorkCommission: 0.10, // 10%
   },
   pro: {
-    marketplaceCommission: 0.03, // 3%
+    marketplaceCommission: 0.05, // 5% (increased from 3% for profitability)
     digitalProductCommission: 0.04, // 4%
-    serviceBookingCommission: 0.06, // 6%
-    commissionWorkCommission: 0.08, // 8%
+    serviceBookingCommission: 0.07, // 7% (increased from 6%)
+    commissionWorkCommission: 0.09, // 9% (increased from 8%)
   }
 };
+
+// Subscription-based fee configuration (reduced fees for paying subscribers)
+const SUBSCRIPTION_TIER_FEES = {
+  free: {
+    marketplaceCommission: 0.08, // 8% (same as percentage basic)
+    digitalProductCommission: 0.06, // 6%
+    serviceBookingCommission: 0.10, // 10%
+    commissionWorkCommission: 0.12, // 12%
+  },
+  creator: {
+    marketplaceCommission: 0.05, // 5% (reduced from 8% base)
+    digitalProductCommission: 0.04, // 4% (reduced from 6% base)
+    serviceBookingCommission: 0.07, // 7% (reduced from 10% base)
+    commissionWorkCommission: 0.09, // 9% (reduced from 12% base)
+  },
+  professional: {
+    marketplaceCommission: 0.04, // 4% (reduced from 8% base)
+    digitalProductCommission: 0.03, // 3% (reduced from 6% base)
+    serviceBookingCommission: 0.06, // 6% (reduced from 10% base)
+    commissionWorkCommission: 0.08, // 8% (reduced from 12% base)
+  },
+  enterprise: {
+    marketplaceCommission: 0.03, // 3% (best rates for enterprise)
+    digitalProductCommission: 0.02, // 2%
+    serviceBookingCommission: 0.05, // 5%
+    commissionWorkCommission: 0.07, // 7%
+  }
+};
+
+// Minimum platform fee per transaction (ensures profitability on small sales)
+const MINIMUM_PLATFORM_FEE = 0.25; // $0.25 USD
 
 // Currency-specific fixed fees (approximate values)
 const CURRENCY_FIXED_FEES = {
   USD: 0.30,   // US Dollar
   EUR: 0.25,   // Euro
   GBP: 0.25,   // British Pound
-  // TZS: 500,    // Tanzanian Shilling (deprecated for worldwide platform)
-  KES: 20,     // Kenyan Shilling
-  UGX: 500,    // Ugandan Shilling
-  RWF: 400,    // Rwandan Franc
+  TZS: 750,    // Tanzanian Shilling (approximately $0.30 USD)
+  KES: 33,     // Kenyan Shilling (approximately $0.30 USD)
+  UGX: 1110,   // Ugandan Shilling (approximately $0.30 USD)
+  RWF: 330,    // Rwandan Franc (approximately $0.30 USD)
+  NGN: 450,    // Nigerian Naira (approximately $0.30 USD)
 };
 
 class PlatformFeeService {
@@ -91,14 +124,33 @@ class PlatformFeeService {
 
   /**
    * Calculate fees for marketplace/product sale
+   * Now includes minimum platform fee to ensure profitability
+   * Supports both percentage-based and subscription-based tiers
    */
-  calculateMarketplaceFee(amount: number, percentageTier?: keyof typeof PERCENTAGE_TIER_FEES, currency: string = 'USD'): FeeCalculation {
-    // Use percentage tier rate if provided, otherwise use default
-    const commissionRate = percentageTier 
-      ? PERCENTAGE_TIER_FEES[percentageTier].marketplaceCommission
-      : this.config.marketplaceCommission;
+  calculateMarketplaceFee(
+    amount: number, 
+    percentageTier?: keyof typeof PERCENTAGE_TIER_FEES,
+    subscriptionTier?: keyof typeof SUBSCRIPTION_TIER_FEES,
+    currency: string = 'USD'
+  ): FeeCalculation {
+    // Priority: subscription tier > percentage tier > default
+    let commissionRate: number;
+    
+    if (subscriptionTier) {
+      commissionRate = SUBSCRIPTION_TIER_FEES[subscriptionTier].marketplaceCommission;
+    } else if (percentageTier) {
+      commissionRate = PERCENTAGE_TIER_FEES[percentageTier].marketplaceCommission;
+    } else {
+      commissionRate = this.config.marketplaceCommission;
+    }
       
-    const platformFee = amount * commissionRate;
+    let platformFee = amount * commissionRate;
+    
+    // Apply minimum platform fee to ensure profitability on small transactions
+    if (platformFee < MINIMUM_PLATFORM_FEE) {
+      platformFee = MINIMUM_PLATFORM_FEE;
+    }
+    
     const fixedFee = this.getFixedFeeForCurrency(currency);
     const paymentProcessingFee = (amount * this.config.paymentProcessingFee) + fixedFee;
     const totalFees = platformFee + paymentProcessingFee;
@@ -118,14 +170,33 @@ class PlatformFeeService {
 
   /**
    * Calculate fees for digital product sale
+   * Now includes minimum platform fee to ensure profitability
+   * Supports both percentage-based and subscription-based tiers
    */
-  calculateDigitalProductFee(amount: number, percentageTier?: keyof typeof PERCENTAGE_TIER_FEES, currency: string = 'USD'): FeeCalculation {
-    // Use percentage tier rate if provided, otherwise use default
-    const commissionRate = percentageTier 
-      ? PERCENTAGE_TIER_FEES[percentageTier].digitalProductCommission
-      : this.config.digitalProductCommission;
+  calculateDigitalProductFee(
+    amount: number, 
+    percentageTier?: keyof typeof PERCENTAGE_TIER_FEES,
+    subscriptionTier?: keyof typeof SUBSCRIPTION_TIER_FEES,
+    currency: string = 'USD'
+  ): FeeCalculation {
+    // Priority: subscription tier > percentage tier > default
+    let commissionRate: number;
+    
+    if (subscriptionTier) {
+      commissionRate = SUBSCRIPTION_TIER_FEES[subscriptionTier].digitalProductCommission;
+    } else if (percentageTier) {
+      commissionRate = PERCENTAGE_TIER_FEES[percentageTier].digitalProductCommission;
+    } else {
+      commissionRate = this.config.digitalProductCommission;
+    }
       
-    const platformFee = amount * commissionRate;
+    let platformFee = amount * commissionRate;
+    
+    // Apply minimum platform fee to ensure profitability on small transactions
+    if (platformFee < MINIMUM_PLATFORM_FEE) {
+      platformFee = MINIMUM_PLATFORM_FEE;
+    }
+    
     const fixedFee = this.getFixedFeeForCurrency(currency);
     const paymentProcessingFee = (amount * this.config.paymentProcessingFee) + fixedFee;
     const totalFees = platformFee + paymentProcessingFee;
@@ -145,14 +216,33 @@ class PlatformFeeService {
 
   /**
    * Calculate fees for service booking
+   * Now includes minimum platform fee to ensure profitability
+   * Supports both percentage-based and subscription-based tiers
    */
-  calculateServiceBookingFee(amount: number, percentageTier?: keyof typeof PERCENTAGE_TIER_FEES, currency: string = 'USD'): FeeCalculation {
-    // Use percentage tier rate if provided, otherwise use default
-    const commissionRate = percentageTier 
-      ? PERCENTAGE_TIER_FEES[percentageTier].serviceBookingCommission
-      : this.config.serviceBookingCommission;
+  calculateServiceBookingFee(
+    amount: number, 
+    percentageTier?: keyof typeof PERCENTAGE_TIER_FEES,
+    subscriptionTier?: keyof typeof SUBSCRIPTION_TIER_FEES,
+    currency: string = 'USD'
+  ): FeeCalculation {
+    // Priority: subscription tier > percentage tier > default
+    let commissionRate: number;
+    
+    if (subscriptionTier) {
+      commissionRate = SUBSCRIPTION_TIER_FEES[subscriptionTier].serviceBookingCommission;
+    } else if (percentageTier) {
+      commissionRate = PERCENTAGE_TIER_FEES[percentageTier].serviceBookingCommission;
+    } else {
+      commissionRate = this.config.serviceBookingCommission;
+    }
       
-    const platformFee = amount * commissionRate;
+    let platformFee = amount * commissionRate;
+    
+    // Apply minimum platform fee to ensure profitability on small transactions
+    if (platformFee < MINIMUM_PLATFORM_FEE) {
+      platformFee = MINIMUM_PLATFORM_FEE;
+    }
+    
     const fixedFee = this.getFixedFeeForCurrency(currency);
     const paymentProcessingFee = (amount * this.config.paymentProcessingFee) + fixedFee;
     const totalFees = platformFee + paymentProcessingFee;
@@ -172,14 +262,33 @@ class PlatformFeeService {
 
   /**
    * Calculate fees for commission work
+   * Now includes minimum platform fee to ensure profitability
+   * Supports both percentage-based and subscription-based tiers
    */
-  calculateCommissionFee(amount: number, percentageTier?: keyof typeof PERCENTAGE_TIER_FEES, currency: string = 'USD'): FeeCalculation {
-    // Use percentage tier rate if provided, otherwise use default
-    const commissionRate = percentageTier 
-      ? PERCENTAGE_TIER_FEES[percentageTier].commissionWorkCommission
-      : this.config.commissionWorkCommission;
+  calculateCommissionFee(
+    amount: number, 
+    percentageTier?: keyof typeof PERCENTAGE_TIER_FEES,
+    subscriptionTier?: keyof typeof SUBSCRIPTION_TIER_FEES,
+    currency: string = 'USD'
+  ): FeeCalculation {
+    // Priority: subscription tier > percentage tier > default
+    let commissionRate: number;
+    
+    if (subscriptionTier) {
+      commissionRate = SUBSCRIPTION_TIER_FEES[subscriptionTier].commissionWorkCommission;
+    } else if (percentageTier) {
+      commissionRate = PERCENTAGE_TIER_FEES[percentageTier].commissionWorkCommission;
+    } else {
+      commissionRate = this.config.commissionWorkCommission;
+    }
       
-    const platformFee = amount * commissionRate;
+    let platformFee = amount * commissionRate;
+    
+    // Apply minimum platform fee to ensure profitability on small transactions
+    if (platformFee < MINIMUM_PLATFORM_FEE) {
+      platformFee = MINIMUM_PLATFORM_FEE;
+    }
+    
     const fixedFee = this.getFixedFeeForCurrency(currency);
     const paymentProcessingFee = (amount * this.config.paymentProcessingFee) + fixedFee;
     const totalFees = platformFee + paymentProcessingFee;
@@ -245,4 +354,5 @@ class PlatformFeeService {
 }
 
 export const platformFees = new PlatformFeeService();
+export { MINIMUM_PLATFORM_FEE };
 export default PlatformFeeService;

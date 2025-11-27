@@ -18,7 +18,7 @@ import { AlertCircle } from "lucide-react";
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<'user' | 'creator' | 'freelancer' | 'seller' | 'lodging' | 'restaurant' | 'educator' | 'journalist' | 'artisan' | 'employer' | 'event_organizer'>('user');
+  const [selectedRole, setSelectedRole] = useState<'user' | 'creator' | 'freelancer' | 'seller' | 'lodging' | 'restaurant' | 'educator' | 'journalist' | 'artisan' | 'employer' | 'event_organizer' | 'musician'>('user');
   const [selectedCountry, setSelectedCountry] = useState("");
   const [selectedPhoneCode, setSelectedPhoneCode] = useState("+1"); // Default to US
   const { signUp, signIn, signInWithGoogle, user } = useAuth();
@@ -32,9 +32,19 @@ export default function Auth() {
     // Check if we should default to signup tab
     const searchParams = new URLSearchParams(location.search);
     const tabParam = searchParams.get("tab");
+    const roleParam = searchParams.get("role");
     
     if (tabParam === "signup") {
       setActiveTab("signup");
+    }
+    
+    // Set role from URL parameter if provided
+    if (roleParam) {
+      const validRoles = ['user', 'creator', 'freelancer', 'seller', 'lodging', 'restaurant', 'educator', 'journalist', 'artisan', 'employer', 'event_organizer', 'musician'];
+      const normalizedRole = roleParam.toLowerCase().replace(/\s+/g, '_');
+      if (validRoles.includes(normalizedRole)) {
+        setSelectedRole(normalizedRole as typeof selectedRole);
+      }
     }
   }, [location]);
 
@@ -350,7 +360,7 @@ export default function Auth() {
                     
                     <div className="space-y-2">
                       <Label htmlFor="signup-role">I want to join as</Label>
-                      <Select value={selectedRole} onValueChange={(value: 'user' | 'creator' | 'freelancer' | 'seller' | 'lodging' | 'restaurant' | 'educator' | 'journalist' | 'artisan' | 'employer' | 'event_organizer') => setSelectedRole(value)}>
+                      <Select value={selectedRole} onValueChange={(value: 'user' | 'creator' | 'freelancer' | 'seller' | 'lodging' | 'restaurant' | 'educator' | 'journalist' | 'artisan' | 'employer' | 'event_organizer' | 'musician') => setSelectedRole(value)}>
                         <SelectTrigger id="signup-role">
                           <SelectValue placeholder="Select your role" />
                         </SelectTrigger>

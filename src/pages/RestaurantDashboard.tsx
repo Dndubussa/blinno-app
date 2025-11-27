@@ -3,8 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 import { hasRole, getPrimaryRole } from "@/lib/roleCheck";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
-import { DashboardSidebar } from "@/components/DashboardSidebar";
+import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -287,56 +286,23 @@ export default function RestaurantDashboard() {
 
   if (!isRestaurant || !user) return null;
 
-  return (
-    <SidebarProvider defaultOpen={true}>
-      <DashboardSidebar />
-      <SidebarInset>
-        <div className="min-h-screen bg-background">
-          <div className="flex items-center gap-4 border-b border-border px-4 py-4">
-            <SidebarTrigger />
-            <h1 className="text-3xl font-bold">Restaurant Dashboard</h1>
-          </div>
-          <div className="container mx-auto px-4 pt-8 pb-12">
-            
-            {/* Navigation */}
-            <div className="flex flex-wrap gap-2 mb-8 border-b border-border pb-4">
-              <Button
-                variant={currentSection === 'overview' ? "default" : "outline"}
-                onClick={() => navigate('/restaurant-dashboard#overview')}
-                className="flex items-center gap-2"
-              >
-                <UtensilsCrossed className="h-4 w-4" />
-                Overview
-              </Button>
-              <Button
-                variant={currentSection === 'restaurants' ? "default" : "outline"}
-                onClick={() => navigate('/restaurant-dashboard#restaurants')}
-                className="flex items-center gap-2"
-              >
-                <UtensilsCrossed className="h-4 w-4" />
-                Restaurants
-              </Button>
-              <Button
-                variant={currentSection === 'menu' ? "default" : "outline"}
-                onClick={() => navigate('/restaurant-dashboard#menu')}
-                className="flex items-center gap-2"
-              >
-                <Menu className="h-4 w-4" />
-                Menu
-              </Button>
-              <Button
-                variant={currentSection === 'reservations' ? "default" : "outline"}
-                onClick={() => navigate('/restaurant-dashboard#reservations')}
-                className="flex items-center gap-2"
-              >
-                <Calendar className="h-4 w-4" />
-                Reservations
-              </Button>
-            </div>
+  const navigationTabs = [
+    { id: "overview", label: "Overview", icon: UtensilsCrossed },
+    { id: "restaurants", label: "Restaurants", icon: UtensilsCrossed },
+    { id: "menu", label: "Menu", icon: Menu },
+    { id: "reservations", label: "Reservations", icon: Calendar },
+  ];
 
-            {/* Overview Section */}
-            {currentSection === 'overview' && (
-            <div className="mt-6">
+  return (
+    <DashboardLayout
+      title="Restaurant Dashboard"
+      navigationTabs={navigationTabs}
+      defaultSection="overview"
+    >
+
+      {/* Overview Section */}
+      {currentSection === 'overview' && (
+      <div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -414,9 +380,9 @@ export default function RestaurantDashboard() {
             </div>
             )}
 
-            {/* Restaurants Section */}
-            {currentSection === 'restaurants' && (
-            <div className="mt-6">
+      {/* Restaurants Section */}
+      {currentSection === 'restaurants' && (
+      <div>
                 <div className="flex justify-between items-center mb-6">
                   <div>
                     <h2 className="text-2xl font-semibold">Restaurants</h2>
@@ -555,9 +521,9 @@ export default function RestaurantDashboard() {
             </div>
             )}
 
-            {/* Menu Section */}
-            {currentSection === 'menu' && (
-            <div className="mt-6">
+      {/* Menu Section */}
+      {currentSection === 'menu' && (
+      <div>
                 <div className="flex justify-between items-center mb-6">
                   <div>
                     <h2 className="text-2xl font-semibold">Menu Items</h2>
@@ -652,9 +618,9 @@ export default function RestaurantDashboard() {
             </div>
             )}
 
-            {/* Reservations Section */}
-            {currentSection === 'reservations' && (
-            <div className="mt-6">
+      {/* Reservations Section */}
+      {currentSection === 'reservations' && (
+      <div>
                 <h2 className="text-2xl font-semibold mb-6">Reservations</h2>
                 <div className="space-y-4">
                   {(reservations || []).map((reservation) => (
@@ -692,10 +658,7 @@ export default function RestaurantDashboard() {
                   </Card>
                 )}
             </div>
-            )}
-          </div>
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+      )}
+    </DashboardLayout>
   );
 }

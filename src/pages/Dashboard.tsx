@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
-import { DashboardSidebar } from "@/components/DashboardSidebar";
+import { DashboardLayout } from "@/components/DashboardLayout";
+import { UserCurrencySettings } from "@/components/UserCurrencySettings";
+import { UserLanguageSettings } from "@/components/UserLanguageSettings";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -187,48 +188,22 @@ export default function Dashboard() {
 
   if (!user) return null;
 
-  return (
-    <SidebarProvider defaultOpen={true}>
-      <DashboardSidebar />
-      <SidebarInset>
-        <div className="min-h-screen bg-background">
-          <div className="flex items-center gap-4 border-b border-border px-4 py-4">
-            <SidebarTrigger />
-            <h1 className="text-3xl font-bold">Dashboard</h1>
-          </div>
-          <div className="container mx-auto px-4 pt-8 pb-12">
-            
-            {/* Navigation */}
-            <div className="flex flex-wrap gap-2 mb-8 border-b border-border pb-4">
-              <Button
-                variant={currentSection === 'portfolio' ? "default" : "outline"}
-                onClick={() => navigate('/dashboard#portfolio')}
-                className="flex items-center gap-2"
-              >
-                <Filter className="h-4 w-4" />
-                My Portfolio
-              </Button>
-              <Button
-                variant={currentSection === 'bookings' ? "default" : "outline"}
-                onClick={() => navigate('/dashboard#bookings')}
-                className="flex items-center gap-2"
-              >
-                <Filter className="h-4 w-4" />
-                Bookings
-              </Button>
-              <Button
-                variant={currentSection === 'profile' ? "default" : "outline"}
-                onClick={() => navigate('/dashboard#profile')}
-                className="flex items-center gap-2"
-              >
-                <Filter className="h-4 w-4" />
-                Profile Settings
-              </Button>
-            </div>
+  const navigationTabs = [
+    { id: "portfolio", label: "My Portfolio", icon: Filter },
+    { id: "bookings", label: "Bookings", icon: Filter },
+    { id: "profile", label: "Profile Settings", icon: Filter },
+  ];
 
-            {/* Portfolio Section */}
-            {currentSection === 'portfolio' && (
-            <div className="mt-6">
+  return (
+    <DashboardLayout
+      title="Dashboard"
+      navigationTabs={navigationTabs}
+      defaultSection="portfolio"
+    >
+
+      {/* Portfolio Section */}
+      {currentSection === 'portfolio' && (
+      <div>
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                   <div>
                     <h2 className="text-2xl font-semibold mb-2">Portfolio Items</h2>
@@ -431,10 +406,10 @@ export default function Dashboard() {
             </div>
             )}
 
-            {/* Bookings Section */}
-            {currentSection === 'bookings' && (
-            <div className="mt-6">
-                <h2 className="text-2xl font-semibold mb-6">Bookings</h2>
+      {/* Bookings Section */}
+      {currentSection === 'bookings' && (
+      <div>
+        <h2 className="text-2xl font-semibold mb-6">Bookings</h2>
                 <div className="space-y-4">
                   {bookings.length === 0 ? (
                     <Card>
@@ -478,9 +453,9 @@ export default function Dashboard() {
             </div>
             )}
 
-            {/* Profile Section */}
-            {currentSection === 'profile' && (
-            <div className="mt-6">
+      {/* Profile Section */}
+      {currentSection === 'profile' && (
+      <div>
                 <Card>
                   <CardHeader>
                     <CardTitle>Profile Settings</CardTitle>
@@ -577,11 +552,26 @@ export default function Dashboard() {
                     </form>
                   </CardContent>
                 </Card>
-            </div>
-            )}
-          </div>
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+
+                {/* Currency Settings */}
+                <UserCurrencySettings
+                  currentCurrency={profile?.currency || 'USD'}
+                  onCurrencyChange={(newCurrency) => {
+                    // Refresh profile to get updated currency
+                    window.location.reload();
+                  }}
+                />
+
+                {/* Language Settings */}
+                <UserLanguageSettings
+                  currentLanguage={profile?.language || 'en'}
+                  onLanguageChange={(newLanguage) => {
+                    // Refresh profile to get updated language
+                    window.location.reload();
+                  }}
+                />
+      </div>
+      )}
+    </DashboardLayout>
   );
 }

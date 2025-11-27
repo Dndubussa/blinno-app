@@ -44,7 +44,6 @@ BLINNO is a comprehensive SaaS platform connecting creators, sellers, and servic
 - **Storage**: Supabase Storage
 - **Email**: Resend
 - **Payments**: Click Pesa
-- **Maps**: Mapbox
 
 ### Infrastructure
 - **Hosting**: (To be determined)
@@ -126,7 +125,6 @@ BLINNO/
    VITE_API_URL=http://localhost:3001/api
    VITE_SUPABASE_URL=your-supabase-url
    VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
-   VITE_MAPBOX_ACCESS_TOKEN=your-mapbox-token
    ```
 
    **Backend `.env`:**

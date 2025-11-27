@@ -3,8 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 import { hasRole, getPrimaryRole } from "@/lib/roleCheck";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
-import { DashboardSidebar } from "@/components/DashboardSidebar";
+import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -301,56 +300,23 @@ export default function EventOrganizerDashboard() {
 
   if (!isOrganizer || !user) return null;
 
-  return (
-    <SidebarProvider defaultOpen={true}>
-      <DashboardSidebar />
-      <SidebarInset>
-        <div className="min-h-screen bg-background">
-          <div className="flex items-center gap-4 border-b border-border px-4 py-4">
-            <SidebarTrigger />
-            <h1 className="text-3xl font-bold">Event Organizer Dashboard</h1>
-          </div>
-          <div className="container mx-auto px-4 pt-8 pb-12">
-            
-            {/* Navigation */}
-            <div className="flex flex-wrap gap-2 mb-8 border-b border-border pb-4">
-              <Button
-                variant={currentSection === 'overview' ? "default" : "outline"}
-                onClick={() => navigate('/event-organizer-dashboard#overview')}
-                className="flex items-center gap-2"
-              >
-                <Calendar className="h-4 w-4" />
-                Overview
-              </Button>
-              <Button
-                variant={currentSection === 'events' ? "default" : "outline"}
-                onClick={() => navigate('/event-organizer-dashboard#events')}
-                className="flex items-center gap-2"
-              >
-                <Ticket className="h-4 w-4" />
-                Events
-              </Button>
-              <Button
-                variant={currentSection === 'registrations' ? "default" : "outline"}
-                onClick={() => navigate('/event-organizer-dashboard#registrations')}
-                className="flex items-center gap-2"
-              >
-                <Users className="h-4 w-4" />
-                Registrations
-              </Button>
-              <Button
-                variant={currentSection === 'profile' ? "default" : "outline"}
-                onClick={() => navigate('/event-organizer-dashboard#profile')}
-                className="flex items-center gap-2"
-              >
-                <Eye className="h-4 w-4" />
-                Profile
-              </Button>
-            </div>
+  const navigationTabs = [
+    { id: "overview", label: "Overview", icon: Calendar },
+    { id: "events", label: "Events", icon: Calendar },
+    { id: "tickets", label: "Tickets", icon: Ticket },
+    { id: "analytics", label: "Analytics", icon: Eye },
+  ];
 
-            {/* Overview Section */}
-            {currentSection === 'overview' && (
-              <div className="mt-6">
+  return (
+    <DashboardLayout
+      title="Event Organizer Dashboard"
+      navigationTabs={navigationTabs}
+      defaultSection="overview"
+    >
+
+      {/* Overview Section */}
+      {currentSection === 'overview' && (
+      <div>
                 <div className="mb-6">
                   <h2 className="text-2xl font-semibold">Dashboard Overview</h2>
                   <p className="text-sm text-muted-foreground">
@@ -435,9 +401,9 @@ export default function EventOrganizerDashboard() {
               </div>
             )}
 
-            {/* Events Section */}
-            {currentSection === 'events' && (
-              <div className="mt-6">
+      {/* Events Section */}
+      {currentSection === 'events' && (
+      <div>
                 <div className="flex justify-between items-center mb-6">
                   <div>
                     <h2 className="text-2xl font-semibold">Events</h2>
@@ -642,9 +608,9 @@ export default function EventOrganizerDashboard() {
               </div>
             )}
 
-            {/* Registrations Section */}
-            {currentSection === 'registrations' && (
-              <div className="mt-6">
+      {/* Registrations Section */}
+      {currentSection === 'registrations' && (
+      <div>
                 <div className="mb-6">
                   <h2 className="text-2xl font-semibold">Event Registrations</h2>
                   <p className="text-sm text-muted-foreground">
@@ -737,9 +703,9 @@ export default function EventOrganizerDashboard() {
               </div>
             )}
 
-            {/* Profile Section */}
-            {currentSection === 'profile' && (
-              <div className="mt-6">
+      {/* Profile Section */}
+      {currentSection === 'profile' && (
+      <div>
                 <div className="mb-6">
                   <h2 className="text-2xl font-semibold">Profile Settings</h2>
                   <p className="text-sm text-muted-foreground">
@@ -810,11 +776,8 @@ export default function EventOrganizerDashboard() {
                     </form>
                   </CardContent>
                 </Card>
-              </div>
-            )}
-          </div>
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+      </div>
+      )}
+    </DashboardLayout>
   );
 }

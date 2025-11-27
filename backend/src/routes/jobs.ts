@@ -46,7 +46,7 @@ router.post('/postings', authenticate, requireRole('employer'), async (req: Auth
         skills_required: skillsRequired || [],
         salary_min: salaryMin ? parseFloat(salaryMin) : null,
         salary_max: salaryMax ? parseFloat(salaryMax) : null,
-        salary_currency: salaryCurrency || 'TSh',
+        salary_currency: salaryCurrency || 'USD',
         is_remote: isRemote || false,
         application_deadline: applicationDeadline || null,
         application_url: applicationUrl || null,

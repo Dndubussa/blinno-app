@@ -30,29 +30,53 @@ export const CategoryCard = ({
 }: CategoryCardProps) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const [parallaxOffset, setParallaxOffset] = useState(0);
+  const rafId = useRef<number | null>(null);
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
   useEffect(() => {
+    if (!backgroundImage || isMobile) {
+      setParallaxOffset(0);
+      return;
+    }
+
     const handleScroll = () => {
-      if (!cardRef.current) return;
-      const rect = cardRef.current.getBoundingClientRect();
-      const scrollPercent = (window.innerHeight - rect.top) / window.innerHeight;
-      setParallaxOffset(scrollPercent * 30);
+      if (rafId.current !== null) {
+        cancelAnimationFrame(rafId.current);
+      }
+
+      rafId.current = requestAnimationFrame(() => {
+        if (!cardRef.current) return;
+        const rect = cardRef.current.getBoundingClientRect();
+        const scrollPercent = Math.max(0, Math.min(1, (window.innerHeight - rect.top) / window.innerHeight));
+        setParallaxOffset(scrollPercent * 20); // Reduced from 30 for smoother effect
+      });
     };
 
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+    
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (rafId.current !== null) {
+        cancelAnimationFrame(rafId.current);
+      }
+    };
+  }, [backgroundImage, isMobile]);
 
   return (
     <Card ref={cardRef} className="group relative overflow-hidden border-border bg-card hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 h-full flex flex-col">
       {backgroundImage && (
         <>
           <div 
-            className="absolute inset-0 bg-cover bg-center transition-all duration-300 group-hover:scale-105"
+            className="absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-105 will-change-transform"
             style={{ 
               backgroundImage: `url(${backgroundImage})`,
-              transform: `translateY(${parallaxOffset}px)`
+              transform: `translate3d(0, ${parallaxOffset}px, 0)`,
+              backfaceVisibility: 'hidden',
+              WebkitBackfaceVisibility: 'hidden',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat'
             }}
           />
           <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/80 to-background/95" />

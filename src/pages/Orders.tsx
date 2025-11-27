@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MultiCurrencyPrice } from "@/components/MultiCurrencyPrice";
 
 export default function Orders() {
   const { user } = useAuth();
@@ -115,6 +116,8 @@ export default function Orders() {
     }
   };
 
+  // Keep formatPrice for backward compatibility in OrderList component
+  // But use MultiCurrencyPrice in the actual display
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -250,7 +253,9 @@ function OrderList({ orders, onView, onCancel, onConfirmDelivery, formatPrice, g
                 )}
 
                 <div className="flex items-center gap-4 text-sm">
-                  <span className="font-semibold">{formatPrice(parseFloat(order.total_amount))}</span>
+                  <div className="font-semibold">
+                    <MultiCurrencyPrice usdPrice={parseFloat(order.total_amount)} size="sm" />
+                  </div>
                   {order.tracking_number && (
                     <span className="text-muted-foreground">
                       Tracking: {order.tracking_number}
@@ -340,7 +345,9 @@ function OrderDetailsDialog({ order, open, onClose, onConfirmDelivery, formatPri
                 </div>
                 <div>
                   <p className="text-muted-foreground">Total Amount</p>
-                  <p className="font-medium">{formatPrice(parseFloat(orderDetails.total_amount))}</p>
+                  <div className="font-medium">
+                    <MultiCurrencyPrice usdPrice={parseFloat(orderDetails.total_amount)} size="md" />
+                  </div>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Order Date</p>
@@ -388,13 +395,14 @@ function OrderDetailsDialog({ order, open, onClose, onConfirmDelivery, formatPri
                       )}
                       <div className="flex-1">
                         <p className="font-medium">{item.product_title}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Quantity: {item.quantity} × {formatPrice(parseFloat(item.price_at_purchase))}
-                        </p>
+                        <div className="text-sm text-muted-foreground flex items-center gap-1">
+                          <span>Quantity: {item.quantity} ×</span>
+                          <MultiCurrencyPrice usdPrice={parseFloat(item.price_at_purchase)} size="sm" />
+                        </div>
                       </div>
-                      <p className="font-medium">
-                        {formatPrice(parseFloat(item.price_at_purchase) * item.quantity)}
-                      </p>
+                      <div className="font-medium">
+                        <MultiCurrencyPrice usdPrice={parseFloat(item.price_at_purchase) * item.quantity} size="sm" />
+                      </div>
                     </div>
                   ))}
                 </div>

@@ -9,7 +9,7 @@ CREATE TABLE music_tracks (
   image_url TEXT,
   audio_url TEXT NOT NULL,
   price DECIMAL(10, 2) DEFAULT 0.00,
-  currency TEXT DEFAULT 'TSh',
+  currency TEXT DEFAULT 'USD',
   plays_count INTEGER DEFAULT 0,
   likes_count INTEGER DEFAULT 0,
   is_published BOOLEAN DEFAULT false,

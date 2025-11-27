@@ -3,8 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 import { hasRole, getPrimaryRole } from "@/lib/roleCheck";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
-import { DashboardSidebar } from "@/components/DashboardSidebar";
+import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -483,20 +482,24 @@ export default function FreelancerDashboard() {
 
   if (!isFreelancer || !user) return null;
 
-      return (
-        <SidebarProvider defaultOpen={true}>
-          <DashboardSidebar />
-          <SidebarInset>
-            <div className="min-h-screen bg-background">
-              <div className="flex items-center gap-4 border-b border-border px-4 py-4">
-                <SidebarTrigger />
-                <h1 className="text-3xl font-bold">Freelancer Dashboard</h1>
-              </div>
-              <div className="container mx-auto px-4 pt-8 pb-12">
+  const navigationTabs = [
+    { id: "overview", label: "Overview", icon: Briefcase },
+    { id: "projects", label: "Projects", icon: Briefcase },
+    { id: "clients", label: "Clients", icon: Users },
+    { id: "services", label: "Services", icon: Briefcase },
+    { id: "financial", label: "Financial", icon: DollarSign },
+    { id: "profile", label: "Profile", icon: Users },
+  ];
 
-        {/* Overview Section */}
-        {currentSection === 'overview' && (
-        <div className="mt-6">
+  return (
+    <DashboardLayout
+      title="Freelancer Dashboard"
+      navigationTabs={navigationTabs}
+      defaultSection="overview"
+    >
+      {/* Overview Section */}
+      {currentSection === 'overview' && (
+      <div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -707,9 +710,9 @@ export default function FreelancerDashboard() {
         </div>
         )}
 
-        {/* Clients Section */}
-        {currentSection === 'clients' && (
-        <div className="mt-6">
+      {/* Clients Section */}
+      {currentSection === 'clients' && (
+      <div>
             <div className="flex justify-between items-center mb-6">
               <div>
                 <h2 className="text-2xl font-semibold">Clients</h2>
@@ -842,9 +845,9 @@ export default function FreelancerDashboard() {
         </div>
         )}
 
-        {/* Services Section */}
-        {currentSection === 'services' && (
-        <div className="mt-6">
+      {/* Services Section */}
+      {currentSection === 'services' && (
+      <div>
             <div className="flex justify-between items-center mb-6">
               <div>
                 <h2 className="text-2xl font-semibold">Services</h2>
@@ -953,9 +956,9 @@ export default function FreelancerDashboard() {
         </div>
         )}
 
-        {/* Financial Section */}
-        {currentSection === 'financial' && (
-        <div className="mt-6">
+      {/* Financial Section */}
+      {currentSection === 'financial' && (
+      <div>
             <div className="space-y-6">
               {/* Financial Summary Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -1212,9 +1215,9 @@ export default function FreelancerDashboard() {
         </div>
         )}
 
-        {/* Profile Section */}
-        {currentSection === 'profile' && (
-        <div className="mt-6">
+      {/* Profile Section */}
+      {currentSection === 'profile' && (
+      <div>
             <Card>
               <CardHeader>
                 <CardTitle>Profile Settings</CardTitle>
@@ -1312,11 +1315,8 @@ export default function FreelancerDashboard() {
               </CardContent>
             </Card>
         </div>
-        )}
-          </div>
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+      )}
+    </DashboardLayout>
   );
 }
 

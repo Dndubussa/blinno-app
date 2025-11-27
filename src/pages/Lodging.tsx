@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { LodgingBookingForm } from "@/components/LodgingBookingForm";
 import { api } from '@/lib/api';
 import { useToast } from "@/components/ui/use-toast";
+import { MultiCurrencyPrice } from "@/components/MultiCurrencyPrice";
 
 interface LodgingProperty {
   id: string;
@@ -107,7 +108,7 @@ export default function Lodging() {
             <CardHeader>
               <CardTitle>Book Stay at {selectedProperty.name}</CardTitle>
               <CardDescription>
-                Room Type: {selectedRoom.room_type} - TZS {selectedRoom.price_per_night}/night
+                Room Type: {selectedRoom.room_type} - <MultiCurrencyPrice usdPrice={selectedRoom.price_per_night} size="sm" />/night
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -167,7 +168,7 @@ export default function Lodging() {
                       <CardHeader>
                         <CardTitle>{room.room_type}</CardTitle>
                         <CardDescription>
-                          TZS {room.price_per_night}/night
+                          <MultiCurrencyPrice usdPrice={room.price_per_night} size="sm" />/night
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="flex-grow">

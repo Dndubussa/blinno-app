@@ -264,7 +264,7 @@ router.post('/bookings/:id/payment', authenticate, async (req: AuthRequest, res)
 
     // Get user's preferred currency
     const userPrefs = await userPreferences.getUserPreferences(req.userId);
-    const currency = userPrefs.currency || 'TZS';
+    const currency = userPrefs.currency || 'USD';
 
     // Get booking details
     const { data: booking, error: bookingError } = await supabase

@@ -3,8 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 import { hasRole, getPrimaryRole } from "@/lib/roleCheck";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
-import { DashboardSidebar } from "@/components/DashboardSidebar";
+import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -285,56 +284,23 @@ export default function ArtisanDashboard() {
 
   if (!isArtisan || !user) return null;
 
-  return (
-    <SidebarProvider defaultOpen={true}>
-      <DashboardSidebar />
-      <SidebarInset>
-        <div className="min-h-screen bg-background">
-          <div className="flex items-center gap-4 border-b border-border px-4 py-4">
-            <SidebarTrigger />
-            <h1 className="text-3xl font-bold">Artisan Dashboard</h1>
-          </div>
-          <div className="container mx-auto px-4 pt-8 pb-12">
-            
-            {/* Navigation */}
-            <div className="flex flex-wrap gap-2 mb-8 border-b border-border pb-4">
-              <Button
-                variant={currentSection === 'overview' ? "default" : "outline"}
-                onClick={() => navigate('/artisan-dashboard#overview')}
-                className="flex items-center gap-2"
-              >
-                <Wrench className="h-4 w-4" />
-                Overview
-              </Button>
-              <Button
-                variant={currentSection === 'services' ? "default" : "outline"}
-                onClick={() => navigate('/artisan-dashboard#services')}
-                className="flex items-center gap-2"
-              >
-                <Wrench className="h-4 w-4" />
-                Services
-              </Button>
-              <Button
-                variant={currentSection === 'bookings' ? "default" : "outline"}
-                onClick={() => navigate('/artisan-dashboard#bookings')}
-                className="flex items-center gap-2"
-              >
-                <Calendar className="h-4 w-4" />
-                Bookings
-              </Button>
-              <Button
-                variant={currentSection === 'profile' ? "default" : "outline"}
-                onClick={() => navigate('/artisan-dashboard#profile')}
-                className="flex items-center gap-2"
-              >
-                <Star className="h-4 w-4" />
-                Profile
-              </Button>
-            </div>
+  const navigationTabs = [
+    { id: "overview", label: "Overview", icon: Wrench },
+    { id: "services", label: "Services", icon: Wrench },
+    { id: "bookings", label: "Bookings", icon: Calendar },
+    { id: "profile", label: "Profile", icon: Star },
+  ];
 
-            {/* Overview Section */}
-            {currentSection === 'overview' && (
-              <div className="mt-6">
+  return (
+    <DashboardLayout
+      title="Artisan Dashboard"
+      navigationTabs={navigationTabs}
+      defaultSection="overview"
+    >
+
+      {/* Overview Section */}
+      {currentSection === 'overview' && (
+      <div>
                 <div className="mb-6">
                   <h2 className="text-2xl font-semibold">Dashboard Overview</h2>
                   <p className="text-sm text-muted-foreground">
@@ -421,9 +387,9 @@ export default function ArtisanDashboard() {
               </div>
             )}
 
-            {/* Services Section */}
-            {currentSection === 'services' && (
-              <div className="mt-6">
+      {/* Services Section */}
+      {currentSection === 'services' && (
+      <div>
                 <div className="flex justify-between items-center mb-6">
                   <div>
                     <h2 className="text-2xl font-semibold">Services</h2>
@@ -584,9 +550,9 @@ export default function ArtisanDashboard() {
               </div>
             )}
 
-            {/* Bookings Section */}
-            {currentSection === 'bookings' && (
-              <div className="mt-6">
+      {/* Bookings Section */}
+      {currentSection === 'bookings' && (
+      <div>
                 <div className="mb-6">
                   <h2 className="text-2xl font-semibold">Bookings</h2>
                   <p className="text-sm text-muted-foreground">
@@ -671,9 +637,9 @@ export default function ArtisanDashboard() {
               </div>
             )}
 
-            {/* Profile Section */}
-            {currentSection === 'profile' && (
-              <div className="mt-6">
+      {/* Profile Section */}
+      {currentSection === 'profile' && (
+      <div>
                 <div className="mb-6">
                   <h2 className="text-2xl font-semibold">Profile Settings</h2>
                   <p className="text-sm text-muted-foreground">
@@ -735,11 +701,8 @@ export default function ArtisanDashboard() {
                   </CardContent>
                 </Card>
               </div>
-            )}
-          </div>
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+      )}
+    </DashboardLayout>
   );
 }
 

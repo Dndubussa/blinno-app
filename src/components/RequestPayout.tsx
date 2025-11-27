@@ -111,11 +111,11 @@ export function RequestPayout() {
       return;
     }
 
-    // Check minimum payout amount (10,000 TZS)
-    if (amountValue < 10000) {
+    // Check minimum payout amount (100 USD)
+    if (amountValue < 100) {
       toast({
         title: "Error",
-        description: "Minimum payout amount is 10,000 TZS",
+        description: "Minimum payout amount is 100 USD",
         variant: "destructive",
       });
       return;

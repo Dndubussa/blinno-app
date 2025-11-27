@@ -64,7 +64,7 @@ export async function createTrack(data: CreateTrackData): Promise<MusicTrack> {
     image_url,
     audio_url,
     price = 0,
-    currency = 'TSh',
+    currency = 'USD',
     is_published = false,
     tags = []
   } = data;

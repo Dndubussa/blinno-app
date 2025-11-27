@@ -3,8 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 import { hasRole, getPrimaryRole } from "@/lib/roleCheck";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
-import { DashboardSidebar } from "@/components/DashboardSidebar";
+import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -290,56 +289,23 @@ export default function EmployerDashboard() {
 
   if (!isEmployer || !user) return null;
 
-  return (
-    <SidebarProvider defaultOpen={true}>
-      <DashboardSidebar />
-      <SidebarInset>
-        <div className="min-h-screen bg-background">
-          <div className="flex items-center gap-4 border-b border-border px-4 py-4">
-            <SidebarTrigger />
-            <h1 className="text-3xl font-bold">Employer Dashboard</h1>
-          </div>
-          <div className="container mx-auto px-4 pt-8 pb-12">
-            
-            {/* Navigation */}
-            <div className="flex flex-wrap gap-2 mb-8 border-b border-border pb-4">
-              <Button
-                variant={currentSection === 'overview' ? "default" : "outline"}
-                onClick={() => navigate('/employer-dashboard#overview')}
-                className="flex items-center gap-2"
-              >
-                <Briefcase className="h-4 w-4" />
-                Overview
-              </Button>
-              <Button
-                variant={currentSection === 'jobs' ? "default" : "outline"}
-                onClick={() => navigate('/employer-dashboard#jobs')}
-                className="flex items-center gap-2"
-              >
-                <FileText className="h-4 w-4" />
-                Job Postings
-              </Button>
-              <Button
-                variant={currentSection === 'applications' ? "default" : "outline"}
-                onClick={() => navigate('/employer-dashboard#applications')}
-                className="flex items-center gap-2"
-              >
-                <Users className="h-4 w-4" />
-                Applications
-              </Button>
-              <Button
-                variant={currentSection === 'profile' ? "default" : "outline"}
-                onClick={() => navigate('/employer-dashboard#profile')}
-                className="flex items-center gap-2"
-              >
-                <Eye className="h-4 w-4" />
-                Profile
-              </Button>
-            </div>
+  const navigationTabs = [
+    { id: "overview", label: "Overview", icon: Briefcase },
+    { id: "jobs", label: "Jobs", icon: Briefcase },
+    { id: "applications", label: "Applications", icon: FileText },
+    { id: "analytics", label: "Analytics", icon: Eye },
+  ];
 
-            {/* Overview Section */}
-            {currentSection === 'overview' && (
-              <div className="mt-6">
+  return (
+    <DashboardLayout
+      title="Employer Dashboard"
+      navigationTabs={navigationTabs}
+      defaultSection="overview"
+    >
+
+      {/* Overview Section */}
+      {currentSection === 'overview' && (
+      <div>
                 <div className="mb-6">
                   <h2 className="text-2xl font-semibold">Dashboard Overview</h2>
                   <p className="text-sm text-muted-foreground">
@@ -426,9 +392,9 @@ export default function EmployerDashboard() {
               </div>
             )}
 
-            {/* Jobs Section */}
-            {currentSection === 'jobs' && (
-              <div className="mt-6">
+      {/* Jobs Section */}
+      {currentSection === 'jobs' && (
+      <div>
                 <div className="flex justify-between items-center mb-6">
                   <div>
                     <h2 className="text-2xl font-semibold">Job Postings</h2>
@@ -622,9 +588,9 @@ export default function EmployerDashboard() {
               </div>
             )}
 
-            {/* Applications Section */}
-            {currentSection === 'applications' && (
-              <div className="mt-6">
+      {/* Applications Section */}
+      {currentSection === 'applications' && (
+      <div>
                 <div className="mb-6">
                   <h2 className="text-2xl font-semibold">Job Applications</h2>
                   <p className="text-sm text-muted-foreground">
@@ -717,9 +683,9 @@ export default function EmployerDashboard() {
               </div>
             )}
 
-            {/* Profile Section */}
-            {currentSection === 'profile' && (
-              <div className="mt-6">
+      {/* Profile Section */}
+      {currentSection === 'profile' && (
+      <div>
                 <div className="mb-6">
                   <h2 className="text-2xl font-semibold">Profile Settings</h2>
                   <p className="text-sm text-muted-foreground">
@@ -790,11 +756,8 @@ export default function EmployerDashboard() {
                     </form>
                   </CardContent>
                 </Card>
-              </div>
-            )}
-          </div>
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+      </div>
+      )}
+    </DashboardLayout>
   );
 }

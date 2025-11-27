@@ -143,7 +143,7 @@ export function EventRegistrationForm({
         <div className="bg-muted p-4 rounded-lg">
           <div className="flex justify-between items-center">
             <span>Ticket Price:</span>
-            <span className="font-semibold">TZS {ticketPrice.toLocaleString()}</span>
+            <span className="font-semibold">USD {ticketPrice.toLocaleString()}</span>
           </div>
           <div className="flex justify-between items-center mt-2">
             <span>Number of Tickets:</span>
@@ -151,7 +151,7 @@ export function EventRegistrationForm({
           </div>
           <div className="flex justify-between items-center mt-2 border-t pt-2">
             <span className="font-semibold">Total Cost:</span>
-            <span className="font-bold text-lg">TZS {totalCost.toLocaleString()}</span>
+            <span className="font-bold text-lg">USD {totalCost.toLocaleString()}</span>
           </div>
         </div>
       )}

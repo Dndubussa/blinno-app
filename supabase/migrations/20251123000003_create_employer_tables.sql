@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS public.job_postings (
   skills_required TEXT[] DEFAULT ARRAY[]::TEXT[],
   salary_min DECIMAL(10, 2),
   salary_max DECIMAL(10, 2),
-  salary_currency TEXT DEFAULT 'TSh',
+  salary_currency TEXT DEFAULT 'USD',
   is_remote BOOLEAN DEFAULT false,
   application_deadline TIMESTAMPTZ,
   application_url TEXT,

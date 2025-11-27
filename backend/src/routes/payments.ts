@@ -33,7 +33,7 @@ router.post('/create', authenticate, async (req: AuthRequest, res) => {
     
     // Get user's preferred currency
     const userPrefs = await userPreferences.getUserPreferences(req.userId);
-    const currency = userPrefs.currency || 'TZS';
+    const currency = userPrefs.currency || 'USD';
 
     if (!orderId || !customerPhone) {
       return res.status(400).json({ error: 'Order ID and customer phone are required' });

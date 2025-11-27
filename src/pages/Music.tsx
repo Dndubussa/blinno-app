@@ -174,11 +174,12 @@ const Music = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredTracks.map((track) => (
               <Card key={track.id} className="overflow-hidden hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10">
-                <div className="relative group">
+                <div className="relative group aspect-square overflow-hidden bg-muted">
                   <img 
                     src={track.image} 
                     alt={track.title}
-                    className="w-full h-64 object-cover"
+                    className="w-full h-full object-cover"
+                    loading="lazy"
                   />
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <Button 

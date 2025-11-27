@@ -81,7 +81,7 @@ router.post('/request', authenticate, async (req: AuthRequest, res) => {
         user_id: req.userId,
         creator_id: creatorId,
         amount: finalAmount,
-        currency: 'TZS',
+        currency: 'USD',
         reason,
         status: 'pending',
       })
@@ -356,7 +356,7 @@ router.post('/:id/complete', authenticate, requireRole('admin'), async (req: Aut
       refund.user_id,
       'refund_completed',
       'Refund Completed',
-      `Your refund of ${refund.amount} TZS has been processed.`,
+      `Your refund of ${refund.amount} USD has been processed.`,
       { refund_id: id, order_id: refund.order_id }
     );
 

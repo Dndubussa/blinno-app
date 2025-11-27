@@ -8,7 +8,6 @@ import { DiasporaBanner } from "@/components/DiasporaBanner";
 import { FeaturedCreators } from "@/components/FeaturedCreators";
 import { CategoriesGrid } from "@/components/CategoriesGrid";
 import { CreatorGallery } from "@/components/CreatorGallery";
-import { MapSection } from "@/components/MapSection";
 import { Footer } from "@/components/Footer";
 import { SearchBar } from "@/components/SearchBar";
 import { Testimonials } from "@/components/Testimonials";
@@ -17,6 +16,7 @@ import { AnimatedSection } from "@/components/AnimatedSection";
 import { SubscriptionPricing } from "@/components/SubscriptionPricing";
 import { SocialFeedPreview } from "@/components/SocialFeedPreview";
 import { QuickActions } from "@/components/QuickActions";
+import { HowToGetStarted } from "@/components/HowToGetStarted";
 import { SEO } from "@/components/SEO";
 
 const Index = () => {
@@ -74,65 +74,66 @@ const Index = () => {
         </div>
       </div>
 
-      <AnimatedSection delay={100}>
-        <DiasporaBanner />
-      </AnimatedSection>
+      <div className="space-y-16 py-8">
+        <AnimatedSection delay={100}>
+          <DiasporaBanner />
+        </AnimatedSection>
 
-      <AnimatedSection delay={200}>
-        <FeaturedCreators />
-      </AnimatedSection>
+        <AnimatedSection delay={200}>
+          <FeaturedCreators />
+        </AnimatedSection>
 
-      {/* Improved category section with better layout */}
-      <div className="container mx-auto px-4 py-12">
-        <div className="flex flex-col lg:flex-row gap-8">
-          <div className="lg:w-80 lg:shrink-0">
-            <CategoryFilterSidebar 
-              selectedCategories={selectedCategories}
-              onCategoryChange={setSelectedCategories}
-            />
-          </div>
-          <div className="flex-1">
-            <div className="mb-6">
-              <h2 className="text-3xl font-bold text-foreground mb-2">Explore Categories</h2>
-              <p className="text-muted-foreground">Discover all the amazing things BLINNO has to offer</p>
+        {/* Improved category section with better layout */}
+        <section className="container mx-auto px-4">
+          <div className="flex flex-col lg:flex-row gap-8">
+            <div className="lg:w-80 lg:shrink-0">
+              <CategoryFilterSidebar 
+                selectedCategories={selectedCategories}
+                onCategoryChange={setSelectedCategories}
+              />
             </div>
-            <AnimatedSection delay={300}>
-              <CategoriesGrid selectedCategories={selectedCategories} />
-            </AnimatedSection>
-            
-            {/* Get Started Today Button */}
-            <div className="mt-12 text-center">
-              <button 
-                onClick={() => navigate("/auth?tab=signup")}
-                className="inline-block bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-8 rounded-lg transition-colors duration-300"
-              >
-                Get Started Today
-              </button>
-              <p className="mt-4 text-muted-foreground">Join our global community of creators and businesses</p>
+            <div className="flex-1">
+              <div className="mb-6">
+                <h2 className="text-3xl font-bold text-foreground mb-2">Explore Categories</h2>
+                <p className="text-muted-foreground">Discover all the amazing things BLINNO has to offer</p>
+              </div>
+              <AnimatedSection delay={300}>
+                <CategoriesGrid selectedCategories={selectedCategories} />
+              </AnimatedSection>
+              
+              {/* Get Started Today Button */}
+              <div className="mt-12 text-center">
+                <button 
+                  onClick={() => navigate("/auth?tab=signup")}
+                  className="inline-block bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-8 rounded-lg transition-colors duration-300"
+                >
+                  Get Started Today
+                </button>
+                <p className="mt-4 text-muted-foreground">Join our global community of creators and businesses</p>
+              </div>
             </div>
           </div>
-        </div>
+        </section>
+
+        <AnimatedSection delay={100}>
+          <CreatorGallery />
+        </AnimatedSection>
+
+        <AnimatedSection delay={200}>
+          <Testimonials />
+        </AnimatedSection>
+
+        <HowToGetStarted />
+
+        <AnimatedSection delay={300}>
+          <SubscriptionPricing />
+        </AnimatedSection>
+
+        <SocialFeedPreview />
+
+        <QuickActions />
+
       </div>
-
-      <AnimatedSection delay={100}>
-        <CreatorGallery />
-      </AnimatedSection>
-
-      <AnimatedSection delay={200}>
-        <Testimonials />
-      </AnimatedSection>
-
-      <AnimatedSection delay={300}>
-        <SubscriptionPricing />
-      </AnimatedSection>
-
-      <SocialFeedPreview />
-
-      <QuickActions />
-
-      <AnimatedSection delay={100}>
-        <MapSection />
-      </AnimatedSection>
 
       <Footer />
     </div>

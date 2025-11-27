@@ -239,14 +239,22 @@ function PostCard({ post, onLike, onComment }: any) {
             </div>
             <p className="text-sm whitespace-pre-wrap">{post.content}</p>
             {post.media_urls && post.media_urls.length > 0 && (
-              <div className="mt-3 grid grid-cols-2 gap-2">
+              <div className={`mt-3 grid gap-2 ${
+                post.media_urls.length === 1 ? 'grid-cols-1' : 
+                post.media_urls.length === 2 ? 'grid-cols-2' : 
+                'grid-cols-2'
+              }`}>
                 {post.media_urls.map((url: string, idx: number) => (
-                  <img
-                    key={idx}
-                    src={url}
-                    alt={`Post media ${idx + 1}`}
-                    className="rounded-md w-full h-48 object-cover"
-                  />
+                  <div key={idx} className={`relative overflow-hidden rounded-md ${
+                    post.media_urls.length === 1 ? 'aspect-video' : 'aspect-square'
+                  }`}>
+                    <img
+                      src={url}
+                      alt={`Post media ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
                 ))}
               </div>
             )}

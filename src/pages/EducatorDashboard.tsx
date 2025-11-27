@@ -3,8 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 import { hasRole, getPrimaryRole } from "@/lib/roleCheck";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
-import { DashboardSidebar } from "@/components/DashboardSidebar";
+import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -276,56 +275,22 @@ export default function EducatorDashboard() {
 
   if (!isEducator || !user) return null;
 
-  return (
-    <SidebarProvider defaultOpen={true}>
-      <DashboardSidebar />
-      <SidebarInset>
-        <div className="min-h-screen bg-background">
-          <div className="flex items-center gap-4 border-b border-border px-4 py-4">
-            <SidebarTrigger />
-            <h1 className="text-3xl font-bold">Educator Dashboard</h1>
-          </div>
-          <div className="container mx-auto px-4 pt-8 pb-12">
-            
-            {/* Navigation */}
-            <div className="flex flex-wrap gap-2 mb-8 border-b border-border pb-4">
-              <Button
-                variant={currentSection === 'overview' ? "default" : "outline"}
-                onClick={() => navigate('/educator-dashboard#overview')}
-                className="flex items-center gap-2"
-              >
-                <GraduationCap className="h-4 w-4" />
-                Overview
-              </Button>
-              <Button
-                variant={currentSection === 'courses' ? "default" : "outline"}
-                onClick={() => navigate('/educator-dashboard#courses')}
-                className="flex items-center gap-2"
-              >
-                <BookOpen className="h-4 w-4" />
-                Courses
-              </Button>
-              <Button
-                variant={currentSection === 'lessons' ? "default" : "outline"}
-                onClick={() => navigate('/educator-dashboard#lessons')}
-                className="flex items-center gap-2"
-              >
-                <Play className="h-4 w-4" />
-                Lessons
-              </Button>
-              <Button
-                variant={currentSection === 'students' ? "default" : "outline"}
-                onClick={() => navigate('/educator-dashboard#students')}
-                className="flex items-center gap-2"
-              >
-                <Users className="h-4 w-4" />
-                Students
-              </Button>
-            </div>
+  const navigationTabs = [
+    { id: "overview", label: "Overview", icon: GraduationCap },
+    { id: "courses", label: "Courses", icon: BookOpen },
+    { id: "students", label: "Students", icon: Users },
+    { id: "analytics", label: "Analytics", icon: TrendingUp },
+  ];
 
-            {/* Overview Section */}
-            {currentSection === 'overview' && (
-            <div className="mt-6">
+  return (
+    <DashboardLayout
+      title="Educator Dashboard"
+      navigationTabs={navigationTabs}
+      defaultSection="overview"
+    >
+      {/* Overview Section */}
+      {currentSection === 'overview' && (
+      <div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -407,9 +372,9 @@ export default function EducatorDashboard() {
             </div>
             )}
 
-            {/* Courses Section */}
-            {currentSection === 'courses' && (
-            <div className="mt-6">
+      {/* Courses Section */}
+      {currentSection === 'courses' && (
+      <div>
                 <div className="flex justify-between items-center mb-6">
                   <div>
                     <h2 className="text-2xl font-semibold">Courses</h2>
@@ -686,9 +651,9 @@ export default function EducatorDashboard() {
             </div>
             )}
 
-            {/* Students Section */}
-            {currentSection === 'students' && (
-            <div className="mt-6">
+      {/* Students Section */}
+      {currentSection === 'students' && (
+      <div>
                 <h2 className="text-2xl font-semibold mb-6">Student Enrollments</h2>
                 <div className="space-y-4">
                   {(enrollments || []).map((enrollment) => (
@@ -729,10 +694,7 @@ export default function EducatorDashboard() {
                   </Card>
                 )}
             </div>
-            )}
-          </div>
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+      )}
+    </DashboardLayout>
   );
 }

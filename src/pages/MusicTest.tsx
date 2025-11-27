@@ -210,11 +210,12 @@ export default function MusicTest() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {tracks.map((track) => (
             <Card key={track.id} className="overflow-hidden">
-              <div className="relative">
+              <div className="relative aspect-square overflow-hidden bg-muted">
                 <img
                   src={track.image_url || "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&h=400&fit=crop"}
                   alt={track.title}
-                  className="w-full h-48 object-cover"
+                  className="w-full h-full object-cover"
+                  loading="lazy"
                 />
                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                   <Button 

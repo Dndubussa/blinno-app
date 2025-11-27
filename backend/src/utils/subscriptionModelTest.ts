@@ -49,7 +49,7 @@ async function testSubscriptionModels() {
       .update({
         tier: 'creator',
         pricing_model: 'subscription',
-        monthly_price: 15000,
+        monthly_price: 15,
         updated_at: new Date().toISOString()
       })
       .eq('user_id', testUserId);
@@ -115,7 +115,7 @@ async function testSubscriptionModels() {
         tier: 'professional',
         pricing_model: 'subscription',
         percentage_tier: null,
-        monthly_price: 40000,
+        monthly_price: 40,
         updated_at: new Date().toISOString()
       })
       .eq('user_id', testUserId);

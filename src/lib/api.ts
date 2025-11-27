@@ -285,10 +285,10 @@ class ApiClient {
     return this.request<any>('/subscriptions/me');
   }
 
-  async subscribeToTier(tier: string) {
+  async subscribeToTier(tier: string, pricingModel?: 'percentage' | 'subscription') {
     return this.request<any>('/subscriptions/subscribe', {
       method: 'POST',
-      body: JSON.stringify({ tier }),
+      body: JSON.stringify({ tier, pricingModel }),
     });
   }
 
@@ -312,6 +312,10 @@ class ApiClient {
 
   async getSubscriptionTiers() {
     return this.request<any>('/subscriptions/tiers');
+  }
+
+  async getVolumeStats() {
+    return this.request<any>('/subscriptions/volume');
   }
 
   // Subscription Tiers update and delete methods

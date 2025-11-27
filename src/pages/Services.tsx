@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AuthContext } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 import { formatPrice as formatCurrency, formatPricePerUnit as formatCurrencyPerUnit } from "@/lib/currency";
+import { MultiCurrencyPrice } from "@/components/MultiCurrencyPrice";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -331,9 +332,22 @@ const Services = () => {
                     )}
                     
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xl font-bold text-primary">
-                        {formatPrice(service.price, service.pricing_type)}
-                      </span>
+                      <div className="text-xl font-bold text-primary">
+                        {service.price ? (
+                          service.pricing_type === 'hourly' || service.pricing_type === 'daily' ? (
+                            <div>
+                              <MultiCurrencyPrice usdPrice={service.price} size="lg" />
+                              <span className="text-sm text-muted-foreground ml-2">
+                                /{service.pricing_type === 'hourly' ? 'hour' : 'day'}
+                              </span>
+                            </div>
+                          ) : (
+                            <MultiCurrencyPrice usdPrice={service.price} size="lg" />
+                          )
+                        ) : (
+                          <span className="text-muted-foreground">Price on request</span>
+                        )}
+                      </div>
                       {service.rating > 0 && (
                         <div className="flex items-center gap-1">
                           <Star className="h-4 w-4 fill-amber-500 text-amber-500" />

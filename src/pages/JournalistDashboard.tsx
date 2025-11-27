@@ -3,8 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 import { hasRole, getPrimaryRole } from "@/lib/roleCheck";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
-import { DashboardSidebar } from "@/components/DashboardSidebar";
+import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -263,48 +262,21 @@ export default function JournalistDashboard() {
 
   if (!isJournalist || !user) return null;
 
-  return (
-    <SidebarProvider defaultOpen={true}>
-      <DashboardSidebar />
-      <SidebarInset>
-        <div className="min-h-screen bg-background">
-          <div className="flex items-center gap-4 border-b border-border px-4 py-4">
-            <SidebarTrigger />
-            <h1 className="text-3xl font-bold">Journalist Dashboard</h1>
-          </div>
-          <div className="container mx-auto px-4 pt-8 pb-12">
-            
-            {/* Navigation */}
-            <div className="flex flex-wrap gap-2 mb-8 border-b border-border pb-4">
-              <Button
-                variant={currentSection === 'overview' ? "default" : "outline"}
-                onClick={() => navigate('/journalist-dashboard#overview')}
-                className="flex items-center gap-2"
-              >
-                <Newspaper className="h-4 w-4" />
-                Overview
-              </Button>
-              <Button
-                variant={currentSection === 'articles' ? "default" : "outline"}
-                onClick={() => navigate('/journalist-dashboard#articles')}
-                className="flex items-center gap-2"
-              >
-                <FileText className="h-4 w-4" />
-                Articles
-              </Button>
-              <Button
-                variant={currentSection === 'profile' ? "default" : "outline"}
-                onClick={() => navigate('/journalist-dashboard#profile')}
-                className="flex items-center gap-2"
-              >
-                <Eye className="h-4 w-4" />
-                Profile
-              </Button>
-            </div>
+  const navigationTabs = [
+    { id: "overview", label: "Overview", icon: Newspaper },
+    { id: "articles", label: "Articles", icon: FileText },
+    { id: "analytics", label: "Analytics", icon: TrendingUp },
+  ];
 
-            {/* Overview Section */}
-            {currentSection === 'overview' && (
-              <div className="mt-6">
+  return (
+    <DashboardLayout
+      title="Journalist Dashboard"
+      navigationTabs={navigationTabs}
+      defaultSection="overview"
+    >
+      {/* Overview Section */}
+      {currentSection === 'overview' && (
+      <div>
                 <div className="mb-6">
                   <h2 className="text-2xl font-semibold">Dashboard Overview</h2>
                   <p className="text-sm text-muted-foreground">
@@ -389,9 +361,9 @@ export default function JournalistDashboard() {
               </div>
             )}
 
-            {/* Articles Section */}
-            {currentSection === 'articles' && (
-              <div className="mt-6">
+      {/* Articles Section */}
+      {currentSection === 'articles' && (
+      <div>
                 <div className="flex justify-between items-center mb-6">
                   <div>
                     <h2 className="text-2xl font-semibold">Articles</h2>
@@ -530,9 +502,9 @@ export default function JournalistDashboard() {
               </div>
             )}
 
-            {/* Profile Section */}
-            {currentSection === 'profile' && (
-              <div className="mt-6">
+      {/* Profile Section */}
+      {currentSection === 'profile' && (
+      <div>
                 <div className="mb-6">
                   <h2 className="text-2xl font-semibold">Profile Settings</h2>
                   <p className="text-sm text-muted-foreground">
@@ -603,11 +575,8 @@ export default function JournalistDashboard() {
                     </form>
                   </CardContent>
                 </Card>
-              </div>
-            )}
-          </div>
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+      </div>
+      )}
+    </DashboardLayout>
   );
 }

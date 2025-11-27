@@ -50,11 +50,11 @@ router.get('/balance', authenticate, async (req: AuthRequest, res) => {
     
     try {
       const balance = await financialTracking.getUserBalance(req.userId);
-      res.json(balance || { available_balance: 0, pending_balance: 0, total_earned: 0, total_paid_out: 0, currency: 'TZS' });
+      res.json(balance || { available_balance: 0, pending_balance: 0, total_earned: 0, total_paid_out: 0, currency: 'USD' });
     } catch (dbError: any) {
       console.error('Database error in getUserBalance:', dbError);
       // Return default balance if tables don't exist yet
-      res.json({ available_balance: 0, pending_balance: 0, total_earned: 0, total_paid_out: 0, currency: 'TZS' });
+      res.json({ available_balance: 0, pending_balance: 0, total_earned: 0, total_paid_out: 0, currency: 'USD' });
     }
   } catch (error: any) {
     console.error('Get balance error:', error);

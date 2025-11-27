@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 import { formatPrice as formatCurrency } from "@/lib/currency";
@@ -11,8 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { DashboardSidebar } from "@/components/DashboardSidebar";
+import { DashboardLayout } from "@/components/DashboardLayout";
 import { ImageUpload } from "@/components/ImageUpload";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -53,10 +52,11 @@ interface Stats {
 export default function MusicianDashboard() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   
   // Get current section from URL hash or default to overview
-  const currentSection = window.location.hash.replace('#', '') || 'overview';
+  const currentSection = location.hash.replace('#', '') || 'overview';
   
   const [isMusician, setIsMusician] = useState(false);
   const [checkingRole, setCheckingRole] = useState(true);
@@ -216,48 +216,21 @@ export default function MusicianDashboard() {
 
   if (!isMusician || !user) return null;
 
-  return (
-    <SidebarProvider defaultOpen={true}>
-      <DashboardSidebar />
-      <SidebarProvider>
-        <div className="min-h-screen bg-background">
-          <div className="flex items-center gap-4 border-b border-border px-4 py-4">
-            <SidebarTrigger />
-            <h1 className="text-3xl font-bold">Musician Dashboard</h1>
-          </div>
-          <div className="container mx-auto px-4 pt-8 pb-12">
-            
-            {/* Navigation */}
-            <div className="flex flex-wrap gap-2 mb-8 border-b border-border pb-4">
-              <Button
-                variant={currentSection === 'overview' ? "default" : "outline"}
-                onClick={() => navigate('/musician-dashboard#overview')}
-                className="flex items-center gap-2"
-              >
-                <BarChart3 className="h-4 w-4" />
-                Overview
-              </Button>
-              <Button
-                variant={currentSection === 'tracks' ? "default" : "outline"}
-                onClick={() => navigate('/musician-dashboard#tracks')}
-                className="flex items-center gap-2"
-              >
-                <Music className="h-4 w-4" />
-                My Tracks
-              </Button>
-              <Button
-                variant={currentSection === 'analytics' ? "default" : "outline"}
-                onClick={() => navigate('/musician-dashboard#analytics')}
-                className="flex items-center gap-2"
-              >
-                <TrendingUp className="h-4 w-4" />
-                Analytics
-              </Button>
-            </div>
+  const navigationTabs = [
+    { id: "overview", label: "Overview", icon: BarChart3 },
+    { id: "tracks", label: "My Tracks", icon: Music },
+    { id: "analytics", label: "Analytics", icon: TrendingUp },
+  ];
 
-            {/* Overview Section */}
-            {currentSection === 'overview' && (
-            <div className="mt-6">
+  return (
+    <DashboardLayout
+      title="Musician Dashboard"
+      navigationTabs={navigationTabs}
+      defaultSection="overview"
+    >
+      {/* Overview Section */}
+      {currentSection === 'overview' && (
+      <div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -352,9 +325,9 @@ export default function MusicianDashboard() {
             </div>
             )}
 
-            {/* Tracks Section */}
-            {currentSection === 'tracks' && (
-            <div className="mt-6">
+      {/* Tracks Section */}
+      {currentSection === 'tracks' && (
+      <div>
                 <div className="flex justify-between items-center mb-6">
                   <div>
                     <h2 className="text-2xl font-semibold">My Tracks</h2>
@@ -522,9 +495,9 @@ export default function MusicianDashboard() {
             </div>
             )}
 
-            {/* Analytics Section */}
-            {currentSection === 'analytics' && (
-            <div className="mt-6">
+      {/* Analytics Section */}
+      {currentSection === 'analytics' && (
+      <div>
                 <h2 className="text-2xl font-semibold mb-6">Analytics</h2>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <Card>
@@ -567,10 +540,7 @@ export default function MusicianDashboard() {
                   </Card>
                 </div>
             </div>
-            )}
-          </div>
-        </div>
-      </SidebarProvider>
-    </SidebarProvider>
+      )}
+    </DashboardLayout>
   );
 }

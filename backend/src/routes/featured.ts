@@ -16,12 +16,12 @@ const clickPesa = new ClickPesaService({
 
 const router = express.Router();
 
-// Featured listing pricing
+// Featured listing pricing (USD)
 const FEATURED_PRICING = {
-  homepage: 30000, // TZS 30,000/week
-  category: 15000, // TZS 15,000/week
-  search: 10000, // TZS 10,000/week
-  event_page: 20000, // TZS 20,000/week
+  homepage: 30, // USD 30/week
+  category: 15, // USD 15/week
+  search: 10, // USD 10/week
+  event_page: 20, // USD 20/week
 };
 
 /**
@@ -81,7 +81,7 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
     }
 
     // Calculate fees (featured listings - platform keeps all, just processing fee)
-    const paymentProcessingFee = (totalPrice * 0.025) + 500;
+    const paymentProcessingFee = (totalPrice * 0.025) + 0.30;
     const totalWithFees = totalPrice + paymentProcessingFee;
 
     // Create featured listing (pending payment)
@@ -127,7 +127,7 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
         order_id: `featured_${featuredListing.id}`,
         user_id: req.userId,
         amount: totalWithFees,
-        currency: 'TZS',
+        currency: 'USD',
         status: 'pending',
         payment_method: 'clickpesa',
         payment_type: 'featured_listing',
@@ -250,7 +250,7 @@ router.post('/:id/payment', authenticate, async (req: AuthRequest, res) => {
 
     // Get user's preferred currency
     const userPrefs = await userPreferences.getUserPreferences(req.userId);
-    const currency = userPrefs.currency || 'TZS';
+    const currency = userPrefs.currency || 'USD';
 
     // Get featured listing
     const { data: listing, error: listingError } = await supabase

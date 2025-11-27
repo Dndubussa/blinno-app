@@ -3,8 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 import { hasRole, getPrimaryRole } from "@/lib/roleCheck";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
-import { DashboardSidebar } from "@/components/DashboardSidebar";
+import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -299,55 +298,22 @@ export default function LodgingDashboard() {
 
   if (!isLodging || !user) return null;
 
-  return (
-    <SidebarProvider defaultOpen={true}>
-      <DashboardSidebar />
-      <SidebarInset>
-        <div className="min-h-screen bg-background">
-          <div className="flex items-center gap-4 border-b border-border px-4 py-4">
-            <SidebarTrigger />
-            <h1 className="text-3xl font-bold">Lodging Dashboard</h1>
-          </div>
-          <div className="container mx-auto px-4 pt-8 pb-12">
-            
-            {/* Navigation */}
-            <div className="flex flex-wrap gap-2 mb-8 border-b border-border pb-4">
-              <Button
-                variant={currentSection === 'overview' ? "default" : "outline"}
-                onClick={() => navigate('/lodging-dashboard#overview')}
-                className="flex items-center gap-2"
-              >
-                <Home className="h-4 w-4" />
-                Overview
-              </Button>
-              <Button
-                variant={currentSection === 'properties' ? "default" : "outline"}
-                onClick={() => navigate('/lodging-dashboard#properties')}
-                className="flex items-center gap-2"
-              >
-                <Home className="h-4 w-4" />
-                Properties
-              </Button>
-              <Button
-                variant={currentSection === 'rooms' ? "default" : "outline"}
-                onClick={() => navigate('/lodging-dashboard#rooms')}
-                className="flex items-center gap-2"
-              >
-                <Bed className="h-4 w-4" />
-                Rooms
-              </Button>
-              <Button
-                variant={currentSection === 'bookings' ? "default" : "outline"}
-                onClick={() => navigate('/lodging-dashboard#bookings')}
-                className="flex items-center gap-2"
-              >
-                <Calendar className="h-4 w-4" />
-                Bookings
-              </Button>
-            </div>
+  const navigationTabs = [
+    { id: "overview", label: "Overview", icon: Home },
+    { id: "properties", label: "Properties", icon: Home },
+    { id: "rooms", label: "Rooms", icon: Bed },
+    { id: "bookings", label: "Bookings", icon: Calendar },
+  ];
 
-            {/* Overview Section */}
-            {currentSection === 'overview' && (
+  return (
+    <DashboardLayout
+      title="Lodging Dashboard"
+      navigationTabs={navigationTabs}
+      defaultSection="overview"
+    >
+
+      {/* Overview Section */}
+      {currentSection === 'overview' && (
             <div className="mt-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                   <Card>
@@ -426,9 +392,9 @@ export default function LodgingDashboard() {
             </div>
             )}
 
-            {/* Properties Section */}
-            {currentSection === 'properties' && (
-            <div className="mt-6">
+      {/* Properties Section */}
+      {currentSection === 'properties' && (
+      <div>
                 <div className="flex justify-between items-center mb-6">
                   <div>
                     <h2 className="text-2xl font-semibold">Properties</h2>
@@ -538,9 +504,9 @@ export default function LodgingDashboard() {
             </div>
             )}
 
-            {/* Rooms Section */}
-            {currentSection === 'rooms' && (
-            <div className="mt-6">
+      {/* Rooms Section */}
+      {currentSection === 'rooms' && (
+      <div>
                 <div className="flex justify-between items-center mb-6">
                   <div>
                     <h2 className="text-2xl font-semibold">Rooms</h2>
@@ -590,7 +556,7 @@ export default function LodgingDashboard() {
                             <Input id="max_guests" name="max_guests" type="number" min="1" required />
                           </div>
                           <div>
-                            <Label htmlFor="price_per_night">Price per Night (TZS)</Label>
+                            <Label htmlFor="price_per_night">Price per Night (USD)</Label>
                             <Input id="price_per_night" name="price_per_night" type="number" step="0.01" required />
                           </div>
                         </div>
@@ -641,9 +607,9 @@ export default function LodgingDashboard() {
             </div>
             )}
 
-            {/* Bookings Section */}
-            {currentSection === 'bookings' && (
-            <div className="mt-6">
+      {/* Bookings Section */}
+      {currentSection === 'bookings' && (
+      <div>
                 <h2 className="text-2xl font-semibold mb-6">Bookings</h2>
                 <div className="space-y-4">
                   {(bookings || []).map((booking) => (
@@ -681,10 +647,7 @@ export default function LodgingDashboard() {
                   </Card>
                 )}
             </div>
-            )}
-          </div>
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+      )}
+    </DashboardLayout>
   );
 }

@@ -100,7 +100,7 @@ export function Analytics() {
     },
     {
       title: "Total Revenue",
-      value: `TZS ${stats.totalRevenue.toLocaleString()}`,
+      value: `USD ${stats.totalRevenue.toLocaleString()}`,
       icon: DollarSign,
       description: "Platform revenue",
     },

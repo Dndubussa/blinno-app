@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { api } from '@/lib/api';
+import { MultiCurrencyPrice } from "@/components/MultiCurrencyPrice";
 
 interface LodgingBookingFormProps {
   propertyId: string;
@@ -194,7 +195,9 @@ export function LodgingBookingForm({
           </div>
           <div className="flex justify-between items-center mt-2">
             <span>Price per Night:</span>
-            <span className="font-semibold">TZS {pricePerNight.toLocaleString()}</span>
+            <div className="font-semibold">
+              <MultiCurrencyPrice usdPrice={pricePerNight} size="sm" />
+            </div>
           </div>
           <div className="flex justify-between items-center mt-2">
             <span>Number of Nights:</span>
@@ -202,7 +205,9 @@ export function LodgingBookingForm({
           </div>
           <div className="flex justify-between items-center mt-2 border-t pt-2">
             <span className="font-semibold">Total Cost:</span>
-            <span className="font-bold text-lg">TZS {totalCost.toLocaleString()}</span>
+            <div className="font-bold text-lg">
+              <MultiCurrencyPrice usdPrice={totalCost} size="md" />
+            </div>
           </div>
         </div>
       )}
