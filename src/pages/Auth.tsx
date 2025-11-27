@@ -99,6 +99,7 @@ export default function Auth() {
       });
       setIsLoading(false);
     }
+    // Note: For OAuth, the browser will be redirected, so we don't need to handle success here
   };
 
   return (
@@ -453,6 +454,9 @@ export default function Auth() {
                       </svg>
                       {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Continue with Google"}
                     </Button>
+                    <p className="text-xs text-center text-muted-foreground mt-2">
+                      Google sign-in allows you to quickly access your account
+                    </p>
                   </form>
                 </CardContent>
               </Card>

@@ -232,18 +232,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin
+          redirectTo: `${window.location.origin}/auth/callback`
         }
       });
 
       if (error) {
-        return { error: { message: error.message } };
+        console.error('Google OAuth error:', error);
+        return { error: { message: error.message || 'Failed to sign in with Google. Please try again.' } };
       }
 
       // The OAuth flow will redirect the user, so we don't need to do anything here
       return { error: null };
     } catch (error: any) {
-      return { error: { message: error.message } };
+      console.error('Google OAuth exception:', error);
+      return { error: { message: error.message || 'An unexpected error occurred during Google sign-in. Please try again.' } };
     }
   };
 

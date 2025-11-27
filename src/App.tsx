@@ -9,6 +9,7 @@ import Marketplace from "@/pages/Marketplace";
 import Services from "@/pages/Services";
 import Music from "@/pages/Music";
 import Auth from "@/pages/Auth";
+import AuthCallback from "@/pages/AuthCallback";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
 import Dashboard from "@/pages/Dashboard";
@@ -62,6 +63,7 @@ function App() {
                 <Route path="/services" element={<Services />} />
                 <Route path="/music" element={<Music />} />
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/auth/callback" element={<AuthCallback />} />
                 <Route path="/auth/forgot-password" element={<ForgotPassword />} />
                 <Route path="/auth/reset-password" element={<ResetPassword />} />
                 <Route path="/dashboard/*" element={<Dashboard />} />
