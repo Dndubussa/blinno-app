@@ -136,6 +136,131 @@ export function getMultiCurrencyPrices(usdPrice: number, currencies: string[] = 
   });
 }
 
+/**
+ * Country to currency mapping
+ */
+const COUNTRY_TO_CURRENCY: Record<string, string> = {
+  'TZ': 'TZS',  // Tanzania
+  'KE': 'KES',  // Kenya
+  'UG': 'UGX',  // Uganda
+  'RW': 'RWF',  // Rwanda
+  'NG': 'NGN',  // Nigeria
+  'US': 'USD',  // United States
+  'GB': 'GBP',  // United Kingdom
+  'DE': 'EUR',  // Germany
+  'FR': 'EUR',  // France
+  'IT': 'EUR',  // Italy
+  'ES': 'EUR',  // Spain
+  'AT': 'EUR',  // Austria
+  'BE': 'EUR',  // Belgium
+  'NL': 'EUR',  // Netherlands
+  'PT': 'EUR',  // Portugal
+  'IE': 'EUR',  // Ireland
+  'FI': 'EUR',  // Finland
+  'GR': 'EUR',  // Greece
+};
+
+/**
+ * Regional currency groups (for showing related currencies)
+ */
+const REGIONAL_CURRENCIES: Record<string, string[]> = {
+  'TZS': ['USD', 'KES', 'UGX'],  // East Africa
+  'KES': ['USD', 'TZS', 'UGX'],  // East Africa
+  'UGX': ['USD', 'KES', 'TZS'],  // East Africa
+  'RWF': ['USD', 'KES', 'UGX'],  // East Africa
+  'NGN': ['USD', 'KES'],         // West Africa
+  'USD': ['KES', 'TZS'],         // Default to East Africa
+  'GBP': ['USD', 'EUR'],
+  'EUR': ['USD', 'GBP'],
+};
+
+/**
+ * Detect user's country from browser locale/timezone
+ * @returns Country code (e.g., 'KE', 'TZ', 'US')
+ */
+export function detectUserCountry(): string {
+  try {
+    // Try to detect from timezone
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    
+    // Map timezones to countries
+    const timezoneToCountry: Record<string, string> = {
+      'Africa/Nairobi': 'KE',
+      'Africa/Dar_es_Salaam': 'TZ',
+      'Africa/Kampala': 'UG',
+      'Africa/Kigali': 'RW',
+      'Africa/Lagos': 'NG',
+      'America/New_York': 'US',
+      'America/Los_Angeles': 'US',
+      'America/Chicago': 'US',
+      'Europe/London': 'GB',
+      'Europe/Berlin': 'DE',
+      'Europe/Paris': 'FR',
+      'Europe/Rome': 'IT',
+      'Europe/Madrid': 'ES',
+    };
+    
+    if (timezoneToCountry[timezone]) {
+      return timezoneToCountry[timezone];
+    }
+    
+    // Try to detect from locale
+    const locale = Intl.DateTimeFormat().resolvedOptions().locale;
+    const countryCode = locale.split('-')[1]?.toUpperCase();
+    
+    if (countryCode && COUNTRY_TO_CURRENCY[countryCode]) {
+      return countryCode;
+    }
+    
+    // Fallback: try to extract from locale string
+    const localeMatch = locale.match(/-([A-Z]{2})/);
+    if (localeMatch && localeMatch[1]) {
+      return localeMatch[1];
+    }
+  } catch (error) {
+    console.error('Error detecting user country:', error);
+  }
+  
+  return 'US'; // Default to US
+}
+
+/**
+ * Get relevant currencies based on user's location
+ * @param countryCode - User's country code (optional, will be detected if not provided)
+ * @param userCurrency - User's preferred currency (optional)
+ * @returns Array of relevant currency codes to display
+ */
+export function getLocationBasedCurrencies(countryCode?: string, userCurrency?: string): string[] {
+  // If user has a preferred currency, use that as primary
+  if (userCurrency && userCurrency !== 'USD') {
+    const regional = REGIONAL_CURRENCIES[userCurrency] || ['USD'];
+    return [userCurrency, ...regional.filter(c => c !== userCurrency)];
+  }
+  
+  // Otherwise, detect from country
+  const detectedCountry = countryCode || detectUserCountry();
+  const primaryCurrency = COUNTRY_TO_CURRENCY[detectedCountry] || 'USD';
+  
+  // Get regional currencies
+  const regional = REGIONAL_CURRENCIES[primaryCurrency] || ['USD'];
+  
+  // Always include USD, then primary currency, then regional
+  const currencies = ['USD'];
+  if (primaryCurrency !== 'USD') {
+    currencies.push(primaryCurrency);
+  }
+  
+  // Add regional currencies (excluding duplicates)
+  regional.forEach(currency => {
+    if (!currencies.includes(currency)) {
+      currencies.push(currency);
+    }
+  });
+  
+  // Limit to 3 currencies total (USD + 2 others)
+  return currencies.slice(0, 3);
+}
+
 export default {
   formatPrice,
   getCurrencySymbol,
@@ -144,5 +269,7 @@ export default {
   formatPricePerUnit,
   convertCurrency,
   getMultiCurrencyPrices,
+  detectUserCountry,
+  getLocationBasedCurrencies,
   CURRENCY_RATES,
 };

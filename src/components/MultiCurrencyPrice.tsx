@@ -1,4 +1,4 @@
-import { formatPrice, convertCurrency, CURRENCY_RATES } from "@/lib/currency";
+import { formatPrice, convertCurrency, getLocationBasedCurrencies } from "@/lib/currency";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 interface MultiCurrencyPriceProps {
   usdPrice: number;
   showOriginal?: boolean;
-  currencies?: string[];
+  currencies?: string[]; // Optional override - if not provided, will use location-based detection
   className?: string;
   size?: "sm" | "md" | "lg";
 }
@@ -14,38 +14,58 @@ interface MultiCurrencyPriceProps {
 export function MultiCurrencyPrice({ 
   usdPrice, 
   showOriginal = true,
-  currencies = ['USD', 'TZS', 'KES', 'UGX', 'NGN'],
+  currencies, // Optional - will be auto-detected if not provided
   className = "",
   size = "md"
 }: MultiCurrencyPriceProps) {
   const { user } = useAuth();
   const [userCurrency, setUserCurrency] = useState<string>('USD');
+  const [userCountry, setUserCountry] = useState<string | undefined>(undefined);
+  const [displayCurrencies, setDisplayCurrencies] = useState<string[]>(['USD']);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchUserCurrency = async () => {
+    const fetchUserPreferences = async () => {
       if (user) {
         try {
           const profile = await api.getCurrentUser();
           if (profile?.currency) {
             setUserCurrency(profile.currency);
           }
+          if (profile?.country) {
+            setUserCountry(profile.country);
+          }
         } catch (error) {
-          console.error("Error fetching user currency:", error);
+          console.error("Error fetching user preferences:", error);
         }
       }
       setLoading(false);
     };
 
-    fetchUserCurrency();
+    fetchUserPreferences();
   }, [user]);
+
+  // Determine which currencies to display
+  useEffect(() => {
+    if (loading) return;
+    
+    // If currencies are explicitly provided, use them
+    if (currencies && currencies.length > 0) {
+      setDisplayCurrencies(currencies);
+      return;
+    }
+    
+    // Otherwise, use location-based detection
+    const locationBasedCurrencies = getLocationBasedCurrencies(userCountry, userCurrency);
+    setDisplayCurrencies(locationBasedCurrencies);
+  }, [currencies, userCountry, userCurrency, loading]);
 
   if (loading) {
     return <span className={className}>...</span>;
   }
 
-  // Get prices in all currencies
-  const prices = currencies.map(currency => {
+  // Get prices in relevant currencies
+  const prices = displayCurrencies.map(currency => {
     const amount = convertCurrency(usdPrice, 'USD', currency);
     return {
       currency,
@@ -55,8 +75,11 @@ export function MultiCurrencyPrice({
     };
   });
 
-  // Find user's currency price
-  const userPrice = prices.find(p => p.isUserCurrency) || prices[0];
+  // Find user's currency price (or primary local currency, or USD)
+  const userPrice = prices.find(p => p.isUserCurrency) || 
+                    prices.find(p => p.currency !== 'USD') || 
+                    prices.find(p => p.currency === 'USD') || 
+                    prices[0];
 
   const textSizes = {
     sm: "text-sm",
@@ -64,9 +87,12 @@ export function MultiCurrencyPrice({
     lg: "text-lg",
   };
 
+  // Get other currencies to show (excluding the primary one)
+  const otherPrices = prices.filter(p => p.currency !== userPrice.currency);
+
   return (
     <div className={`space-y-1 ${className}`}>
-      {/* Primary price (user's currency or USD) */}
+      {/* Primary price (user's currency or local currency) */}
       <div className={`font-semibold ${textSizes[size]}`}>
         {userPrice.formatted}
         {userPrice.currency !== 'USD' && showOriginal && (
@@ -76,16 +102,16 @@ export function MultiCurrencyPrice({
         )}
       </div>
       
-      {/* Multi-currency display */}
-      <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-        {prices
-          .filter(p => p.currency !== userPrice.currency) // Don't show user currency twice
-          .map((price) => (
+      {/* Show other relevant currencies (if any) */}
+      {otherPrices.length > 0 && (
+        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+          {otherPrices.map((price) => (
             <span key={price.currency} className="whitespace-nowrap">
               {price.formatted}
             </span>
           ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
