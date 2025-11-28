@@ -101,6 +101,19 @@ app.use(cors(corsConfig));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Debug middleware (only in development or for troubleshooting)
+if (process.env.NODE_ENV === 'development' || process.env.DEBUG === 'true') {
+  app.use((req, res, next) => {
+    console.log(`[${req.method}] ${req.path}`, {
+      originalUrl: req.originalUrl,
+      baseUrl: req.baseUrl,
+      url: req.url,
+      query: req.query
+    });
+    next();
+  });
+}
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/profiles', profileRoutes);
@@ -125,17 +138,58 @@ app.use('/api/services', serviceRoutes);
 app.use('/api/news', newsRoutes);
 app.use('/api/music', musicRoutes);
 
-// Health check endpoint
+// Health check endpoint (accessible at /api/health or /health)
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Root API endpoint
+app.get('/api', (req, res) => {
+  res.json({ 
+    message: 'BLINNO API',
+    version: '1.0.0',
+    endpoints: {
+      health: '/api/health',
+      auth: '/api/auth',
+      subscriptions: '/api/subscriptions',
+      products: '/api/products',
+      cart: '/api/cart',
+      orders: '/api/orders',
+      payments: '/api/payments',
+      revenue: '/api/revenue',
+      music: '/api/music',
+      services: '/api/services'
+    }
+  });
+});
+
 // 404 handler - must be before error handler
 app.use((req: express.Request, res: express.Response) => {
+  console.error('404 Not Found:', {
+    method: req.method,
+    path: req.path,
+    originalUrl: req.originalUrl,
+    baseUrl: req.baseUrl,
+    url: req.url
+  });
+  
   res.status(404).json({ 
     error: 'Route not found',
     path: req.path,
-    method: req.method
+    originalUrl: req.originalUrl,
+    method: req.method,
+    availableEndpoints: [
+      '/api/health',
+      '/api/subscriptions/tiers',
+      '/api/products',
+      '/api/cart',
+      '/api/orders',
+      '/api/payments'
+    ]
   });
 });
 
