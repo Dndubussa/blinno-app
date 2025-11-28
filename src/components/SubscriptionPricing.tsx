@@ -287,6 +287,15 @@ export function SubscriptionPricing() {
         });
         await fetchCurrentSubscription();
         await fetchVolumeStats();
+        
+        // If we're on the choose-subscription page, redirect to dashboard after selection
+        if (window.location.pathname === '/choose-subscription') {
+          const { getDashboardRoute } = await import("@/lib/dashboardRoutes");
+          const dashboardRoute = getDashboardRoute(profile?.roles);
+          setTimeout(() => {
+            navigate(dashboardRoute, { replace: true });
+          }, 1500);
+        }
       }
     } catch (error: any) {
       const errorMessage = error.message || "Failed to update tier";

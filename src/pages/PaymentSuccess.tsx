@@ -63,6 +63,16 @@ export default function PaymentSuccess() {
         if (paymentStatus === "completed" || paymentStatus === "success") {
           setPaymentStatus("success");
 
+          // Check if subscription was successfully created (has an id and created_at)
+          // Backend returns default object without 'id' when no subscription exists
+          // If not, redirect to choose-subscription
+          if (!subscriptionData?.id || !subscriptionData?.created_at) {
+            setTimeout(() => {
+              navigate("/choose-subscription", { replace: true });
+            }, 2000);
+            return;
+          }
+
           // Determine redirect based on pricing model
           const pricingModel = subscriptionData?.pricing_model || subscriptionData?.pricingModel;
 

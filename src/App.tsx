@@ -51,6 +51,7 @@ import MediaTest from "@/pages/MediaTest";
 import MusicianDashboard from "@/pages/MusicianDashboard";
 import MusicTest from "@/pages/MusicTest";
 import PaymentSuccess from "@/pages/PaymentSuccess";
+import ChooseSubscription from "@/pages/ChooseSubscription";
 
 function App() {
   return (
@@ -75,6 +76,7 @@ function App() {
                 <Route path="/signup" element={<SignUp />} />
                 <Route path="/unsubscribe" element={<Unsubscribe />} />
                 <Route path="/auth/callback" element={<AuthCallback />} />
+                <Route path="/choose-subscription" element={<ChooseSubscription />} />
                 <Route path="/auth/forgot-password" element={<ForgotPassword />} />
                 <Route path="/auth/reset-password" element={<ResetPassword />} />
                 <Route path="/dashboard/*" element={<Dashboard />} />

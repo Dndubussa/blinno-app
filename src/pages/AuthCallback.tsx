@@ -40,10 +40,26 @@ export default function AuthCallback() {
             // Refresh user data to get updated profile
             await refreshUser();
             
-            // Get user profile to determine dashboard route
+            // Get user profile and check subscription
             try {
               const { api } = await import("@/lib/api");
               const profileData = await api.getCurrentUser();
+              
+            // Check if user has selected a subscription
+            try {
+              const subscription = await api.getMySubscription();
+              // Backend returns default object without 'id' when no subscription exists
+              // If subscription doesn't have an 'id' or 'created_at', it's a default and user needs to choose
+              if (!subscription?.id || !subscription?.created_at) {
+                navigate("/choose-subscription", { replace: true });
+                return;
+              }
+            } catch (subError) {
+              // If error getting subscription, assume they need to choose
+              console.error("Error checking subscription:", subError);
+              navigate("/choose-subscription", { replace: true });
+              return;
+            }
               
               if (profileData?.roles) {
                 const primaryRole = Array.isArray(profileData.roles) 
@@ -67,10 +83,26 @@ export default function AuthCallback() {
           // Refresh the user data to get the updated session
           await refreshUser();
           
-          // Get user profile to determine dashboard route
+          // Get user profile and check subscription
           try {
             const { api } = await import("@/lib/api");
             const profileData = await api.getCurrentUser();
+            
+            // Check if user has selected a subscription
+            try {
+              const subscription = await api.getMySubscription();
+              // Backend returns default object without 'id' when no subscription exists
+              // If subscription doesn't have an 'id' or 'created_at', it's a default and user needs to choose
+              if (!subscription?.id || !subscription?.created_at) {
+                navigate("/choose-subscription", { replace: true });
+                return;
+              }
+            } catch (subError) {
+              // If error getting subscription, assume they need to choose
+              console.error("Error checking subscription:", subError);
+              navigate("/choose-subscription", { replace: true });
+              return;
+            }
             
             if (profileData?.roles) {
               const primaryRole = Array.isArray(profileData.roles) 
