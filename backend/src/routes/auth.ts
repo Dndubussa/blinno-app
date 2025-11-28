@@ -42,16 +42,7 @@ router.post('/register', async (req, res) => {
     }
 
     // Create user with Supabase Auth
-    // Add emailRedirectTo to ensure proper callback URL
-    let authData: any = null;
-    let authError: any = null;
-    let userId: string | null = null;
-    let userEmail: string | null = null;
-    let emailConfirmedAt: string | null = null;
-    let userCreatedAt: string | null = null;
-    let emailSendingFailed = false;
-
-    const signUpResult = await supabase.auth.signUp({
+    const { data: authData, error: authError } = await supabase.auth.signUp({
       email: email.toLowerCase(),
       password: password,
       options: {
@@ -59,92 +50,36 @@ router.post('/register', async (req, res) => {
       },
     });
 
-    authData = signUpResult.data;
-    authError = signUpResult.error;
-
-    // Handle auth errors - check if it's an email sending error
+    // Handle auth errors
     if (authError) {
       console.error('Supabase auth error:', {
         message: authError.message,
         status: authError.status,
         name: authError.name,
       });
-      
-      // Check if it's an email sending error
-      const isEmailError = authError.message.includes('Error sending confirmation email') || 
-                          authError.message.includes('535') || // SMTP error code
-                          (authError.message.includes('email') && authError.message.includes('send')) ||
-                          authError.message.includes('confirmation');
-      
-      if (isEmailError) {
-        console.warn('Email sending error detected, attempting to create user via Admin API:', email);
-        emailSendingFailed = true;
-        
-        // Try to create user using Admin API (bypasses email requirement)
-        try {
-          const { data: adminUser, error: adminError } = await supabaseAdmin.auth.admin.createUser({
-            email: email.toLowerCase(),
-            password: password,
-            email_confirm: false, // Don't auto-confirm, but allow creation without email
-            user_metadata: {
-              display_name: displayName,
-            },
-          });
 
-          if (adminError) {
-            // Check if user already exists
-            if (adminError.message.includes('already registered') || adminError.message.includes('already exists')) {
-              // Try to get existing user
-              const { data: existingUser } = await supabaseAdmin.auth.admin.getUserByEmail(email.toLowerCase());
-              if (existingUser?.user) {
-                console.log('User already exists, using existing user');
-                userId = existingUser.user.id;
-                userEmail = existingUser.user.email || email.toLowerCase();
-                emailConfirmedAt = existingUser.user.email_confirmed_at;
-                userCreatedAt = existingUser.user.created_at;
-              } else {
-                return res.status(400).json({ error: 'User already exists' });
-              }
-            } else {
-              console.error('Admin API user creation error:', adminError);
-              return res.status(400).json({ 
-                error: 'Account creation failed. Please try again later.',
-                details: adminError.message 
-              });
-            }
-          } else if (adminUser?.user) {
-            console.log('User created successfully via Admin API');
-            userId = adminUser.user.id;
-            userEmail = adminUser.user.email || email.toLowerCase();
-            emailConfirmedAt = adminUser.user.email_confirmed_at;
-            userCreatedAt = adminUser.user.created_at;
-          }
-        } catch (adminError: any) {
-          console.error('Error creating user via Admin API:', adminError);
-          return res.status(500).json({ 
-            error: 'Account creation failed. Please try again later.',
-            details: adminError.message 
-          });
-        }
-      } else {
-        // Not an email error - return the original error
-        if (authError.message.includes('already registered') || authError.message.includes('already exists')) {
-          return res.status(400).json({ error: 'User already exists' });
-        }
-        return res.status(400).json({ error: authError.message });
+      // Provide user-friendly error messages
+      if (authError.message.includes('already registered') || authError.message.includes('already exists')) {
+        return res.status(400).json({ error: 'User already exists' });
       }
-    } else if (authData?.user) {
-      // Normal flow - user created successfully
-      userId = authData.user.id;
-      userEmail = authData.user.email || email.toLowerCase();
-      emailConfirmedAt = authData.user.email_confirmed_at;
-      userCreatedAt = authData.user.created_at;
+
+      if (authError.message.includes('Error sending confirmation email') || 
+          authError.message.includes('535') || // SMTP error code
+          authError.message.includes('email') && authError.message.includes('send')) {
+        return res.status(500).json({ 
+          error: 'Failed to send confirmation email. Please check your email configuration and try again later.',
+          details: 'SMTP configuration is required for user registration.'
+        });
+      }
+
+      return res.status(400).json({ error: authError.message });
     }
 
-    // If we still don't have a userId, something went wrong
-    if (!userId) {
+    if (!authData.user) {
       return res.status(500).json({ error: 'Failed to create user' });
     }
+
+    const userId = authData.user.id;
 
     // Create profile with additional fields
     const { error: profileError } = await supabase
@@ -187,35 +122,25 @@ router.post('/register', async (req, res) => {
       }
     }
 
-    // Get session token (only available if normal signup succeeded)
-    const token = authData?.session?.access_token || null;
+    // Get session token
+    const token = authData.session?.access_token || null;
 
     // Send welcome email (non-blocking)
-    if (userEmail) {
-      sendWelcomeEmail(userEmail, displayName).catch((err) => {
-        console.error('Failed to send welcome email:', err);
-        // Don't fail registration if email fails
-      });
-    }
+    sendWelcomeEmail(authData.user.email || '', displayName).catch((err) => {
+      console.error('Failed to send welcome email:', err);
+      // Don't fail registration if email fails
+    });
 
-    // Prepare response
-    const response: any = {
+    res.status(201).json({
       user: {
-        id: userId,
-        email: userEmail,
-        created_at: userCreatedAt,
-        email_confirmed_at: emailConfirmedAt,
+        id: authData.user.id,
+        email: authData.user.email,
+        created_at: authData.user.created_at,
+        email_confirmed_at: authData.user.email_confirmed_at,
       },
       token: token, // Token might be null if email confirmation is required
-      session: authData?.session || null,
-    };
-
-    // Add warning if email sending failed
-    if (emailSendingFailed) {
-      response.warning = 'Account created successfully. However, the confirmation email could not be sent due to email configuration issues. Please use the "Resend Verification Email" feature to verify your account once email is configured.';
-    }
-
-    res.status(201).json(response);
+      session: authData.session,
+    });
   } catch (error: any) {
     console.error('Registration error:', error);
     res.status(500).json({ error: 'Registration failed' });
