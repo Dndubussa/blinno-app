@@ -778,6 +778,11 @@ router.post('/payouts/:payoutId/complete', authenticate, requireRole('admin'), a
       
       if (disbursementResponse.success) {
         paymentReference = disbursementResponse.disbursementId;
+        // Store disbursement ID in payment_reference for webhook matching
+        paymentReference = JSON.stringify({
+          disbursementId: disbursementResponse.disbursementId,
+          transactionId: disbursementResponse.transactionId,
+        });
       }
     } else if (payout.payment_method === 'bank_transfer' && paymentMethodDetails.accountNumber) {
       // For bank transfers, we would typically use a different API or manual process
@@ -832,19 +837,43 @@ router.post('/payouts/:payoutId/complete', authenticate, requireRole('admin'), a
     const balanceAfterAmount = balanceAfter?.available_balance || 0;
 
     // Update payout status to paid
+    // Store both the financial transaction ID and ClickPesa disbursement ID
+    const updateData: any = {
+      status: 'paid',
+      payment_reference: paymentReference,
+      notes: notes || payout.notes,
+      transaction_id: transactionId, // Financial transaction ID
+      balance_before: balanceBeforeAmount,
+      balance_after: balanceAfterAmount,
+      processed_at: new Date().toISOString(),
+      payout_date: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    // If we have a ClickPesa disbursement ID, also store it for webhook matching
+    if (paymentReference) {
+      try {
+        const refData = typeof paymentReference === 'string' ? JSON.parse(paymentReference) : paymentReference;
+        if (refData.disbursementId) {
+          // Store disbursement ID in a separate field or in metadata
+          updateData.metadata = JSON.stringify({
+            clickpesa_disbursement_id: refData.disbursementId,
+            clickpesa_transaction_id: refData.transactionId,
+          });
+        }
+      } catch (e) {
+        // If paymentReference is not JSON, it might be the disbursement ID directly
+        if (typeof paymentReference === 'string' && paymentReference !== 'BANK_TRANSFER_PENDING') {
+          updateData.metadata = JSON.stringify({
+            clickpesa_disbursement_id: paymentReference,
+          });
+        }
+      }
+    }
+
     await supabase
       .from('creator_payouts')
-      .update({
-        status: 'paid',
-        payment_reference: paymentReference,
-        notes: notes || payout.notes,
-        transaction_id: transactionId,
-        balance_before: balanceBeforeAmount,
-        balance_after: balanceAfterAmount,
-        processed_at: new Date().toISOString(),
-        payout_date: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', payoutId);
 
     // Mark associated fees as paid
@@ -921,6 +950,250 @@ router.post('/payouts/:payoutId/cancel', authenticate, requireRole('admin'), asy
   } catch (error: any) {
     console.error('Cancel payout error:', error);
     res.status(500).json({ error: 'Failed to cancel payout' });
+  }
+});
+
+/**
+ * Webhook endpoint for Click Pesa disbursement (payout) notifications
+ * Handles: payout initiated, payout completed, payout failed, payout refunded, payout reversed
+ */
+router.post('/payouts/webhook', async (req, res) => {
+  try {
+    const webhookData = req.body;
+    const signature = req.headers['x-clickpesa-signature'] as string;
+
+    // Verify webhook signature if provided
+    // clickPesa.verifyWebhookSignature(webhookData, signature);
+
+    const { 
+      disbursement_id, 
+      transaction_id, 
+      status, 
+      order_id,
+      amount,
+      currency,
+      reason,
+      error_message 
+    } = webhookData;
+
+    if (!disbursement_id) {
+      return res.status(400).json({ error: 'Missing disbursement_id' });
+    }
+
+    // Find payout by Click Pesa disbursement ID
+    // The disbursement_id from ClickPesa is stored in transaction_id when payout is completed
+    // We also check payment_reference which might contain the disbursement ID as JSON
+    let payout = null;
+    
+    // First, try to find by transaction_id
+    const { data: payoutByTransaction, error: error1 } = await supabase
+      .from('creator_payouts')
+      .select('*')
+      .eq('transaction_id', disbursement_id)
+      .limit(1)
+      .single();
+
+    if (!error1 && payoutByTransaction) {
+      payout = payoutByTransaction;
+    } else {
+      // Try to find by payment_reference (which might contain disbursement ID)
+      const { data: allPayouts, error: error2 } = await supabase
+        .from('creator_payouts')
+        .select('*')
+        .eq('status', 'processing')
+        .limit(10);
+
+      if (!error2 && allPayouts) {
+        // Search through payouts to find one with matching disbursement ID
+        for (const p of allPayouts) {
+          // Check payment_reference
+          try {
+            const paymentRef = typeof p.payment_reference === 'string' 
+              ? JSON.parse(p.payment_reference) 
+              : p.payment_reference;
+            
+            if (paymentRef && (paymentRef.disbursementId === disbursement_id || paymentRef.disbursement_id === disbursement_id)) {
+              payout = p;
+              break;
+            }
+          } catch (e) {
+            // If payment_reference is not JSON, check if it's the disbursement ID directly
+            if (p.payment_reference === disbursement_id) {
+              payout = p;
+              break;
+            }
+          }
+
+          // Check metadata field
+          if (!payout && p.metadata) {
+            try {
+              const metadata = typeof p.metadata === 'string' ? JSON.parse(p.metadata) : p.metadata;
+              if (metadata && (metadata.clickpesa_disbursement_id === disbursement_id || metadata.disbursementId === disbursement_id)) {
+                payout = p;
+                break;
+              }
+            } catch (e) {
+              // Metadata is not JSON, skip
+            }
+          }
+        }
+      }
+    }
+
+    if (!payout) {
+      console.error('Payout not found for webhook:', disbursement_id);
+      // Still return 200 to prevent ClickPesa from retrying
+      return res.json({ success: true, message: 'Payout not found, but webhook acknowledged' });
+    }
+
+    // Map Click Pesa status to our payout status
+    let newStatus = payout.status;
+    let shouldUpdateBalance = false;
+    let balanceAdjustment = 0;
+
+    if (status === 'success' || status === 'completed' || status === 'paid') {
+      // Payout completed successfully
+      newStatus = 'paid';
+      shouldUpdateBalance = true;
+      // Balance was already deducted when payout was initiated, so no adjustment needed
+    } else if (status === 'failed' || status === 'cancelled' || status === 'rejected') {
+      // Payout failed - refund the amount back to creator's balance
+      newStatus = 'failed';
+      shouldUpdateBalance = true;
+      balanceAdjustment = parseFloat(payout.amount.toString()); // Refund the amount
+    } else if (status === 'refunded') {
+      // Payout was refunded - refund the amount back to creator's balance
+      newStatus = 'refunded';
+      shouldUpdateBalance = true;
+      balanceAdjustment = parseFloat(payout.amount.toString()); // Refund the amount
+    } else if (status === 'reversed') {
+      // Payout was reversed - refund the amount back to creator's balance
+      newStatus = 'reversed';
+      shouldUpdateBalance = true;
+      balanceAdjustment = parseFloat(payout.amount.toString()); // Refund the amount
+    } else if (status === 'initiated' || status === 'processing' || status === 'pending') {
+      // Payout initiated/processing
+      newStatus = 'processing';
+    }
+
+    // Update payout status
+    const updateData: any = {
+      status: newStatus,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (transaction_id) {
+      updateData.transaction_id = transaction_id;
+    }
+
+    if (status === 'failed' || status === 'refunded' || status === 'reversed') {
+      updateData.notes = reason || error_message || payout.notes || `Payout ${status}`;
+    }
+
+    if (newStatus === 'paid') {
+      updateData.processed_at = new Date().toISOString();
+      updateData.payout_date = new Date().toISOString();
+    }
+
+    await supabase
+      .from('creator_payouts')
+      .update(updateData)
+      .eq('id', payout.id);
+
+    // Handle balance adjustments for failed/refunded/reversed payouts
+    if (shouldUpdateBalance && balanceAdjustment > 0) {
+      // Get current balance
+      const { data: balanceData } = await supabase
+        .from('user_balances')
+        .select('available_balance, pending_balance')
+        .eq('user_id', payout.creator_id)
+        .single();
+
+      if (balanceData) {
+        const currentAvailable = parseFloat(balanceData.available_balance?.toString() || '0');
+        const newAvailable = currentAvailable + balanceAdjustment;
+
+        // Update balance
+        await supabase
+          .from('user_balances')
+          .update({
+            available_balance: newAvailable,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('user_id', payout.creator_id);
+
+        // Record financial transaction for refund
+        // Get balance before for transaction record
+        const { data: balanceBeforeData } = await supabase
+          .from('user_balances')
+          .select('available_balance')
+          .eq('user_id', payout.creator_id)
+          .single();
+
+        const balanceBefore = parseFloat(balanceBeforeData?.available_balance?.toString() || '0');
+        const balanceAfter = balanceBefore + balanceAdjustment;
+
+        // Record the refund transaction
+        await supabase
+          .from('financial_transactions')
+          .insert({
+            user_id: payout.creator_id,
+            transaction_type: 'payout_refund',
+            amount: balanceAdjustment,
+            currency: payout.currency || 'USD',
+            balance_before: balanceBefore,
+            balance_after: balanceAfter,
+            status: 'completed',
+            reference_id: payout.id,
+            reference_type: 'payout',
+            description: `Payout ${status}: ${payout.id}`,
+            metadata: JSON.stringify({
+              payout_id: payout.id,
+              disbursement_id: disbursement_id,
+              reason: reason || error_message || `Payout ${status}`,
+            }),
+          });
+      }
+    }
+
+    // Mark associated fees based on payout status
+    if (payout.fee_ids && payout.fee_ids.length > 0) {
+      if (newStatus === 'paid') {
+        // Mark fees as paid
+        await supabase
+          .from('platform_fees')
+          .update({
+            payout_status: 'paid',
+            payout_date: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .in('id', payout.fee_ids);
+      } else if (newStatus === 'failed' || newStatus === 'refunded' || newStatus === 'reversed') {
+        // Mark fees back to pending (available for new payout)
+        await supabase
+          .from('platform_fees')
+          .update({
+            payout_status: 'pending',
+            payout_date: null,
+            updated_at: new Date().toISOString(),
+          })
+          .in('id', payout.fee_ids);
+      }
+    }
+
+    // Notify creator about payout status
+    // Note: You may want to import notificationService here if needed
+    // await notificationService.notifyPayoutStatus(
+    //   payout.creator_id,
+    //   payout.id,
+    //   newStatus,
+    //   parseFloat(payout.amount.toString())
+    // );
+
+    res.json({ success: true, message: 'Payout webhook processed', status: newStatus });
+  } catch (error: any) {
+    console.error('Payout webhook error:', error);
+    res.status(500).json({ error: 'Webhook processing failed' });
   }
 });
 

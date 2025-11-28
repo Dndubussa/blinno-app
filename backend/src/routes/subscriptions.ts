@@ -533,6 +533,16 @@ router.post('/payment', authenticate, async (req: AuthRequest, res) => {
       .eq('user_id', req.userId)
       .single();
 
+    // Get subscription info to determine pricing model
+    const { data: subscription } = await supabase
+      .from('platform_subscriptions')
+      .select('pricing_model, tier, percentage_tier')
+      .eq('user_id', req.userId)
+      .single();
+
+    // Create success URL with payment ID for redirect handling
+    const successUrl = `${process.env.APP_URL || 'https://www.blinno.app'}/payment-success?paymentId=${payment.id}`;
+
     // Create Click Pesa payment request with user's currency
     const paymentRequest: PaymentRequest = {
       amount: parseFloat(payment.amount.toString()),
@@ -543,6 +553,7 @@ router.post('/payment', authenticate, async (req: AuthRequest, res) => {
       customerName: customerName || profile?.display_name || 'Customer',
       description: `Subscription payment for ${(payment as any).platform_subscriptions?.tier || 'tier'}`,
       callbackUrl: `${process.env.APP_URL || 'https://www.blinno.app'}/api/payments/webhook`,
+      successUrl: successUrl,
     };
 
     const clickPesaResponse = await clickPesa.createPayment(paymentRequest);

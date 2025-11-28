@@ -57,12 +57,19 @@ router.post('/create', authenticate, async (req: AuthRequest, res) => {
     // Get user email
     const { data: authUser } = await supabase.auth.admin.getUserById(req.userId);
 
-    if (order.status !== 'pending') {
-      return res.status(400).json({ error: 'Order is not in pending status' });
+    if (order.status !== 'pending' && order.status !== 'payment_pending') {
+      return res.status(400).json({ error: `Order is not in a valid status for payment. Current status: ${order.status}` });
     }
 
-    // Calculate fees based on user's currency
-    const feeCalculation = platformFees.calculateMarketplaceFee(parseFloat(order.total_amount), undefined, currency);
+    // Use order's total_amount directly (fees already calculated in checkout)
+    // Don't recalculate fees as order.total_amount already includes all fees
+    const paymentAmount = parseFloat(order.total_amount.toString());
+    const orderCurrency = (order as any).currency || currency;
+
+    // Validate payment amount matches order total
+    if (isNaN(paymentAmount) || paymentAmount <= 0) {
+      return res.status(400).json({ error: 'Invalid order total amount' });
+    }
 
     // Create payment record with currency support
     const { data: payment, error: paymentError } = await supabase
@@ -70,10 +77,11 @@ router.post('/create', authenticate, async (req: AuthRequest, res) => {
       .insert({
         order_id: orderId,
         user_id: req.userId,
-        amount: feeCalculation.total,
-        currency: currency,
+        amount: paymentAmount,
+        currency: orderCurrency,
         status: 'pending',
         payment_method: 'clickpesa',
+        payment_type: 'order',
       })
       .select()
       .single();
@@ -84,8 +92,8 @@ router.post('/create', authenticate, async (req: AuthRequest, res) => {
 
     // Create Click Pesa payment request
     const paymentRequest: PaymentRequest = {
-      amount: feeCalculation.total,
-      currency: currency,
+      amount: paymentAmount,
+      currency: orderCurrency,
       orderId: orderId,
       customerPhone: customerPhone,
       customerEmail: customerEmail || authUser?.user?.email || '',
@@ -335,7 +343,7 @@ router.post('/webhook', async (req, res) => {
             updated_at: new Date().toISOString(),
           })
           .eq('id', listingId);
-      } else if (paymentType === 'lodging_booking') {
+      } else if (paymentType === 'lodging_booking' || orderId.startsWith('lodging_booking_')) {
         // Lodging booking
         const bookingId = orderId.replace('lodging_booking_', '');
         await supabase
@@ -464,7 +472,7 @@ router.post('/webhook', async (req, res) => {
             updated_at: new Date().toISOString(),
           })
           .eq('id', listingId);
-      } else if (paymentType === 'lodging_booking') {
+      } else if (paymentType === 'lodging_booking' || orderId.startsWith('lodging_booking_')) {
         const bookingId = orderId.replace('lodging_booking_', '');
         await supabase
           .from('lodging_bookings')

@@ -218,9 +218,12 @@ router.post('/checkout', authenticate, async (req: AuthRequest, res) => {
       .select(`
         *,
         products (
+          id,
           price,
           title,
-          creator_id
+          creator_id,
+          stock_quantity,
+          is_active
         )
       `)
       .eq('user_id', req.userId);
@@ -233,20 +236,110 @@ router.post('/checkout', authenticate, async (req: AuthRequest, res) => {
       return res.status(400).json({ error: 'Cart is empty' });
     }
 
-    // Calculate subtotal (products are stored in USD)
-    const subtotal = cartItems.reduce((sum: number, item: any) => {
-      return sum + (parseFloat(item.products?.price || 0) * item.quantity);
-    }, 0);
+    // Validate products exist, are active, and have stock
+    const validationErrors: string[] = [];
+    for (const item of cartItems) {
+      if (!item.products) {
+        validationErrors.push(`Product ${item.product_id} not found`);
+        continue;
+      }
+      
+      if (!item.products.is_active) {
+        validationErrors.push(`Product "${item.products.title}" is no longer available`);
+        continue;
+      }
 
-    // Calculate platform fees using user's currency
-    const feeCalculation = platformFees.calculateMarketplaceFee(subtotal, undefined, undefined, currency);
+      if (item.products.stock_quantity !== null && item.quantity > item.products.stock_quantity) {
+        validationErrors.push(`Insufficient stock for "${item.products.title}". Available: ${item.products.stock_quantity}, Requested: ${item.quantity}`);
+        continue;
+      }
+    }
 
-    // Create order
+    if (validationErrors.length > 0) {
+      return res.status(400).json({ 
+        error: 'Cart validation failed', 
+        details: validationErrors 
+      });
+    }
+
+    // Group items by creator and calculate subtotals per creator
+    const creatorItems = new Map<string, Array<{ item: any; subtotal: number }>>();
+    let totalSubtotal = 0;
+
+    for (const item of cartItems) {
+      if (!item.products?.creator_id) continue;
+      
+      const creatorId = item.products.creator_id;
+      const itemSubtotal = parseFloat(item.products.price || 0) * item.quantity;
+      totalSubtotal += itemSubtotal;
+
+      if (!creatorItems.has(creatorId)) {
+        creatorItems.set(creatorId, []);
+      }
+      creatorItems.get(creatorId)!.push({ item, subtotal: itemSubtotal });
+    }
+
+    // Get creator subscription tiers for fee calculation
+    const creatorTiers = new Map<string, { percentageTier?: string; subscriptionTier?: string }>();
+    for (const creatorId of creatorItems.keys()) {
+      const { data: subscription } = await supabase
+        .from('platform_subscriptions')
+        .select('pricing_model, percentage_tier, tier')
+        .eq('user_id', creatorId)
+        .eq('status', 'active')
+        .single();
+
+      if (subscription) {
+        creatorTiers.set(creatorId, {
+          percentageTier: subscription.pricing_model === 'percentage' ? subscription.percentage_tier : undefined,
+          subscriptionTier: subscription.pricing_model === 'subscription' ? subscription.tier : undefined,
+        });
+      }
+    }
+
+    // Calculate fees per creator
+    let totalPlatformFee = 0;
+    let totalPaymentProcessingFee = 0;
+    const creatorFees = new Map<string, any>();
+
+    for (const [creatorId, items] of creatorItems.entries()) {
+      const creatorSubtotal = items.reduce((sum, { subtotal }) => sum + subtotal, 0);
+      const tier = creatorTiers.get(creatorId);
+      
+      const feeCalculation = platformFees.calculateMarketplaceFee(
+        creatorSubtotal,
+        tier?.percentageTier as any,
+        tier?.subscriptionTier as any,
+        currency
+      );
+
+      totalPlatformFee += feeCalculation.platformFee;
+      totalPaymentProcessingFee += feeCalculation.paymentProcessingFee;
+
+      creatorFees.set(creatorId, {
+        ...feeCalculation,
+        creatorSubtotal,
+      });
+    }
+
+    // Calculate total order amount (subtotal + payment processing fee)
+    // Payment processing fee is calculated on the total subtotal, not per creator
+    const totalPaymentProcessingFeeCalculation = platformFees.calculateMarketplaceFee(
+      totalSubtotal,
+      undefined,
+      undefined,
+      currency
+    );
+    const orderTotal = totalSubtotal + totalPaymentProcessingFeeCalculation.paymentProcessingFee;
+
+    // Create order with currency
+    // Note: Run migration add_currency_to_orders.sql if currency column doesn't exist
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert({
         user_id: req.userId,
-        total_amount: feeCalculation.total,
+        total_amount: orderTotal,
+        currency: currency,
         shipping_address: shippingAddress || {},
         notes: notes || null,
         status: 'pending',
@@ -258,42 +351,66 @@ router.post('/checkout', authenticate, async (req: AuthRequest, res) => {
       throw orderError;
     }
 
-    // Create order items and track creator IDs
-    const creatorIds = new Set<string>();
+    // Create order items and track errors
+    const orderItemErrors: string[] = [];
     for (const item of cartItems) {
-      await supabase
+      if (!item.products) continue;
+
+      const { error: itemError } = await supabase
         .from('order_items')
         .insert({
           order_id: order.id,
           product_id: item.product_id,
           quantity: item.quantity,
-          price_at_purchase: item.products?.price,
+          price_at_purchase: item.products.price,
         });
 
-      if (item.products?.creator_id) {
-        creatorIds.add(item.products.creator_id);
+      if (itemError) {
+        orderItemErrors.push(`Failed to create order item for product ${item.product_id}: ${itemError.message}`);
       }
     }
 
-    // Record platform fees for each creator
-    for (const creatorId of creatorIds) {
-      await supabase
+    // If order items creation failed, delete order and return error
+    if (orderItemErrors.length > 0) {
+      await supabase.from('orders').delete().eq('id', order.id);
+      return res.status(500).json({ 
+        error: 'Failed to create order items', 
+        details: orderItemErrors 
+      });
+    }
+
+    // Record platform fees for each creator with their specific calculations
+    const feeErrors: string[] = [];
+    for (const [creatorId, feeData] of creatorFees.entries()) {
+      // Calculate payment processing fee proportion for this creator
+      const paymentProcessingFeeProportion = (feeData.creatorSubtotal / totalSubtotal) * totalPaymentProcessingFeeCalculation.paymentProcessingFee;
+
+      const { error: feeError } = await supabase
         .from('platform_fees')
         .insert({
           transaction_id: order.id,
           transaction_type: 'marketplace',
           user_id: creatorId,
           buyer_id: req.userId,
-          subtotal: subtotal,
-          platform_fee: feeCalculation.platformFee,
-          payment_processing_fee: feeCalculation.paymentProcessingFee,
-          total_fees: feeCalculation.totalFees,
-          creator_payout: feeCalculation.creatorPayout,
+          subtotal: feeData.creatorSubtotal,
+          platform_fee: feeData.platformFee,
+          payment_processing_fee: paymentProcessingFeeProportion,
+          total_fees: feeData.platformFee + paymentProcessingFeeProportion,
+          creator_payout: feeData.creatorPayout,
           status: 'pending',
         });
+
+      if (feeError) {
+        feeErrors.push(`Failed to record fees for creator ${creatorId}: ${feeError.message}`);
+      }
     }
 
-    // Clear cart
+    // If fee recording failed, log but don't fail the order (fees can be recalculated)
+    if (feeErrors.length > 0) {
+      console.error('Fee recording errors:', feeErrors);
+    }
+
+    // Clear cart only after successful order creation
     await supabase
       .from('cart_items')
       .delete()
@@ -302,16 +419,17 @@ router.post('/checkout', authenticate, async (req: AuthRequest, res) => {
     res.status(201).json({
       ...order,
       feeBreakdown: {
-        subtotal: feeCalculation.subtotal,
-        platformFee: feeCalculation.platformFee,
-        paymentProcessingFee: feeCalculation.paymentProcessingFee,
-        total: feeCalculation.total,
+        subtotal: totalSubtotal,
+        platformFee: totalPlatformFee,
+        paymentProcessingFee: totalPaymentProcessingFeeCalculation.paymentProcessingFee,
+        total: orderTotal,
       },
     });
   } catch (error: any) {
     console.error('Checkout error:', error);
-    res.status(500).json({ error: 'Checkout failed' });
+    res.status(500).json({ error: 'Checkout failed', details: error.message });
   }
 });
 
 export default router;
+

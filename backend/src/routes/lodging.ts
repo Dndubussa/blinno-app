@@ -302,13 +302,13 @@ router.post('/bookings/:id/payment', authenticate, async (req: AuthRequest, res)
     const { data: payment, error: paymentError } = await supabase
       .from('payments')
       .insert({
-        order_id: `lodging_reservation_${id}`,
+        order_id: `lodging_booking_${id}`,
         user_id: req.userId,
         amount: feeCalculation.total,
         currency: currency,
         status: 'pending',
         payment_method: 'clickpesa',
-        payment_type: 'lodging_reservation',
+        payment_type: 'lodging_booking',
       })
       .select()
       .single();
@@ -321,15 +321,15 @@ router.post('/bookings/:id/payment', authenticate, async (req: AuthRequest, res)
     await supabase
       .from('platform_fees')
       .insert({
-        transaction_id: `lodging_reservation_${id}`,
-        transaction_type: 'lodging_reservation',
+        transaction_id: `lodging_booking_${id}`,
+        transaction_type: 'booking',
         user_id: booking.property.owner_id,
         buyer_id: req.userId,
         subtotal: feeCalculation.subtotal,
         platform_fee: feeCalculation.platformFee,
         payment_processing_fee: feeCalculation.paymentProcessingFee,
-        total_fees: feeCalculation.totalFees,
         creator_payout: feeCalculation.creatorPayout,
+        currency: currency,
         status: 'pending',
       });
 
@@ -337,7 +337,7 @@ router.post('/bookings/:id/payment', authenticate, async (req: AuthRequest, res)
     const paymentRequest: PaymentRequest = {
       amount: feeCalculation.total,
       currency: currency,
-      orderId: `lodging_reservation_${id}`,
+      orderId: `lodging_booking_${id}`,
       customerPhone: customerPhone,
       customerEmail: customerEmail || booking.guest?.email || '',
       customerName: customerName || booking.guest_profile?.display_name || 'Customer',
@@ -384,91 +384,5 @@ router.post('/bookings/:id/payment', authenticate, async (req: AuthRequest, res)
   }
 });
 
-// Create lodging reservation - NEW
-router.post('/bookings', async (req, res) => {
-  try {
-    const {
-      propertyId, roomId, guestName, guestEmail, guestPhone,
-      checkInDate, checkOutDate, numberOfGuests, specialRequests
-    } = req.body;
-
-    // Validate required fields
-    if (!propertyId || !roomId || !guestName || !guestEmail || !guestPhone || 
-        !checkInDate || !checkOutDate || !numberOfGuests) {
-      return res.status(400).json({ 
-        error: 'Missing required fields: propertyId, roomId, guestName, guestEmail, guestPhone, checkInDate, checkOutDate, numberOfGuests' 
-      });
-    }
-
-    // Verify property and room exist and are available
-    const { data: room, error: roomError } = await supabase
-      .from('lodging_rooms')
-      .select(`
-        *,
-        property:lodging_properties!inner(name, owner_id),
-        owner:users!lodging_properties_owner_id_fkey(email),
-        owner_profile:profiles!lodging_properties_owner_id_fkey(display_name)
-      `)
-      .eq('id', roomId)
-      .eq('property_id', propertyId)
-      .eq('availability_status', 'available')
-      .single();
-
-    if (roomError || !room) {
-      return res.status(404).json({ error: 'Room not found or not available' });
-    }
-
-    // Check guest capacity
-    if (parseInt(numberOfGuests) > (room.max_guests || 0)) {
-      return res.status(400).json({ error: `Maximum ${room.max_guests} guests allowed for this room` });
-    }
-
-    // Check for date conflicts
-    const { data: conflicts } = await supabase
-      .from('lodging_bookings')
-      .select('id')
-      .eq('room_id', roomId)
-      .in('status', ['confirmed', 'pending'])
-      .or(`check_in_date.lte.${checkOutDate},check_out_date.gte.${checkInDate}`);
-
-    if (conflicts && conflicts.length > 0) {
-      return res.status(400).json({ error: 'Selected dates are not available' });
-    }
-
-    // Create booking
-    const { data: booking, error: bookingError } = await supabase
-      .from('lodging_bookings')
-      .insert({
-        property_id: propertyId,
-        room_id: roomId,
-        guest_name: guestName,
-        guest_email: guestEmail,
-        guest_phone: guestPhone,
-        check_in_date: checkInDate,
-        check_out_date: checkOutDate,
-        number_of_guests: parseInt(numberOfGuests),
-        special_requests: specialRequests || null,
-        status: 'pending',
-      })
-      .select()
-      .single();
-
-    if (bookingError || !booking) {
-      throw bookingError;
-    }
-
-    res.status(201).json({
-      ...booking,
-      property_name: room.property?.name,
-      room_type: room.room_type,
-      price_per_night: room.price_per_night,
-      owner_email: room.owner?.email,
-      owner_name: room.owner_profile?.display_name
-    });
-  } catch (error: any) {
-    console.error('Create lodging booking error:', error);
-    res.status(500).json({ error: 'Failed to create booking' });
-  }
-});
 
 export default router;

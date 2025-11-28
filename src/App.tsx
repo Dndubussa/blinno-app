@@ -47,6 +47,7 @@ import CourseViewer from "@/pages/CourseViewer";
 import MediaTest from "@/pages/MediaTest";
 import MusicianDashboard from "@/pages/MusicianDashboard";
 import MusicTest from "@/pages/MusicTest";
+import PaymentSuccess from "@/pages/PaymentSuccess";
 
 function App() {
   return (
@@ -121,6 +122,7 @@ function App() {
                 <Route path="/course/:courseId" element={<CourseViewer />} />
                 <Route path="/media-test" element={<MediaTest />} />
                 <Route path="/music-test" element={<MusicTest />} />
+                <Route path="/payment-success" element={<PaymentSuccess />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </div>

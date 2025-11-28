@@ -18,6 +18,7 @@ interface PaymentRequest {
   customerName?: string;
   description?: string;
   callbackUrl?: string;
+  successUrl?: string;
 }
 
 interface PaymentResponse {
@@ -164,22 +165,29 @@ class ClickPesaService {
         }
       }
 
+      const requestBody: any = {
+        amount: amountForProcessing,
+        currency: currencyForProcessing,
+        order_id: payment.orderId,
+        customer_phone: payment.customerPhone,
+        customer_email: payment.customerEmail,
+        customer_name: payment.customerName,
+        description: payment.description || `Payment for order ${payment.orderId}`,
+        callback_url: payment.callbackUrl,
+      };
+
+      // Add success URL if provided
+      if (payment.successUrl) {
+        requestBody.success_url = payment.successUrl;
+      }
+
       const response = await fetch(`${this.config.baseUrl}/api/v1/payments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          amount: amountForProcessing,
-          currency: currencyForProcessing,
-          order_id: payment.orderId,
-          customer_phone: payment.customerPhone,
-          customer_email: payment.customerEmail,
-          customer_name: payment.customerName,
-          description: payment.description || `Payment for order ${payment.orderId}`,
-          callback_url: payment.callbackUrl,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       const data = await response.json() as any;
