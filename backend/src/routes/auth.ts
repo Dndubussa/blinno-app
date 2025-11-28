@@ -8,10 +8,14 @@ const router = express.Router();
 // Register
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, displayName, role = 'user', firstName, middleName, lastName, phoneNumber, country } = req.body;
+    const { email, password, displayName, role = 'user', firstName, middleName, lastName, phoneNumber, country, termsAccepted } = req.body;
 
     if (!email || !password || !displayName) {
       return res.status(400).json({ error: 'Email, password, and display name are required' });
+    }
+
+    if (!termsAccepted) {
+      return res.status(400).json({ error: 'You must accept the Terms of Service to create an account' });
     }
 
     // Create user with Supabase Auth
@@ -45,6 +49,8 @@ router.post('/register', async (req, res) => {
         phone: phoneNumber,
         location: country,
         is_creator: ['creator', 'freelancer', 'seller', 'lodging', 'restaurant', 'educator', 'journalist', 'artisan', 'employer', 'event_organizer'].includes(role),
+        terms_accepted: true,
+        terms_accepted_at: new Date().toISOString(),
       });
 
     if (profileError) {

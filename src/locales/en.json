@@ -288,6 +288,8 @@
       "description": "Sign in to your BLINNO account"
     },
     "signUp": {
+      "acceptTerms": "I agree to the",
+      "termsOfService": "Terms of Service",
       "title": "Create Account",
       "email": "Email",
       "password": "Password",

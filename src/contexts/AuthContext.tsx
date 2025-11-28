@@ -12,6 +12,7 @@ interface User {
 }
 
 interface SignUpAdditionalData {
+  termsAccepted?: boolean;
   firstName?: string;
   middleName?: string;
   lastName?: string;

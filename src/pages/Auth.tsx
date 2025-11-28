@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, User, Briefcase, Palette, Store, Home, UtensilsCrossed, GraduationCap, Newspaper, Wrench, Calendar, ArrowLeft, Music } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import logo from "@/assets/logo.png";
 import { SEO } from "@/components/SEO";
@@ -23,6 +24,7 @@ export default function Auth() {
   const [selectedRole, setSelectedRole] = useState<'user' | 'creator' | 'freelancer' | 'seller' | 'lodging' | 'restaurant' | 'educator' | 'journalist' | 'artisan' | 'employer' | 'event_organizer' | 'musician'>('user');
   const [selectedCountry, setSelectedCountry] = useState("");
   const [selectedPhoneCode, setSelectedPhoneCode] = useState("+1"); // Default to US
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const { signUp, signIn, signInWithGoogle, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -62,6 +64,16 @@ export default function Auth() {
 
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
+    if (!termsAccepted) {
+      toast({
+        title: "Terms Required",
+        description: "You must accept the Terms of Service to create an account.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsLoading(true);
     
     const formData = new FormData(e.currentTarget);
@@ -80,7 +92,8 @@ export default function Auth() {
       middleName,
       lastName,
       phoneNumber,
-      country
+      country,
+      termsAccepted: true
     });
     
     if (error) {
@@ -455,7 +468,31 @@ export default function Auth() {
                       </p>
                     </div>
                     
-                    <Button type="submit" className="w-full" disabled={isLoading}>
+                    <div className="flex items-start space-x-2">
+                      <Checkbox
+                        id="terms-accepted"
+                        checked={termsAccepted}
+                        onCheckedChange={(checked) => setTermsAccepted(checked === true)}
+                        required
+                      />
+                      <label
+                        htmlFor="terms-accepted"
+                        className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        {t("auth.signUp.acceptTerms")}{" "}
+                        <a
+                          href="/terms"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary underline hover:no-underline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {t("auth.signUp.termsOfService")}
+                        </a>
+                      </label>
+                    </div>
+                    
+                    <Button type="submit" className="w-full" disabled={isLoading || !termsAccepted}>
                       {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       {t("auth.signUp.title")}
                     </Button>
