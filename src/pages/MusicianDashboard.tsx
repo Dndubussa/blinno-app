@@ -24,7 +24,10 @@ import {
   Play, 
   BarChart3,
   Upload,
-  Eye
+  Eye,
+  CreditCard,
+  Settings,
+  Clock
 } from "lucide-react";
 
 interface Track {
@@ -73,6 +76,13 @@ export default function MusicianDashboard() {
     image_url: "",
     audio_url: ""
   });
+  // Financial state
+  const [balance, setBalance] = useState<any>(null);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [payouts, setPayouts] = useState<any[]>([]);
+  const [showRequestPayout, setShowRequestPayout] = useState(false);
+  // Profile state
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
 
   useEffect(() => {
     checkMusicianRole();
@@ -121,29 +131,44 @@ export default function MusicianDashboard() {
   };
 
   const fetchData = async () => {
+    if (!user) return;
+    
     try {
-      // Fetch real tracks from API
-      const tracksData = await api.getMyTracks();
-      setTracks(tracksData || []);
-      
-      // Fetch real stats from API
-      try {
-        const statsData = await api.getMyTrackStats();
-        setStats({
-          totalTracks: statsData.totalTracks || tracksData?.length || 0,
-          totalPlays: statsData.totalPlays || 0,
-          totalEarnings: statsData.totalEarnings || 0,
-          followerCount: statsData.followerCount || 0
-        });
-      } catch (statsError) {
-        // If stats endpoint doesn't exist, calculate from tracks
-        const calculatedStats: Stats = {
-          totalTracks: tracksData?.length || 0,
-          totalPlays: tracksData?.reduce((sum: number, track: Track) => sum + (track.plays || 0), 0) || 0,
-          totalEarnings: 0, // Would need separate calculation
-          followerCount: 0 // Would need separate API call
-        };
-        setStats(calculatedStats);
+      // Fetch data based on current section
+      if (currentSection === 'financial') {
+        // Fetch financial data
+        const [balanceData, transactionsData, payoutsData] = await Promise.all([
+          api.getBalance().catch(() => null),
+          api.getTransactions({ limit: 50 }).catch(() => ({ transactions: [] })),
+          api.getPayoutHistory().catch(() => [])
+        ]);
+        setBalance(balanceData);
+        setTransactions(transactionsData?.transactions || []);
+        setPayouts(payoutsData || []);
+      } else {
+        // Fetch tracks and stats
+        const tracksData = await api.getMyTracks();
+        setTracks(tracksData || []);
+        
+        // Fetch real stats from API
+        try {
+          const statsData = await api.getMyTrackStats();
+          setStats({
+            totalTracks: statsData.totalTracks || tracksData?.length || 0,
+            totalPlays: statsData.totalPlays || 0,
+            totalEarnings: statsData.totalEarnings || 0,
+            followerCount: statsData.followerCount || 0
+          });
+        } catch (statsError) {
+          // If stats endpoint doesn't exist, calculate from tracks
+          const calculatedStats: Stats = {
+            totalTracks: tracksData?.length || 0,
+            totalPlays: tracksData?.reduce((sum: number, track: Track) => sum + (track.plays || 0), 0) || 0,
+            totalEarnings: 0, // Would need separate calculation
+            followerCount: 0 // Would need separate API call
+          };
+          setStats(calculatedStats);
+        }
       }
     } catch (error: any) {
       console.error('Error fetching data:', error);
@@ -152,13 +177,15 @@ export default function MusicianDashboard() {
         description: error.message || "Failed to load dashboard data",
         variant: "destructive"
       });
-      setTracks([]);
-      setStats({
-        totalTracks: 0,
-        totalPlays: 0,
-        totalEarnings: 0,
-        followerCount: 0
-      });
+      if (currentSection !== 'financial') {
+        setTracks([]);
+        setStats({
+          totalTracks: 0,
+          totalPlays: 0,
+          totalEarnings: 0,
+          followerCount: 0
+        });
+      }
     }
   };
 
@@ -188,9 +215,118 @@ export default function MusicianDashboard() {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return formatCurrency(amount, 'USD');
+  const handleRequestPayout = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!user || !balance) return;
+
+    const formData = new FormData(e.currentTarget);
+    const amount = parseFloat(formData.get("amount") as string);
+    const paymentMethod = formData.get("paymentMethod") as string;
+    const accountNumber = formData.get("accountNumber") as string;
+    const accountName = formData.get("accountName") as string;
+
+    const availableBalance = balance?.available_balance || 0;
+    
+    if (amount > availableBalance) {
+      toast({
+        title: "Error",
+        description: `Insufficient funds. Available: ${formatCurrency(availableBalance)}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (amount < 25) {
+      toast({
+        title: "Error",
+        description: "Minimum payout amount is USD 25",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Get existing payout methods or create new one
+      const payoutMethods = await api.getPayoutMethods();
+      let methodId = payoutMethods.find((m: any) => 
+        (m.account_number === accountNumber || m.mobile_number === accountNumber)
+      )?.id;
+
+      if (!methodId) {
+        // Create new payout method
+        const methodType = paymentMethod === 'mobile_money' ? 'mobile_money' : 'bank_transfer';
+        const newMethod = await api.addPayoutMethod({
+          methodType: methodType,
+          accountNumber: paymentMethod === 'bank_transfer' ? accountNumber : undefined,
+          accountName: paymentMethod === 'bank_transfer' ? accountName : undefined,
+          mobileNumber: paymentMethod === 'mobile_money' ? accountNumber : undefined,
+        });
+        methodId = newMethod.id;
+      }
+
+      // Create payout request
+      await api.createPayoutRequest({
+        methodId: methodId,
+        amount: amount,
+        currency: 'USD',
+        description: `Payout request for ${accountName}`
+      });
+
+      toast({
+        title: "Success",
+        description: "Payout request submitted successfully"
+      });
+      setShowRequestPayout(false);
+      fetchData();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to submit payout request",
+        variant: "destructive"
+      });
+    }
   };
+
+  const handleUpdateProfile = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!user) return;
+
+    setIsUpdatingProfile(true);
+    const formData = new FormData(e.currentTarget);
+
+    const profileFormData = new FormData();
+    profileFormData.append('displayName', formData.get("displayName") as string);
+    profileFormData.append('bio', formData.get("bio") as string || '');
+    profileFormData.append('location', formData.get("location") as string || '');
+    profileFormData.append('phone', formData.get("phone") as string || '');
+    profileFormData.append('website', formData.get("website") as string || '');
+
+    try {
+      await api.updateProfile(profileFormData);
+      toast({ title: "Success", description: "Profile updated successfully!" });
+      // Refresh profile data
+      window.location.reload();
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message || "Failed to update profile", variant: "destructive" });
+    } finally {
+      setIsUpdatingProfile(false);
+    }
+  };
+
+  const handleAvatarUpload = async (url: string) => {
+    if (!user) return;
+    try {
+      const formData = new FormData();
+      formData.append('avatar_url', url);
+      await api.updateProfile(formData);
+      toast({ title: "Success", description: "Avatar updated!" });
+      window.location.reload();
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  };
+
+  // formatCurrency is already imported from @/lib/currency
 
   if (checkingRole) {
     return (
@@ -206,6 +342,8 @@ export default function MusicianDashboard() {
     { id: "overview", label: "Overview", icon: BarChart3 },
     { id: "tracks", label: "My Tracks", icon: Music },
     { id: "analytics", label: "Analytics", icon: TrendingUp },
+    { id: "financial", label: "Financial", icon: CreditCard },
+    { id: "profile", label: "Settings", icon: Settings },
   ];
 
   return (
@@ -526,6 +664,330 @@ export default function MusicianDashboard() {
                   </Card>
                 </div>
             </div>
+      )}
+
+      {/* Financial Section */}
+      {currentSection === 'financial' && (
+      <div>
+            <div className="space-y-6">
+              {/* Financial Summary Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Available Balance</CardTitle>
+                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {balance ? formatCurrency(balance.available_balance || 0) : formatCurrency(0)}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Ready for payout</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Pending Balance</CardTitle>
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {balance ? formatCurrency(balance.pending_balance || 0) : formatCurrency(0)}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Awaiting payment</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Earned</CardTitle>
+                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {balance ? formatCurrency(balance.total_earned || 0) : formatCurrency(stats.totalEarnings)}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Lifetime earnings</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Paid Out</CardTitle>
+                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {balance ? formatCurrency(balance.total_paid_out || 0) : formatCurrency(0)}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Withdrawn funds</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Payout Request Section */}
+              <Card>
+                <CardHeader>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <CardTitle>Payouts</CardTitle>
+                      <CardDescription>Request payouts of your earnings</CardDescription>
+                    </div>
+                    <Button 
+                      onClick={() => setShowRequestPayout(!showRequestPayout)}
+                      disabled={!balance || (balance.available_balance || 0) < 25}
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Request Payout
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {!balance || (balance.available_balance || 0) < 25 ? (
+                    <p className="text-center text-muted-foreground py-4">
+                      Minimum payout amount is USD 25. Available balance: {formatCurrency(balance?.available_balance || 0)}
+                    </p>
+                  ) : null}
+
+                  {showRequestPayout && (
+                    <Card className="mb-6">
+                      <CardHeader>
+                        <CardTitle>Request Payout</CardTitle>
+                        <CardDescription>
+                          Available: {formatCurrency(balance?.available_balance || 0)}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <form onSubmit={handleRequestPayout} className="space-y-4">
+                          <div>
+                            <Label htmlFor="payout-amount">Amount (USD)</Label>
+                            <Input
+                              id="payout-amount"
+                              name="amount"
+                              type="number"
+                              step="0.01"
+                              min="25"
+                              max={balance?.available_balance || 0}
+                              required
+                              placeholder="25"
+                            />
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Minimum: USD 25
+                            </p>
+                          </div>
+                          <div>
+                            <Label htmlFor="payment-method">Payment Method</Label>
+                            <Select name="paymentMethod" required>
+                              <SelectTrigger id="payment-method">
+                                <SelectValue placeholder="Select payment method" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="clickpesa">Click Pesa</SelectItem>
+                                <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                                <SelectItem value="mobile_money">Mobile Money</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label htmlFor="account-number">Account Number / Phone Number</Label>
+                            <Input
+                              id="account-number"
+                              name="accountNumber"
+                              type="text"
+                              required
+                              placeholder="e.g., 0712345678 or Account Number"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="account-name">Account Name</Label>
+                            <Input
+                              id="account-name"
+                              name="accountName"
+                              type="text"
+                              required
+                              placeholder="Account holder name"
+                            />
+                          </div>
+                          <Button type="submit" className="w-full">
+                            Submit Payout Request
+                          </Button>
+                        </form>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {payouts.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">No payout requests yet</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {payouts.map((payout) => (
+                        <div key={payout.id} className="flex items-center justify-between p-4 border rounded-lg">
+                          <div>
+                            <h3 className="font-semibold">Payout #{payout.id?.slice(0, 8) || 'N/A'}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              {payout.created_at ? new Date(payout.created_at).toLocaleDateString() : 'N/A'}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {payout.payment_method || 'N/A'}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-lg font-semibold">{formatCurrency(payout.amount || 0)}</div>
+                            <Badge variant={
+                              payout.status === 'completed' ? 'default' :
+                              payout.status === 'pending' ? 'secondary' :
+                              payout.status === 'processing' ? 'secondary' :
+                              'destructive'
+                            }>
+                              {payout.status || 'pending'}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Transaction History */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Transaction History</CardTitle>
+                  <CardDescription>Your recent financial transactions</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {transactions.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">No transactions yet</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {transactions.map((transaction) => (
+                        <div key={transaction.id} className="flex items-center justify-between p-4 border rounded-lg">
+                          <div>
+                            <h3 className="font-semibold">{transaction.description || transaction.type || 'Transaction'}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              {transaction.created_at ? new Date(transaction.created_at).toLocaleDateString() : 'N/A'}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <div className={`text-lg font-semibold ${
+                              transaction.amount > 0 ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                              {transaction.amount > 0 ? '+' : ''}{formatCurrency(Math.abs(transaction.amount || 0))}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Balance: {formatCurrency(transaction.balance_after || 0)}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+        </div>
+      )}
+
+      {/* Profile Section */}
+      {currentSection === 'profile' && (
+      <div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Profile Settings</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleUpdateProfile} className="space-y-6">
+                  <div>
+                    <Label htmlFor="avatar">Profile Avatar</Label>
+                    <div className="mt-2">
+                      {profile?.avatar_url ? (
+                        <div className="flex items-start gap-4 mb-4">
+                          <img
+                            src={profile.avatar_url}
+                            alt="Current avatar"
+                            className="w-24 h-24 rounded-full object-cover"
+                          />
+                        </div>
+                      ) : null}
+                      <ImageUpload
+                        bucket="avatars"
+                        userId={user?.id || ""}
+                        onUploadComplete={handleAvatarUpload}
+                        currentImage={profile?.avatar_url}
+                        maxSizeMB={2}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="displayName">Display Name</Label>
+                    <Input
+                      id="displayName"
+                      name="displayName"
+                      defaultValue={profile?.display_name}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="bio">Bio</Label>
+                    <Textarea
+                      id="bio"
+                      name="bio"
+                      defaultValue={profile?.bio || ""}
+                      placeholder="Tell us about yourself and your music..."
+                      rows={4}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="location">Location</Label>
+                    <Input
+                      id="location"
+                      name="location"
+                      defaultValue={profile?.location || ""}
+                      placeholder="City, Country"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="phone">Phone</Label>
+                    <Input
+                      id="phone"
+                      name="phone"
+                      type="tel"
+                      defaultValue={profile?.phone || ""}
+                      placeholder="+1 (XXX) XXX-XXXX"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="website">Website</Label>
+                    <Input
+                      id="website"
+                      name="website"
+                      type="url"
+                      defaultValue={profile?.website || ""}
+                      placeholder="https://yourwebsite.com"
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Email</Label>
+                    <Input value={user?.email || ""} disabled />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Email cannot be changed
+                    </p>
+                  </div>
+
+                  <Button type="submit" disabled={isUpdatingProfile}>
+                    {isUpdatingProfile && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Save Changes
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+        </div>
       )}
     </DashboardLayout>
   );

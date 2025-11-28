@@ -25,6 +25,7 @@ export function getDashboardRoute(role: string | string[] | null | undefined): s
     artisan: '/artisan-dashboard',
     employer: '/employer-dashboard',
     event_organizer: '/event-organizer-dashboard',
+    musician: '/musician-dashboard',
     creator: '/dashboard', // Creators use the main dashboard
     user: '/dashboard', // Regular users use the main dashboard
   };
