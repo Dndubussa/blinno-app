@@ -4,6 +4,7 @@ import { ArrowRight, LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 interface CategoryCardProps {
   id: string;
@@ -29,6 +30,7 @@ export const CategoryCard = ({
   href = "#",
   backgroundImage
 }: CategoryCardProps) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const cardRef = useRef<HTMLDivElement>(null);
   const [parallaxOffset, setParallaxOffset] = useState(0);
@@ -128,7 +130,7 @@ export const CategoryCard = ({
           asChild
         >
           <Link to={href}>
-            <span>View {title}</span>
+            <span>{t("common.view")} {title}</span>
             <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
           </Link>
         </Button>
