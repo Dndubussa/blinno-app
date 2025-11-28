@@ -296,7 +296,7 @@ router.post('/bookings/:id/payment', authenticate, async (req: AuthRequest, res)
     const totalAmount = nights * parseFloat(booking.room.price_per_night.toString());
 
     // Calculate fees with user's currency
-    const feeCalculation = platformFees.calculateServiceBookingFee(totalAmount, undefined, currency);
+    const feeCalculation = platformFees.calculateServiceBookingFee(totalAmount, undefined, undefined, currency);
 
     // Create payment record with user's currency
     const { data: payment, error: paymentError } = await supabase

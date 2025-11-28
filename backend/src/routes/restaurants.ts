@@ -458,7 +458,7 @@ router.post('/reservations/:id/payment', authenticate, async (req: AuthRequest, 
     }
 
     // Calculate fees with user's currency
-    const feeCalculation = platformFees.calculateServiceBookingFee(totalAmount, undefined, currency);
+    const feeCalculation = platformFees.calculateServiceBookingFee(totalAmount, undefined, undefined, currency);
 
     // Create payment record with user's currency
     const { data: payment, error: paymentError } = await supabase

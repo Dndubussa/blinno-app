@@ -209,7 +209,7 @@ router.post('/:id/payment', authenticate, async (req: AuthRequest, res) => {
     }
 
     // Calculate fees with user's currency (performance bookings have higher platform fee - 12%)
-    const baseFee = platformFees.calculateServiceBookingFee(parseFloat(booking.fee.toString()), undefined, currency);
+    const baseFee = platformFees.calculateServiceBookingFee(parseFloat(booking.fee.toString()), undefined, undefined, currency);
     // Override for performance bookings (12% instead of 10%)
     const performanceFee = parseFloat(booking.fee.toString()) * 0.12;
     const fixedFee = platformFees['getFixedFeeForCurrency'] ? 

@@ -208,7 +208,7 @@ router.post('/:id/payment', authenticate, async (req: AuthRequest, res) => {
     }
 
     // Calculate fees with user's currency
-    const feeCalculation = platformFees.calculateCommissionFee(parseFloat(commission.budget.toString()), undefined, currency);
+    const feeCalculation = platformFees.calculateCommissionFee(parseFloat(commission.budget.toString()), undefined, undefined, currency);
 
     // Create payment record with user's currency
     const { data: payment, error: paymentError } = await supabase
