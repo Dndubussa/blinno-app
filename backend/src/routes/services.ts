@@ -41,7 +41,7 @@ router.get('/', async (req, res) => {
       }
 
       promises.push(
-        query.then(({ data }) => (data || []).map((fs: any) => ({
+        Promise.resolve(query).then(({ data }) => (data || []).map((fs: any) => ({
           id: fs.id,
           creator_id: fs.user_id,
           title: fs.title,
@@ -90,7 +90,7 @@ router.get('/', async (req, res) => {
       }
 
       promises.push(
-        query.then(({ data }) => (data || []).map((as: any) => ({
+        Promise.resolve(query).then(({ data }) => (data || []).map((as: any) => ({
           id: as.id,
           creator_id: as.user_id,
           title: as.title,
@@ -134,7 +134,7 @@ router.get('/', async (req, res) => {
       }
 
       promises.push(
-        query.then(({ data }) => (data || []).map((mi: any) => ({
+        Promise.resolve(query).then(({ data }) => (data || []).map((mi: any) => ({
           id: mi.id,
           creator_id: mi.restaurants?.owner_id,
           title: mi.name,
@@ -179,7 +179,7 @@ router.get('/', async (req, res) => {
       }
 
       promises.push(
-        query.then(({ data }) => (data || []).map((e: any) => ({
+        Promise.resolve(query).then(({ data }) => (data || []).map((e: any) => ({
           id: e.id,
           creator_id: e.organizer_id,
           title: e.title,
@@ -223,7 +223,7 @@ router.get('/', async (req, res) => {
       }
 
       promises.push(
-        query.then(({ data }) => (data || []).map((lr: any) => ({
+        Promise.resolve(query).then(({ data }) => (data || []).map((lr: any) => ({
           id: lr.id,
           creator_id: lr.lodging_properties?.owner_id,
           title: `${lr.lodging_properties?.name} - ${lr.room_type}`,
