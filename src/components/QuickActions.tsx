@@ -12,8 +12,10 @@ import {
   UserPlus,
 } from "lucide-react";
 import { AnimatedSection } from "./AnimatedSection";
+import { useTranslation } from "react-i18next";
 
 export function QuickActions() {
+  const { t } = useTranslation();
   // Safely access auth context
   const authContext = useContext(AuthContext);
   const user = authContext?.user || null;
@@ -27,30 +29,30 @@ export function QuickActions() {
   const actions = [
     {
       icon: Heart,
-      label: "My Wishlist",
-      description: "View saved items",
+      label: t("quickActions.wishlist.label"),
+      description: t("quickActions.wishlist.description"),
       href: "/wishlist",
       color: "text-red-500",
     },
     {
       icon: BarChart3,
-      label: "Analytics",
-      description: "Track performance",
+      label: t("quickActions.analytics.label"),
+      description: t("quickActions.analytics.description"),
       href: "/analytics",
       color: "text-blue-500",
       show: profile?.is_creator,
     },
     {
       icon: Search,
-      label: "Advanced Search",
-      description: "Find exactly what you need",
+      label: t("quickActions.search.label"),
+      description: t("quickActions.search.description"),
       href: "/search",
       color: "text-purple-500",
     },
     {
       icon: Shield,
-      label: "Security",
-      description: "Enable 2FA",
+      label: t("quickActions.security.label"),
+      description: t("quickActions.security.description"),
       href: "/2fa",
       color: "text-green-500",
     },
@@ -60,9 +62,9 @@ export function QuickActions() {
     <AnimatedSection delay={500}>
       <div className="container mx-auto px-4 py-12">
         <div className="mb-6">
-          <h2 className="text-3xl font-bold mb-2">Quick Actions</h2>
+          <h2 className="text-3xl font-bold mb-2">{t("quickActions.title")}</h2>
           <p className="text-muted-foreground">
-            Access your favorite features quickly
+            {t("quickActions.subtitle")}
           </p>
         </div>
 

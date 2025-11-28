@@ -442,10 +442,10 @@ export default function FreelancerDashboard() {
         return;
       }
 
-      if (amount < 10000) {
+      if (amount < 25) {
         toast({
           title: "Error",
-          description: "Minimum payout amount is USD 10,000",
+          description: "Minimum payout amount is USD 25",
           variant: "destructive",
         });
         return;
@@ -1074,9 +1074,9 @@ export default function FreelancerDashboard() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {!balance || (balance.available_balance || 0) < 10000 ? (
+                  {!balance || (balance.available_balance || 0) < 25 ? (
                     <p className="text-center text-muted-foreground py-4">
-                      Minimum payout amount is USD 10,000. Available balance: {formatCurrency(balance?.available_balance || 0)}
+                      Minimum payout amount is USD 25. Available balance: {formatCurrency(balance?.available_balance || 0)}
                     </p>
                   ) : null}
 
@@ -1097,13 +1097,13 @@ export default function FreelancerDashboard() {
                               name="amount"
                               type="number"
                               step="0.01"
-                              min="10000"
+                              min="25"
                               max={balance?.available_balance || 0}
                               required
-                              placeholder="10000"
+                              placeholder="25"
                             />
                             <p className="text-xs text-muted-foreground mt-1">
-                              Minimum: USD 10,000
+                              Minimum: USD 25
                             </p>
                           </div>
                           <div>

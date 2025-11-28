@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowRight, LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 interface CategoryCardProps {
   id: string;
@@ -28,10 +29,21 @@ export const CategoryCard = ({
   href = "#",
   backgroundImage
 }: CategoryCardProps) => {
+  const navigate = useNavigate();
   const cardRef = useRef<HTMLDivElement>(null);
   const [parallaxOffset, setParallaxOffset] = useState(0);
   const rafId = useRef<number | null>(null);
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't navigate if clicking on the button (it has its own link)
+    if ((e.target as HTMLElement).closest('button, a')) {
+      return;
+    }
+    if (href && href !== "#") {
+      navigate(href);
+    }
+  };
 
   useEffect(() => {
     if (!backgroundImage || isMobile) {
@@ -64,7 +76,11 @@ export const CategoryCard = ({
   }, [backgroundImage, isMobile]);
 
   return (
-    <Card ref={cardRef} className="group relative overflow-hidden border-border bg-card hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 h-full flex flex-col">
+    <Card 
+      ref={cardRef} 
+      className="group relative overflow-hidden border-border bg-card hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 h-full flex flex-col cursor-pointer"
+      onClick={handleCardClick}
+    >
       {backgroundImage && (
         <>
           <div 
@@ -111,10 +127,10 @@ export const CategoryCard = ({
           className="w-full justify-between group-hover:text-primary transition-colors mt-auto"
           asChild
         >
-          <a href={href}>
+          <Link to={href}>
             <span>View {title}</span>
             <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-          </a>
+          </Link>
         </Button>
       </div>
     </Card>

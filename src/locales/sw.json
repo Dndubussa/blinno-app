@@ -30,7 +30,22 @@
     "previous": "Iliyotangulia",
     "confirm": "Thibitisha",
     "yes": "Ndiyo",
-    "no": "Hapana"
+    "no": "Hapana",
+    "name": "Jina",
+    "email": "Barua pepe",
+    "phone": "Simu",
+    "address": "Anwani",
+    "country": "Nchi",
+    "city": "Jiji",
+    "description": "Maelezo",
+    "price": "Bei",
+    "quantity": "Kiasi",
+    "total": "Jumla",
+    "subtotal": "Jumla ndogo",
+    "date": "Tarehe",
+    "time": "Muda",
+    "status": "Hali",
+    "actions": "Vitendo"
   },
   "header": {
     "title": "BLINNO",
@@ -50,31 +65,216 @@
   },
   "homepage": {
     "hero": {
-      "title": "Unganisha, Unda, na Kustawi",
-      "subtitle": "Jukwaa la mwisho kwa waundaji, biashara, na watoa huduma katika Afrika na zaidi",
-      "cta": "Anza"
+      "title": "BLISSFUL INNOVATIONS",
+      "titlePart1": "BLISSFUL INNOVATIONS",
+      "titlePart2": "Gundua",
+      "titlePart3": ", Unda na Unganisha",
+      "subtitle": "Gundua, Unda na Unganisha na Waundaji na Biashara za Kienyeji Duniani Kote",
+      "exploreContent": "Gundua Maudhui",
+      "submitContent": "Wasilisha Maudhui",
+      "getStartedToday": "Anza Leo",
+      "creators": "Waundaji",
+      "events": "Matukio",
+      "products": "Bidhaa",
+      "worldwidePlatform": "🌍 Jukwaa la Duniani Kote",
+      "creatorOwned": "🌟 100% ya Waundaji",
+      "verifiedCreators": "✓ Waundaji Waliohakikiwa"
     },
     "categories": {
       "title": "Gundua Kategoria",
-      "subtitle": "Tafuta unachotafuta"
+      "subtitle": "Tafuta unachotafuta",
+      "news": {
+        "title": "Habari na Vyombo vya Habari",
+        "description": "Vichwa vya habari vya hivi karibuni",
+        "stats": "Sasisho za Kila Siku",
+        "badge": "🔥 Inavuma"
+      },
+      "creativity": {
+        "title": "Ubunifu",
+        "description": "Onyesha sanaa yako",
+        "stats": "Kazi 15K+"
+      },
+      "marketplace": {
+        "title": "Soko",
+        "description": "Nunua na uuze bidhaa",
+        "stats": "Bidhaa 2K+",
+        "badge": "⭐ Zinazojulikana"
+      },
+      "events": {
+        "title": "Matukio",
+        "description": "Gundua na uandae matukio",
+        "stats": "Matukio 500+",
+        "badge": "🔥 Inavuma"
+      },
+      "music": {
+        "title": "Muziki",
+        "description": "Gundua Muziki wa Kienyeji",
+        "stats": "Nyimbo 1K+"
+      },
+      "restaurants": {
+        "title": "Mikahawa",
+        "description": "Pata chakula bora",
+        "stats": "Mikahawa 200+"
+      },
+      "lodging": {
+        "title": "Malazi",
+        "description": "Nunua makao ya kipekee",
+        "stats": "Mali 350+"
+      },
+      "education": {
+        "title": "Elimu",
+        "description": "Jifunze na ufundishe",
+        "stats": "Kozi 100+"
+      },
+      "jobs": {
+        "title": "Kazi",
+        "description": "Pata fursa",
+        "stats": "Nafasi 250+"
+      },
+      "artisans": {
+        "title": "Fundi",
+        "description": "Ajiri wafanyakazi wenye ujuzi",
+        "stats": "Fundi 150+"
+      },
+      "movies": {
+        "title": "Filamu",
+        "description": "Tazama Filamu za Kienyeji",
+        "stats": "Filamu 500+"
+      },
+      "community": {
+        "title": "Jumuiya",
+        "description": "Ungana na wengine",
+        "stats": "Wanachama 10K+"
+      }
     },
+    "getStartedToday": "Anza Leo",
+    "joinCommunity": "Jiunge na jumuiya yetu ya kimataifa ya waundaji na biashara",
     "howToGetStarted": {
-      "title": "Jinsi ya Kuanza",
-      "step1": "Unda Akaunti",
-      "step1Desc": "Jisajili na uchague jukumu lako",
-      "step2": "Kamilisha Wasifu",
-      "step2Desc": "Ongeza taarifa zako na mapendeleo",
-      "step3": "Anza Kuunda",
-      "step3Desc": "Orodhesha bidhaa, huduma, au maudhui",
-      "step4": "Unganisha",
-      "step4Desc": "Shirikiana na wateja na waundaji",
-      "step5": "Kua",
-      "step5Desc": "Jenga uwepo wako na upate mapato"
+      "title": "Jinsi ya Kuanza kwenye BLINNO",
+      "badge": "Kuanza",
+      "subtitle": "Jiunge na maelfu ya waundaji na biashara tayari zinazopata pesa kwenye jukwaa letu. Anza kwa hatua 5 tu rahisi!",
+      "step1": {
+        "title": "Unda Akaunti Yako",
+        "description": "Jisajili kwa anwani yako ya barua pepe. Ni bure na inachukua chini ya dakika 2!",
+        "detail1": "Bofya 'Jisajili' kwenye kona ya juu kulia",
+        "detail2": "Ingiza barua pepe yako na uunde nenosiri",
+        "detail3": "Jaza taarifa zako za msingi (jina, nchi, simu)",
+        "detail4": "Chagua jukumu lako kulingana na unachotaka kufanya kwenye jukwaa",
+        "action": "Jisajili Sasa"
+      },
+      "step2": {
+        "title": "Thibitisha Barua Pepe Yako",
+        "description": "Angalia kikasha chako na ubofye kiungo cha uthibitishaji ili kuamsha akaunti yako.",
+        "detail1": "Tutakutumia barua pepe ya uthibitishaji",
+        "detail2": "Bofya kiungo kwenye barua pepe ili kuthibitisha",
+        "detail3": "Akaunti yako itaamshwa mara moja",
+        "detail4": "Unaweza kuanza kutumia jukwaa mara moja"
+      },
+      "step3": {
+        "title": "Kamilisha Wasifu Wako",
+        "description": "Ongeza picha yako ya wasifu, wasifu, na onyesha kazi yako ili kuvutia wateja.",
+        "detail1": "Pakia picha ya kitaalamu ya wasifu",
+        "detail2": "Andika wasifu wa kuvutia kuhusu wewe",
+        "detail3": "Ongeza portfolio yako, bidhaa, au huduma",
+        "detail4": "Weka mapendeleo yako ya malipo",
+        "action": "Nenda kwenye Dashibodi"
+      },
+      "step4": {
+        "title": "Anza Kupata Mapato",
+        "description": "Anza kuuza, kutoa huduma, au kupata mapato kutoka kwa maudhui yako kwenye jukwaa.",
+        "detail1": "Orodhesha bidhaa au huduma zako",
+        "detail2": "Weka bei na upatikanaji wako",
+        "detail3": "Jibu maswali na maagizo",
+        "detail4": "Fuata mapato yako kwenye dashibodi yako",
+        "action": "Gundua Vipengele"
+      },
+      "step5": {
+        "title": "Pata Malipo Kwa Usalama",
+        "description": "Pokea malipo kupitia Click Pesa na omba malipo wakati wowote uko tayari.",
+        "detail1": "Wateja hulipa kwa usalama kupitia Click Pesa",
+        "detail2": "Fedha zinawekwa kwa usalama hadi uwasilishaji",
+        "detail3": "Omba malipo kwenye akaunti yako ya pesa za simu",
+        "detail4": "Fuata muamala wote kwenye dashibodi yako",
+        "action": "Angalia Mapato"
+      },
+      "roleSelection": {
+        "title": "Chagua Jukumu Lako",
+        "subtitle": "Chagua jukumu linaloelezea zaidi unachotaka kufanya kwenye BLINNO",
+        "creator": "Muundaji",
+        "creatorDesc": "Onyesha kazi yako na uuze bidhaa",
+        "freelancer": "Mfanyakazi wa Huru",
+        "freelancerDesc": "Toa huduma za kitaalamu",
+        "seller": "Muuzaji",
+        "sellerDesc": "Uuze bidhaa kwenye soko",
+        "eventOrganizer": "Mratibu wa Matukio",
+        "eventOrganizerDesc": "Unda na usimamize matukio",
+        "musician": "Mwanamuziki",
+        "musicianDesc": "Shiriki muziki na hifadhi maonyesho",
+        "educator": "Mwalimu",
+        "educatorDesc": "Unda na uuze kozi",
+        "journalist": "Mwandishi wa Habari",
+        "journalistDesc": "Chapisha makala na habari",
+        "artisan": "Fundi",
+        "artisanDesc": "Onyesha ufundi wa mikono",
+        "restaurantOwner": "Mmiliki wa Mkahawa",
+        "restaurantOwnerDesc": "Orodhesha mkahawa wako",
+        "lodgingProvider": "Mtoa Malazi",
+        "lodgingProviderDesc": "Toa malazi",
+        "employer": "Mwajiri",
+        "employerDesc": "Chapisha kazi na waajiri talanta",
+        "selected": "Umechagua",
+        "roleSetOnSignup": "Jukumu hili litakuwa limewekwa unapounda akaunti yako.",
+        "signUpAs": "Jisajili kama"
+      },
+      "cta": {
+        "joinUsers": "Jiunge na watumiaji 10,000+ hai",
+        "readyToStart": "Uko Tayari Kuanza?",
+        "description": "Unda akaunti yako ya bure leo na uanze kupata mapato kutoka kwa ujuzi, bidhaa, au huduma zako. Hakuna kadi ya mkopo inayohitajika.",
+        "createFreeAccount": "Unda Akaunti ya Bure",
+        "signIn": "Ingia",
+        "goToDashboard": "Nenda kwenye Dashibodi",
+        "freeToJoin": "Bure kujiunga",
+        "noCreditCard": "Hakuna kadi ya mkopo inayohitajika",
+        "startEarning": "Anza kupata mapato mara moja"
+      }
     },
     "pricing": {
       "title": "Chagua Mpango Wako",
       "subtitle": "Bei rahisi kwa kila mtu"
+    },
+    "featuredCreators": {
+      "title": "Waundaji Wanaojulikana",
+      "subtitle": "Wasanii wakuu, wafanyabiashara, na watu wenye ushawishi kutoka duniani kote",
+      "followers": "wafuasi",
+      "joinThousands": "Jiunge na maelfu ya waundaji tayari kwenye BLINNO"
+    },
+    "testimonials": {
+      "title": "Hadithi za Mafanikio",
+      "subtitle": "Sikiliza kutoka kwa waundaji ambao wamebadilisha kazi zao kwa BLINNO",
+      "joinSuccessful": "Jiunge na maelfu ya waundaji wenye mafanikio kwenye BLINNO"
     }
+  },
+  "footer": {
+    "about": "Jukwaa lako la kugundua, kuunda, na kuunganisha na waundaji na biashara za kienyeji. Kukuza talanta na utamaduni duniani kote kupitia jukwaa letu linalopatikana kimataifa.",
+    "quickLinks": "Viungo vya Haraka",
+    "aboutUs": "Kuhusu Sisi",
+    "howItWorks": "Jinsi Inavyofanya Kazi",
+    "featuredCreators": "Waundaji Wanaojulikana",
+    "successStories": "Hadithi za Mafanikio",
+    "blog": "Blogu",
+    "categories": "Kategoria",
+    "events": "Matukio",
+    "marketplace": "Soko",
+    "musicEntertainment": "Muziki na Burudani",
+    "jobsOpportunities": "Kazi na Fursa",
+    "education": "Elimu",
+    "contactUs": "Wasiliana Nasi",
+    "worldwide": "Duniani Kote",
+    "globalPlatform": "Jukwaa la Kimataifa",
+    "copyright": "© 2024 BLINNO. Haki zote zimehifadhiwa. Jukwaa la Kimataifa.",
+    "privacyPolicy": "Sera ya Faragha",
+    "termsOfService": "Masharti ya Huduma",
+    "cookiePolicy": "Sera ya Vidakuzi"
   },
   "auth": {
     "signIn": {
@@ -83,16 +283,35 @@
       "password": "Nenosiri",
       "forgotPassword": "Umesahau nenosiri?",
       "noAccount": "Huna akaunti?",
-      "signUpLink": "Jisajili"
+      "signUpLink": "Jisajili",
+      "welcomeBack": "Karibu Tena",
+      "description": "Ingia kwenye akaunti yako ya BLINNO"
     },
     "signUp": {
       "title": "Unda Akaunti",
       "email": "Barua pepe",
       "password": "Nenosiri",
       "confirmPassword": "Thibitisha Nenosiri",
+      "firstName": "Jina la Kwanza",
+      "middleName": "Jina la Kati",
+      "lastName": "Jina la Mwisho",
+      "phoneNumber": "Nambari ya Simu",
+      "country": "Nchi",
+      "selectCountry": "Chagua nchi yako",
       "role": "Chagua Jukumu Lako",
       "hasAccount": "Tayari una akaunti?",
-      "signInLink": "Ingia"
+      "signInLink": "Ingia",
+      "joinToday": "Jiunge na BLINNO leo"
+    },
+    "emailVerificationRequired": "Uthibitishaji wa Barua Pepe Unahitajika",
+    "emailVerificationDescription": "Tafadhali angalia barua pepe yako ({{email}}) na ubofye kiungo cha uthibitishaji ili kuamsha akaunti yako. Utaelekezwa kiotomatiki kwenye dashibodi yako mara barua pepe yako ikiwa imethibitishwa.",
+    "orContinueWith": "Au endelea na",
+    "continueWithGoogle": "Endelea na Google",
+    "googleSignInDescription": "Kuingia kwa Google hukuruhusu kufikia akaunti yako haraka",
+    "iWantToJoinAs": "Nataka kujiunga kama",
+    "chooseHowToUse": "Chagua jinsi unavyotaka kutumia BLINNO",
+    "roles": {
+      "user": "Mtumiaji"
     }
   },
   "marketplace": {
@@ -102,7 +321,36 @@
     "viewDetails": "Angalia Maelezo",
     "price": "Bei",
     "outOfStock": "Hakuna Akiba",
-    "inStock": "Ipo Akiba"
+    "inStock": "Ipo Akiba",
+    "settingUp": "Jedwali la bidhaa linakamilishwa. Tafadhali onyesha upya baada ya muda mfupi.",
+    "failedToLoad": "Imeshindwa kupakia bidhaa. Tafadhali jaribu tena baadaye.",
+    "signInRequired": "Kuingia kunahitajika",
+    "signInToAddToCart": "Tafadhali ingia ili kuongeza vitu kwenye kikapu chako",
+    "addedToCart": "Imeongezwa kwenye kikapu",
+    "itemAddedToCart": "Kipengee kimeongezwa kwenye kikapu chako",
+    "failedToAddToCart": "Imeshindwa kuongeza kipengee kwenye kikapu",
+    "activeFilters": "Vichujio hai",
+    "category": "Kategoria",
+    "location": "Eneo",
+    "removeCategoryFilter": "Ondoa kichujio cha kategoria",
+    "removeLocationFilter": "Ondoa kichujio cha eneo",
+    "clearSearch": "Futa utafutaji",
+    "clearAll": "Futa Zote",
+    "searchPlaceholder": "Tafuta bidhaa na kozi...",
+    "allCategories": "Kategoria Zote",
+    "allLocations": "Maeneo Yote",
+    "noProducts": "Hakuna bidhaa zilizopatikana",
+    "tryAdjustingFilters": "Jaribu kurekebisha utafutaji au vichujio vyako",
+    "beFirstToSell": "Kuwa wa kwanza kuuza kwenye soko letu!",
+    "showingItems": "Inaonyesha {{filtered}} ya {{total}} vitu",
+    "by": "Na",
+    "unknownSeller": "Muuzaji Asiyejulikana",
+    "course": "Kozi",
+    "viewCourse": "Angalia Kozi",
+    "inStock": "ipo akiba",
+    "out": "Nje",
+    "add": "Ongeza",
+    "reviews": "maoni"
   },
   "cart": {
     "title": "Kikapu cha Ununuzi",
@@ -111,7 +359,39 @@
     "total": "Jumla",
     "checkout": "Maliza Ununuzi",
     "remove": "Ondoa",
-    "quantity": "Kiasi"
+    "quantity": "Kiasi",
+    "shippingAddress": "Anwani ya Uwasilishaji",
+    "notes": "Maelezo ya Agizo (Si Lazima)",
+    "proceedToPayment": "Endelea kwa Malipo",
+    "orderTotal": "Jumla ya Agizo",
+    "itemsInCart": "Kipengee {{count}} kwenye kikapu chako",
+    "itemsInCart_plural": "Vipengee {{count}} kwenye kikapu chako",
+    "browseMarketplace": "Vinjari Soko",
+    "orderSummary": "Muhtasari wa Agizo",
+    "reviewOrderDetails": "Kagua maelezo ya agizo lako",
+    "streetAddress": "Anwani ya Mtaa",
+    "enterStreetAddress": "Ingiza anwani ya mtaa",
+    "postalCode": "Msimbo wa Posta",
+    "processing": "Inachakata...",
+    "completePayment": "Maliza Malipo",
+    "enterPhoneForClickPesa": "Ingiza nambari yako ya simu ili kuendelea na malipo ya Click Pesa",
+    "enterMobileMoneyNumber": "Ingiza nambari yako ya pesa za simu (M-Pesa, Tigo Pesa, Airtel Money, nk.)",
+    "payWithClickPesa": "Lipa kwa Click Pesa",
+    "redirectToClickPesa": "Utaelekezwa kwenye Click Pesa ili kukamilisha malipo yako kwa usalama",
+    "failedToLoad": "Imeshindwa kupakia vitu vya kikapu",
+    "itemRemoved": "Kipengee kimeondolewa",
+    "itemRemovedFromCart": "Kipengee kimeondolewa kutoka kikapuni",
+    "failedToRemove": "Imeshindwa kuondoa kipengee",
+    "shippingAddressRequired": "Anwani ya uwasilishaji inahitajika",
+    "provideShippingAddress": "Tafadhali toa anwani yako ya uwasilishaji",
+    "checkoutError": "Hitilafu ya Maliza Ununuzi",
+    "failedToProcessCheckout": "Imeshindwa kuchakata maliza ununuzi",
+    "phoneRequired": "Nambari ya simu inahitajika",
+    "enterPhoneForPayment": "Tafadhali ingiza nambari yako ya simu kwa malipo",
+    "invalidPhone": "Nambari ya simu si sahihi",
+    "enterValidPhone": "Tafadhali ingiza nambari sahihi ya simu",
+    "paymentError": "Hitilafu ya Malipo",
+    "failedToInitiatePayment": "Imeshindwa kuanzisha malipo. Tafadhali jaribu tena."
   },
   "orders": {
     "title": "Maagizo Yangu",
@@ -128,7 +408,34 @@
     "tracking": "Ufuatiliaji",
     "viewDetails": "Angalia Maelezo",
     "cancelOrder": "Ghairi Agizo",
-    "confirmDelivery": "Thibitisha Uwasilishaji"
+    "confirmDelivery": "Thibitisha Uwasilishaji",
+    "trackAndManage": "Fuatilia na usimamie maagizo yako",
+    "all": "Zote",
+    "active": "Hai",
+    "completed": "Yamekamilika",
+    "loading": "Inapakia maagizo...",
+    "failedToLoad": "Imeshindwa kupakia maagizo",
+    "confirmCancel": "Je, una uhakika unataka kughairi agizo hili?",
+    "cancelledByBuyer": "Imeghairiwa na mnunuzi",
+    "orderCancelled": "Agizo limeghairiwa",
+    "orderCancelledDesc": "Agizo lako limeghairiwa",
+    "failedToCancel": "Imeshindwa kughairi agizo",
+    "deliveryConfirmed": "Uwasilishaji umethibitishwa",
+    "thankYouForConfirming": "Asante kwa kuthibitisha uwasilishaji!",
+    "failedToConfirmDelivery": "Imeshindwa kuthibitisha uwasilishaji",
+    "items": "Vitu",
+    "moreItems": "vitu zaidi",
+    "orderInformation": "Taarifa za Agizo",
+    "orderId": "Kitambulisho cha Agizo",
+    "totalAmount": "Jumla ya Kiasi",
+    "orderDate": "Tarehe ya Agizo",
+    "statusHistory": "Historia ya Hali",
+    "by": "na",
+    "trackingInformation": "Taarifa za Ufuatiliaji",
+    "trackingNumber": "Nambari ya Ufuatiliaji",
+    "carrier": "Mchukuzi",
+    "estimatedDelivery": "Tarehe ya Uwasilishaji Inayotarajiwa",
+    "failedToLoadDetails": "Imeshindwa kupakia maelezo ya agizo"
   },
   "services": {
     "title": "Huduma",
@@ -155,6 +462,51 @@
     "pricing": "Bei",
     "fixed": "thabiti"
   },
+  "music": {
+    "title": "Muziki",
+    "subtitle": "Gundua na sikiliza muziki kutoka kwa waundaji wenye talanta",
+    "play": "Cheza",
+    "pause": "Simamisha",
+    "genre": "Aina",
+    "allGenres": "Aina Zote",
+    "duration": "Muda",
+    "plays": "Machezo",
+    "noTracks": "Hakuna nyimbo zilizopatikana",
+    "failedToLoad": "Imeshindwa kupakia nyimbo za muziki",
+    "searchPlaceholder": "Tafuta nyimbo au waandaji...",
+    "nowPlaying": "Inacheza Sasa",
+    "unknownTrack": "Nyimbo Isiyojulikana",
+    "showingTracks": "Inaonyesha nyimbo {{count}}",
+    "showingTracks_plural": "Inaonyesha nyimbo {{count}}",
+    "tryAdjustingFilters": "Jaribu kurekebisha utafutaji au vichujio vyako",
+    "beFirstToUpload": "Kuwa wa kwanza kupakia muziki!",
+    "likes": "Upendaji"
+  },
+  "events": {
+    "title": "Matukio",
+    "subtitle": "Gundua matukio yanayokuja na uzoefu",
+    "upcoming": "Yanayokuja",
+    "past": "Yaliyopita",
+    "attending": "Wanahudhuria",
+    "attendance": "Ushiriki",
+    "register": "Jisajili",
+    "viewDetails": "Angalia Maelezo",
+    "noEvents": "Hakuna matukio yaliyopatikana",
+    "failedToFetch": "Imeshindwa kupata matukio",
+    "registerFor": "Jisajili kwa",
+    "fillFormToRegister": "Jaza fomu hapa chini ili kujisajili kwa tukio hili",
+    "checkBackLater": "Rudi baadaye kwa matukio yanayokuja!",
+    "soldOut": "Imeuza Zote",
+    "pastEvent": "Tukio la Zamani",
+    "cancelled": "Limeghairiwa",
+    "location": "Eneo",
+    "date": "Tarehe",
+    "time": "Muda",
+    "ticketPrice": "Bei ya Tiketi",
+    "free": "Bure",
+    "full": "imejaa",
+    "registerNow": "Jisajili Sasa"
+  },
   "dashboard": {
     "title": "Dashibodi",
     "overview": "Muhtasari",
@@ -162,7 +514,57 @@
     "orders": "Maagizo",
     "earnings": "Mapato",
     "analytics": "Uchambuzi",
-    "settings": "Mipangilio"
+    "settings": "Mipangilio",
+    "myPortfolio": "Portfolio Yangu",
+    "bookings": "Maagizo",
+    "profileSettings": "Mipangilio ya Wasifu",
+    "failedToFetch": "Imeshindwa kupata data",
+    "itemTitle": "Kichwa",
+    "selectCategory": "Tafadhali chagua kategoria",
+    "portfolioItemAdded": "Kipengee cha portfolio kimeongezwa!",
+    "failedToAddPortfolio": "Imeshindwa kuongeza portfolio",
+    "profileUpdated": "Wasifu umehakikiwa!",
+    "failedToUpdateProfile": "Imeshindwa kusasisha wasifu",
+    "avatarUpdated": "Picha ya wasifu imesasishwa!",
+    "failedToUpdateAvatar": "Imeshindwa kusasisha picha ya wasifu",
+    "portfolioItemDeleted": "Kipengee cha portfolio kimefutwa",
+    "failedToDeletePortfolio": "Imeshindwa kufuta portfolio",
+    "portfolioItems": "Vipengee vya Portfolio",
+    "totalItemsAcrossCategories": "Vipengee {{count}} kwa jumla katika kategoria {{categories}}",
+    "addItem": "Ongeza Kipengee",
+    "categoryOverview": "Muhtasari wa Kategoria",
+    "all": "Zote",
+    "filterByCategory": "Chuja kwa kategoria",
+    "allCategories": "Kategoria Zote",
+    "clearFilter": "Futa Chujio",
+    "showing": "Inaonyesha: {{category}} (vipengee {{count}})",
+    "addPortfolioItem": "Ongeza Kipengee cha Portfolio",
+    "category": "Kategoria",
+    "tags": "Lebo (zimetenganishwa na koma)",
+    "tagsPlaceholder": "muundo, sanaa, upigaji picha",
+    "noItemsInCategory": "Hakuna vipengee vya portfolio vilivyopatikana katika kategoria \"{{category}}\".",
+    "viewAllCategories": "Angalia Kategoria Zote",
+    "noPortfolioItemsYet": "Bado hakuna vipengee vya portfolio",
+    "addYourFirstItem": "Ongeza Kipengee Chako Cha Kwanza",
+    "noBookingsYet": "Bado hakuna maagizo",
+    "service": "Huduma",
+    "client": "Mteja",
+    "unknown": "Haijulikani",
+    "at": "saa",
+    "profileAvatar": "Picha ya Wasifu",
+    "currentAvatar": "Picha ya sasa",
+    "displayName": "Jina la Kuonyesha",
+    "bio": "Wasifu",
+    "bioPlaceholder": "Tuambie kuhusu wewe na huduma zako...",
+    "location": "Eneo",
+    "locationPlaceholder": "Jiji, Nchi",
+    "phone": "Simu",
+    "phonePlaceholder": "+255 XXX XXX XXX",
+    "website": "Tovuti",
+    "websitePlaceholder": "https://tovutiyako.com",
+    "email": "Barua Pepe",
+    "emailCannotBeChanged": "Barua pepe haiwezi kubadilishwa",
+    "saveChanges": "Hifadhi Mabadiliko"
   },
   "settings": {
     "title": "Mipangilio",
@@ -205,6 +607,34 @@
     "unauthorized": "Huna ruhusa ya kufanya kitendo hiki",
     "notFound": "Rasilimali haijapatikana",
     "validation": "Tafadhali angalia ingizo lako na ujaribu tena"
+  },
+  "quickActions": {
+    "title": "Vitendo vya Haraka",
+    "subtitle": "Pata huduma unazozipenda haraka",
+    "wishlist": {
+      "label": "Orodha Yangu ya Matamanio",
+      "description": "Angalia vitu vilivyohifadhiwa"
+    },
+    "analytics": {
+      "label": "Uchambuzi",
+      "description": "Fuatilia utendaji"
+    },
+    "search": {
+      "label": "Utafutaji wa Hali ya Juu",
+      "description": "Pata hasa unachohitaji"
+    },
+    "security": {
+      "label": "Usalama",
+      "description": "Washa 2FA"
+    }
+  },
+  "socialFeed": {
+    "title": "Hivi Karibuni Kutoka kwa Waundaji",
+    "subtitle": "Angalia kile waundaji unawafuatilio wanachoshiriki",
+    "viewAll": "Angalia Zote",
+    "loading": "Inapakia ujumbe...",
+    "emptyFeed": "Ujumbe wako ni tupu. Fuatilia waundaji ili uone machapisho yao!",
+    "discoverCreators": "Gundua Waundaji",
+    "post": "Chapisho"
   }
 }
-

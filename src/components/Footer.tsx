@@ -1,9 +1,11 @@
 import { Facebook, Twitter, Instagram, Youtube, Mail, MapPin, Phone, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import logo from "@/assets/logo.png";
 
 export const Footer = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const scrollToTop = () => {
@@ -29,7 +31,7 @@ export const Footer = () => {
               </span>
             </div>
             <p className="text-muted-foreground text-sm mb-4">
-              Your platform to discover, create, and connect with local creators and businesses. Supporting talent and culture worldwide through our globally accessible platform.
+              {t("footer.about")}
             </p>
             <div className="flex gap-3">
               <Button 
@@ -73,14 +75,14 @@ export const Footer = () => {
 
           {/* Quick Links */}
           <div>
-            <h3 className="font-semibold text-foreground mb-4">Quick Links</h3>
+            <h3 className="font-semibold text-foreground mb-4">{t("footer.quickLinks")}</h3>
             <ul className="space-y-2">
               <li>
                 <button 
                   onClick={() => navigate("/about")}
                   className="text-muted-foreground hover:text-primary text-sm transition-colors text-left"
                 >
-                  About Us
+                  {t("footer.aboutUs")}
                 </button>
               </li>
               <li>
@@ -88,7 +90,7 @@ export const Footer = () => {
                   onClick={() => navigate("/how-it-works")}
                   className="text-muted-foreground hover:text-primary text-sm transition-colors text-left"
                 >
-                  How It Works
+                  {t("footer.howItWorks")}
                 </button>
               </li>
               <li>
@@ -96,7 +98,7 @@ export const Footer = () => {
                   onClick={() => navigate("/featured-creators")}
                   className="text-muted-foreground hover:text-primary text-sm transition-colors text-left"
                 >
-                  Featured Creators
+                  {t("footer.featuredCreators")}
                 </button>
               </li>
               <li>
@@ -104,7 +106,7 @@ export const Footer = () => {
                   onClick={() => navigate("/success-stories")}
                   className="text-muted-foreground hover:text-primary text-sm transition-colors text-left"
                 >
-                  Success Stories
+                  {t("footer.successStories")}
                 </button>
               </li>
               <li>
@@ -112,15 +114,7 @@ export const Footer = () => {
                   onClick={() => navigate("/blog")}
                   className="text-muted-foreground hover:text-primary text-sm transition-colors text-left"
                 >
-                  Blog
-                </button>
-              </li>
-              <li>
-                <button 
-                  onClick={() => navigate("/jobs")}
-                  className="text-muted-foreground hover:text-primary text-sm transition-colors text-left"
-                >
-                  Jobs & Opportunities
+                  {t("footer.blog")}
                 </button>
               </li>
             </ul>
@@ -128,14 +122,14 @@ export const Footer = () => {
 
           {/* Categories */}
           <div>
-            <h3 className="font-semibold text-foreground mb-4">Categories</h3>
+            <h3 className="font-semibold text-foreground mb-4">{t("footer.categories")}</h3>
             <ul className="space-y-2">
               <li>
                 <button 
                   onClick={() => navigate("/events")}
                   className="text-muted-foreground hover:text-primary text-sm transition-colors text-left"
                 >
-                  Events
+                  {t("footer.events")}
                 </button>
               </li>
               <li>
@@ -143,7 +137,7 @@ export const Footer = () => {
                   onClick={() => navigate("/marketplace")}
                   className="text-muted-foreground hover:text-primary text-sm transition-colors text-left"
                 >
-                  Marketplace
+                  {t("footer.marketplace")}
                 </button>
               </li>
               <li>
@@ -151,7 +145,7 @@ export const Footer = () => {
                   onClick={() => navigate("/music")}
                   className="text-muted-foreground hover:text-primary text-sm transition-colors text-left"
                 >
-                  Music & Entertainment
+                  {t("footer.musicEntertainment")}
                 </button>
               </li>
               <li>
@@ -159,7 +153,7 @@ export const Footer = () => {
                   onClick={() => navigate("/jobs")}
                   className="text-muted-foreground hover:text-primary text-sm transition-colors text-left"
                 >
-                  Jobs & Opportunities
+                  {t("footer.jobsOpportunities")}
                 </button>
               </li>
               <li>
@@ -167,7 +161,7 @@ export const Footer = () => {
                   onClick={() => navigate("/education")}
                   className="text-muted-foreground hover:text-primary text-sm transition-colors text-left"
                 >
-                  Education
+                  {t("footer.education")}
                 </button>
               </li>
             </ul>
@@ -175,18 +169,18 @@ export const Footer = () => {
 
           {/* Contact */}
           <div>
-            <h3 className="font-semibold text-foreground mb-4">Contact Us</h3>
+            <h3 className="font-semibold text-foreground mb-4">{t("footer.contactUs")}</h3>
             <ul className="space-y-3">
               <li className="flex items-start gap-2">
                 <MapPin className="h-4 w-4 text-primary mt-1 flex-shrink-0" />
                 <span className="text-muted-foreground text-sm">
-    Worldwide
+                  {t("footer.worldwide")}
                 </span>
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="h-4 w-4 text-primary flex-shrink-0" />
                 <a 
-                  href="tel:+1234567890"
+                  href="tel:+255712345678"
                   className="text-muted-foreground hover:text-primary text-sm transition-colors"
                 >
                   +1 234 567 890
@@ -204,7 +198,7 @@ export const Footer = () => {
               <li className="flex items-center gap-2">
                 <Globe className="h-4 w-4 text-primary flex-shrink-0" />
                 <span className="text-muted-foreground text-sm">
-                  Global Platform
+                  {t("footer.globalPlatform")}
                 </span>
               </li>
             </ul>
@@ -213,26 +207,26 @@ export const Footer = () => {
 
         <div className="border-t border-border mt-8 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-muted-foreground text-sm">
-            © 2024 BLINNO. All rights reserved. Global Platform.
+            {t("footer.copyright")}
           </p>
           <div className="flex gap-6 text-sm">
             <button 
               onClick={() => navigate("/privacy")}
               className="text-muted-foreground hover:text-primary transition-colors"
             >
-              Privacy Policy
+              {t("footer.privacyPolicy")}
             </button>
             <button 
               onClick={() => navigate("/terms")}
               className="text-muted-foreground hover:text-primary transition-colors"
             >
-              Terms of Service
+              {t("footer.termsOfService")}
             </button>
             <button 
               onClick={() => navigate("/cookies")}
               className="text-muted-foreground hover:text-primary transition-colors"
             >
-              Cookie Policy
+              {t("footer.cookiePolicy")}
             </button>
           </div>
         </div>

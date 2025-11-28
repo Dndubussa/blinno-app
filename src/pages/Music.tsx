@@ -13,6 +13,7 @@ import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { MultiCurrencyPrice } from "@/components/MultiCurrencyPrice";
 import { formatPrice } from "@/lib/currency";
+import { useTranslation } from "react-i18next";
 
 interface Track {
   id: string;
@@ -32,6 +33,7 @@ interface Track {
 }
 
 const Music = () => {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,8 +61,8 @@ const Music = () => {
     } catch (error: any) {
       console.error("Error fetching tracks:", error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to load music tracks",
+        title: t("common.error"),
+        description: error.message || t("music.failedToLoad"),
         variant: "destructive",
       });
       setTracks([]);
@@ -138,8 +140,8 @@ const Music = () => {
       <div className="pt-24 pb-16">
         <div className="container mx-auto px-4">
           <div className="mb-8">
-            <h1 className="text-4xl font-bold text-foreground mb-2">Music</h1>
-            <p className="text-muted-foreground">Discover and stream the best local music</p>
+            <h1 className="text-4xl font-bold text-foreground mb-2">{t("music.title")}</h1>
+            <p className="text-muted-foreground">{t("music.subtitle")}</p>
           </div>
 
           {/* Search and Filters */}
@@ -150,7 +152,7 @@ const Music = () => {
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Search tracks or artists..."
+                      placeholder={t("music.searchPlaceholder")}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="pl-10 h-10"
@@ -162,11 +164,11 @@ const Music = () => {
                   <SelectTrigger className="h-10">
                     <div className="flex items-center gap-2">
                       <Filter className="h-4 w-4 text-muted-foreground" />
-                      <SelectValue placeholder="Genre" />
+                      <SelectValue placeholder={t("music.genre")} />
                     </div>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Genres</SelectItem>
+                    <SelectItem value="all">{t("music.allGenres")}</SelectItem>
                     {getUniqueGenres().map((genre) => (
                       <SelectItem key={genre} value={genre}>
                         {genre}
@@ -184,12 +186,12 @@ const Music = () => {
               <CardContent className="p-6">
                 <div className="flex items-center gap-4 mb-4">
                   <Volume2 className="h-5 w-5 text-primary" />
-                  <h2 className="text-xl font-bold">Now Playing</h2>
+                  <h2 className="text-xl font-bold">{t("music.nowPlaying")}</h2>
                 </div>
                 <MediaPlayer 
                   url={tracks.find(t => t.id === currentlyPlaying)?.audio_url || ""}
                   type="audio"
-                  title={tracks.find(t => t.id === currentlyPlaying)?.title || "Unknown Track"}
+                  title={tracks.find(t => t.id === currentlyPlaying)?.title || t("music.unknownTrack")}
                 />
               </CardContent>
             </Card>
@@ -198,7 +200,7 @@ const Music = () => {
           {/* Results Count */}
           {filteredTracks.length > 0 && (
             <div className="mb-4 text-sm text-muted-foreground">
-              Showing {filteredTracks.length} {filteredTracks.length === 1 ? 'track' : 'tracks'}
+              {t("music.showingTracks", { count: filteredTracks.length })}
             </div>
           )}
 
@@ -207,11 +209,11 @@ const Music = () => {
             <Card>
               <CardContent className="p-12 text-center">
                 <MusicIcon className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-                <p className="text-lg font-medium text-foreground mb-2">No tracks found</p>
+                <p className="text-lg font-medium text-foreground mb-2">{t("music.noTracks")}</p>
                 <p className="text-muted-foreground mb-4">
                   {searchQuery || genreFilter !== "all" 
-                    ? "Try adjusting your search or filters" 
-                    : "Be the first to upload music!"}
+                    ? t("music.tryAdjustingFilters") 
+                    : t("music.beFirstToUpload")}
                 </p>
                 {(searchQuery || genreFilter !== "all") && (
                   <Button
@@ -221,7 +223,7 @@ const Music = () => {
                       setGenreFilter("all");
                     }}
                   >
-                    Clear Filters
+                    {t("common.filter")} {t("common.close")}
                   </Button>
                 )}
               </CardContent>
@@ -290,13 +292,13 @@ const Music = () => {
                     <div className="flex items-center gap-4 pt-4 border-t border-border">
                       {track.plays !== undefined && (
                         <div className="flex-1">
-                          <div className="text-xs text-muted-foreground">Plays</div>
+                          <div className="text-xs text-muted-foreground">{t("music.plays")}</div>
                           <div className="text-sm font-semibold text-foreground">{formatNumber(track.plays)}</div>
                         </div>
                       )}
                       {track.likes !== undefined && (
                         <div className="flex-1">
-                          <div className="text-xs text-muted-foreground">Likes</div>
+                          <div className="text-xs text-muted-foreground">{t("music.likes")}</div>
                           <div className="text-sm font-semibold text-foreground">{formatNumber(track.likes)}</div>
                         </div>
                       )}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTranslation } from "react-i18next";
 import { getDashboardRoute } from "@/lib/dashboardRoutes";
 import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
@@ -19,6 +20,7 @@ import { HowToGetStarted } from "@/components/HowToGetStarted";
 import { SEO } from "@/components/SEO";
 
 const Index = () => {
+  const { t } = useTranslation();
   const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -93,8 +95,8 @@ const Index = () => {
             </div>
             <div className="flex-1">
               <div className="mb-6">
-                <h2 className="text-3xl font-bold text-foreground mb-2">Explore Categories</h2>
-                <p className="text-muted-foreground">Discover all the amazing things BLINNO has to offer</p>
+                <h2 className="text-3xl font-bold text-foreground mb-2">{t("homepage.categories.title")}</h2>
+                <p className="text-muted-foreground">{t("homepage.categories.subtitle")}</p>
               </div>
               <AnimatedSection delay={300}>
                 <CategoriesGrid selectedCategories={selectedCategories} />
@@ -106,9 +108,9 @@ const Index = () => {
                   onClick={() => navigate("/auth?tab=signup")}
                   className="inline-block bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-8 rounded-lg transition-colors duration-300"
                 >
-                  Get Started Today
+                  {t("homepage.getStartedToday")}
                 </button>
-                <p className="mt-4 text-muted-foreground">Join our global community of creators and businesses</p>
+                <p className="mt-4 text-muted-foreground">{t("homepage.joinCommunity")}</p>
               </div>
             </div>
           </div>

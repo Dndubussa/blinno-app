@@ -30,7 +30,22 @@
     "previous": "Previous",
     "confirm": "Confirm",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "address": "Address",
+    "country": "Country",
+    "city": "City",
+    "description": "Description",
+    "price": "Price",
+    "quantity": "Quantity",
+    "total": "Total",
+    "subtotal": "Subtotal",
+    "date": "Date",
+    "time": "Time",
+    "status": "Status",
+    "actions": "Actions"
   },
   "header": {
     "title": "BLINNO",
@@ -50,31 +65,216 @@
   },
   "homepage": {
     "hero": {
-      "title": "Connect, Create, and Thrive",
-      "subtitle": "The ultimate platform for creators, businesses, and service providers across Africa and beyond",
-      "cta": "Get Started"
+      "title": "BLISSFUL INNOVATIONS",
+      "titlePart1": "BLISSFUL INNOVATIONS",
+      "titlePart2": "Discover",
+      "titlePart3": ", Create & Connect",
+      "subtitle": "Discover, Create & Connect with Local Creators and Businesses Worldwide",
+      "exploreContent": "Explore Content",
+      "submitContent": "Submit Content",
+      "getStartedToday": "Get Started Today",
+      "creators": "Creators",
+      "events": "Events",
+      "products": "Products",
+      "worldwidePlatform": "🌍 Worldwide Platform",
+      "creatorOwned": "🌟 100% Creator-Owned",
+      "verifiedCreators": "✓ Verified Creators"
     },
     "categories": {
       "title": "Explore Categories",
-      "subtitle": "Discover what you're looking for"
+      "subtitle": "Discover what you're looking for",
+      "news": {
+        "title": "News & Media",
+        "description": "Latest headlines",
+        "stats": "Daily Updates",
+        "badge": "🔥 Trending"
+      },
+      "creativity": {
+        "title": "Creativity",
+        "description": "Showcase your art",
+        "stats": "15K+ Works"
+      },
+      "marketplace": {
+        "title": "Marketplace",
+        "description": "Buy & sell products",
+        "stats": "2K+ Products",
+        "badge": "⭐ Featured"
+      },
+      "events": {
+        "title": "Events",
+        "description": "Discover & host events",
+        "stats": "500+ Events",
+        "badge": "🔥 Trending"
+      },
+      "music": {
+        "title": "Music",
+        "description": "Discover Local Music",
+        "stats": "1K+ Tracks"
+      },
+      "restaurants": {
+        "title": "Restaurants",
+        "description": "Find great food",
+        "stats": "200+ Restaurants"
+      },
+      "lodging": {
+        "title": "Lodging",
+        "description": "Book unique stays",
+        "stats": "350+ Properties"
+      },
+      "education": {
+        "title": "Education",
+        "description": "Learn & teach",
+        "stats": "100+ Courses"
+      },
+      "jobs": {
+        "title": "Jobs",
+        "description": "Find opportunities",
+        "stats": "250+ Openings"
+      },
+      "artisans": {
+        "title": "Artisans",
+        "description": "Hire skilled workers",
+        "stats": "150+ Artisans"
+      },
+      "movies": {
+        "title": "Movies",
+        "description": "Watch Local Films",
+        "stats": "500+ Movies"
+      },
+      "community": {
+        "title": "Community",
+        "description": "Connect with others",
+        "stats": "10K+ Members"
+      }
     },
+    "getStartedToday": "Get Started Today",
+    "joinCommunity": "Join our global community of creators and businesses",
     "howToGetStarted": {
-      "title": "How to Get Started",
-      "step1": "Create Account",
-      "step1Desc": "Sign up and choose your role",
-      "step2": "Complete Profile",
-      "step2Desc": "Add your information and preferences",
-      "step3": "Start Creating",
-      "step3Desc": "List products, services, or content",
-      "step4": "Connect",
-      "step4Desc": "Engage with customers and creators",
-      "step5": "Grow",
-      "step5Desc": "Build your presence and earn"
+      "title": "How to Get Started on BLINNO",
+      "badge": "Getting Started",
+      "subtitle": "Join thousands of creators and businesses already making money on our platform. Get started in just 5 simple steps!",
+      "step1": {
+        "title": "Create Your Account",
+        "description": "Sign up with your email address. It's free and takes less than 2 minutes!",
+        "detail1": "Click 'Sign Up' in the top right corner",
+        "detail2": "Enter your email and create a password",
+        "detail3": "Fill in your basic information (name, country, phone)",
+        "detail4": "Choose your role based on what you want to do on the platform",
+        "action": "Sign Up Now"
+      },
+      "step2": {
+        "title": "Verify Your Email",
+        "description": "Check your inbox and click the verification link to activate your account.",
+        "detail1": "We'll send you a verification email",
+        "detail2": "Click the link in the email to verify",
+        "detail3": "Your account will be activated immediately",
+        "detail4": "You can start using the platform right away"
+      },
+      "step3": {
+        "title": "Complete Your Profile",
+        "description": "Add your profile picture, bio, and showcase your work to attract customers.",
+        "detail1": "Upload a professional profile picture",
+        "detail2": "Write a compelling bio about yourself",
+        "detail3": "Add your portfolio, products, or services",
+        "detail4": "Set up your payment preferences",
+        "action": "Go to Dashboard"
+      },
+      "step4": {
+        "title": "Start Earning",
+        "description": "Begin selling, offering services, or monetizing your content on the platform.",
+        "detail1": "List your products or services",
+        "detail2": "Set your pricing and availability",
+        "detail3": "Respond to inquiries and bookings",
+        "detail4": "Track your earnings in your dashboard",
+        "action": "Explore Features"
+      },
+      "step5": {
+        "title": "Get Paid Securely",
+        "description": "Receive payments through Click Pesa and request payouts whenever you're ready.",
+        "detail1": "Customers pay securely via Click Pesa",
+        "detail2": "Funds are held safely until delivery",
+        "detail3": "Request payouts to your mobile money account",
+        "detail4": "Track all transactions in your dashboard",
+        "action": "View Earnings"
+      },
+      "roleSelection": {
+        "title": "Choose Your Role",
+        "subtitle": "Select the role that best describes what you want to do on BLINNO",
+        "creator": "Creator",
+        "creatorDesc": "Showcase your work and sell products",
+        "freelancer": "Freelancer",
+        "freelancerDesc": "Offer professional services",
+        "seller": "Seller",
+        "sellerDesc": "Sell products in the marketplace",
+        "eventOrganizer": "Event Organizer",
+        "eventOrganizerDesc": "Create and manage events",
+        "musician": "Musician",
+        "musicianDesc": "Share music and book performances",
+        "educator": "Educator",
+        "educatorDesc": "Create and sell courses",
+        "journalist": "Journalist",
+        "journalistDesc": "Publish articles and news",
+        "artisan": "Artisan",
+        "artisanDesc": "Showcase handmade crafts",
+        "restaurantOwner": "Restaurant Owner",
+        "restaurantOwnerDesc": "List your restaurant",
+        "lodgingProvider": "Lodging Provider",
+        "lodgingProviderDesc": "Offer accommodations",
+        "employer": "Employer",
+        "employerDesc": "Post jobs and hire talent",
+        "selected": "You've selected",
+        "roleSetOnSignup": "This role will be set when you create your account.",
+        "signUpAs": "Sign Up as"
+      },
+      "cta": {
+        "joinUsers": "Join 10,000+ active users",
+        "readyToStart": "Ready to Get Started?",
+        "description": "Create your free account today and start monetizing your skills, products, or services. No credit card required.",
+        "createFreeAccount": "Create Free Account",
+        "signIn": "Sign In",
+        "goToDashboard": "Go to Dashboard",
+        "freeToJoin": "Free to join",
+        "noCreditCard": "No credit card required",
+        "startEarning": "Start earning immediately"
+      }
     },
     "pricing": {
       "title": "Choose Your Plan",
       "subtitle": "Flexible pricing for everyone"
+    },
+    "featuredCreators": {
+      "title": "Featured Creators",
+      "subtitle": "Top artists, entrepreneurs, and influencers from around the world",
+      "followers": "followers",
+      "joinThousands": "Join thousands of creators already on BLINNO"
+    },
+    "testimonials": {
+      "title": "Success Stories",
+      "subtitle": "Hear from creators who have transformed their careers with BLINNO",
+      "joinSuccessful": "Join thousands of successful creators on BLINNO"
     }
+  },
+  "footer": {
+    "about": "Your platform to discover, create, and connect with local creators and businesses. Supporting talent and culture worldwide through our globally accessible platform.",
+    "quickLinks": "Quick Links",
+    "aboutUs": "About Us",
+    "howItWorks": "How It Works",
+    "featuredCreators": "Featured Creators",
+    "successStories": "Success Stories",
+    "blog": "Blog",
+    "categories": "Categories",
+    "events": "Events",
+    "marketplace": "Marketplace",
+    "musicEntertainment": "Music & Entertainment",
+    "jobsOpportunities": "Jobs & Opportunities",
+    "education": "Education",
+    "contactUs": "Contact Us",
+    "worldwide": "Worldwide",
+    "globalPlatform": "Global Platform",
+    "copyright": "© 2024 BLINNO. All rights reserved. Global Platform.",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service",
+    "cookiePolicy": "Cookie Policy"
   },
   "auth": {
     "signIn": {
@@ -83,16 +283,35 @@
       "password": "Password",
       "forgotPassword": "Forgot Password?",
       "noAccount": "Don't have an account?",
-      "signUpLink": "Sign Up"
+      "signUpLink": "Sign Up",
+      "welcomeBack": "Welcome Back",
+      "description": "Sign in to your BLINNO account"
     },
     "signUp": {
       "title": "Create Account",
       "email": "Email",
       "password": "Password",
       "confirmPassword": "Confirm Password",
+      "firstName": "First Name",
+      "middleName": "Middle Name",
+      "lastName": "Last Name",
+      "phoneNumber": "Phone Number",
+      "country": "Country",
+      "selectCountry": "Select your country",
       "role": "Select Your Role",
       "hasAccount": "Already have an account?",
-      "signInLink": "Sign In"
+      "signInLink": "Sign In",
+      "joinToday": "Join BLINNO today"
+    },
+    "emailVerificationRequired": "Email Verification Required",
+    "emailVerificationDescription": "Please check your email ({{email}}) and click the verification link to activate your account. You will be automatically redirected to your dashboard once your email is verified.",
+    "orContinueWith": "Or continue with",
+    "continueWithGoogle": "Continue with Google",
+    "googleSignInDescription": "Google sign-in allows you to quickly access your account",
+    "iWantToJoinAs": "I want to join as",
+    "chooseHowToUse": "Choose how you want to use BLINNO",
+    "roles": {
+      "user": "User"
     }
   },
   "marketplace": {
@@ -102,7 +321,36 @@
     "viewDetails": "View Details",
     "price": "Price",
     "outOfStock": "Out of Stock",
-    "inStock": "In Stock"
+    "inStock": "In Stock",
+    "settingUp": "Products table is being set up. Please refresh in a moment.",
+    "failedToLoad": "Failed to load products. Please try again later.",
+    "signInRequired": "Sign in required",
+    "signInToAddToCart": "Please sign in to add items to your cart",
+    "addedToCart": "Added to cart",
+    "itemAddedToCart": "Item added to your cart",
+    "failedToAddToCart": "Failed to add item to cart",
+    "activeFilters": "Active filters",
+    "category": "Category",
+    "location": "Location",
+    "removeCategoryFilter": "Remove category filter",
+    "removeLocationFilter": "Remove location filter",
+    "clearSearch": "Clear search",
+    "clearAll": "Clear All",
+    "searchPlaceholder": "Search products and courses...",
+    "allCategories": "All Categories",
+    "allLocations": "All Locations",
+    "noProducts": "No products found",
+    "tryAdjustingFilters": "Try adjusting your search or filters",
+    "beFirstToSell": "Be the first to sell on our marketplace!",
+    "showingItems": "Showing {{filtered}} of {{total}} items",
+    "by": "By",
+    "unknownSeller": "Unknown Seller",
+    "course": "Course",
+    "viewCourse": "View Course",
+    "inStock": "in stock",
+    "out": "Out",
+    "add": "Add",
+    "reviews": "reviews"
   },
   "cart": {
     "title": "Shopping Cart",
@@ -111,7 +359,39 @@
     "total": "Total",
     "checkout": "Checkout",
     "remove": "Remove",
-    "quantity": "Quantity"
+    "quantity": "Quantity",
+    "shippingAddress": "Shipping Address",
+    "notes": "Order Notes (Optional)",
+    "proceedToPayment": "Proceed to Payment",
+    "orderTotal": "Order Total",
+    "itemsInCart": "{{count}} item in your cart",
+    "itemsInCart_plural": "{{count}} items in your cart",
+    "browseMarketplace": "Browse Marketplace",
+    "orderSummary": "Order Summary",
+    "reviewOrderDetails": "Review your order details",
+    "streetAddress": "Street Address",
+    "enterStreetAddress": "Enter street address",
+    "postalCode": "Postal Code",
+    "processing": "Processing...",
+    "completePayment": "Complete Payment",
+    "enterPhoneForClickPesa": "Enter your phone number to proceed with Click Pesa payment",
+    "enterMobileMoneyNumber": "Enter your mobile money number (M-Pesa, Tigo Pesa, Airtel Money, etc.)",
+    "payWithClickPesa": "Pay with Click Pesa",
+    "redirectToClickPesa": "You will be redirected to Click Pesa to complete your payment securely",
+    "failedToLoad": "Failed to load cart items",
+    "itemRemoved": "Item removed",
+    "itemRemovedFromCart": "Item removed from cart",
+    "failedToRemove": "Failed to remove item",
+    "shippingAddressRequired": "Shipping address required",
+    "provideShippingAddress": "Please provide your shipping address",
+    "checkoutError": "Checkout Error",
+    "failedToProcessCheckout": "Failed to process checkout",
+    "phoneRequired": "Phone number required",
+    "enterPhoneForPayment": "Please enter your phone number for payment",
+    "invalidPhone": "Invalid phone number",
+    "enterValidPhone": "Please enter a valid phone number",
+    "paymentError": "Payment Error",
+    "failedToInitiatePayment": "Failed to initiate payment. Please try again."
   },
   "orders": {
     "title": "My Orders",
@@ -155,6 +435,28 @@
     "pricing": "Pricing",
     "fixed": "fixed"
   },
+  "music": {
+    "title": "Music",
+    "subtitle": "Discover and stream music from talented creators",
+    "play": "Play",
+    "pause": "Pause",
+    "genre": "Genre",
+    "allGenres": "All Genres",
+    "duration": "Duration",
+    "plays": "Plays",
+    "noTracks": "No tracks found"
+  },
+  "events": {
+    "title": "Events",
+    "subtitle": "Discover upcoming events and experiences",
+    "upcoming": "Upcoming",
+    "past": "Past",
+    "attending": "Attending",
+    "attendance": "Attendance",
+    "register": "Register",
+    "viewDetails": "View Details",
+    "noEvents": "No events found"
+  },
   "dashboard": {
     "title": "Dashboard",
     "overview": "Overview",
@@ -162,7 +464,57 @@
     "orders": "Orders",
     "earnings": "Earnings",
     "analytics": "Analytics",
-    "settings": "Settings"
+    "settings": "Settings",
+    "myPortfolio": "My Portfolio",
+    "bookings": "Bookings",
+    "profileSettings": "Profile Settings",
+    "failedToFetch": "Failed to fetch data",
+    "itemTitle": "Title",
+    "selectCategory": "Please select a category",
+    "portfolioItemAdded": "Portfolio item added!",
+    "failedToAddPortfolio": "Failed to add portfolio",
+    "profileUpdated": "Profile updated!",
+    "failedToUpdateProfile": "Failed to update profile",
+    "avatarUpdated": "Avatar updated!",
+    "failedToUpdateAvatar": "Failed to update avatar",
+    "portfolioItemDeleted": "Portfolio item deleted",
+    "failedToDeletePortfolio": "Failed to delete portfolio",
+    "portfolioItems": "Portfolio Items",
+    "totalItemsAcrossCategories": "{{count}} total items across {{categories}} categories",
+    "addItem": "Add Item",
+    "categoryOverview": "Category Overview",
+    "all": "All",
+    "filterByCategory": "Filter by category",
+    "allCategories": "All Categories",
+    "clearFilter": "Clear Filter",
+    "showing": "Showing: {{category}} ({{count}} items)",
+    "addPortfolioItem": "Add Portfolio Item",
+    "category": "Category",
+    "tags": "Tags (comma separated)",
+    "tagsPlaceholder": "design, art, photography",
+    "noItemsInCategory": "No portfolio items found in \"{{category}}\" category.",
+    "viewAllCategories": "View All Categories",
+    "noPortfolioItemsYet": "No portfolio items yet",
+    "addYourFirstItem": "Add Your First Item",
+    "noBookingsYet": "No bookings yet",
+    "service": "Service",
+    "client": "Client",
+    "unknown": "Unknown",
+    "at": "at",
+    "profileAvatar": "Profile Avatar",
+    "currentAvatar": "Current avatar",
+    "displayName": "Display Name",
+    "bio": "Bio",
+    "bioPlaceholder": "Tell us about yourself and your services...",
+    "location": "Location",
+    "locationPlaceholder": "City, Country",
+    "phone": "Phone",
+    "phonePlaceholder": "+1 (XXX) XXX-XXXX",
+    "website": "Website",
+    "websitePlaceholder": "https://yourwebsite.com",
+    "email": "Email",
+    "emailCannotBeChanged": "Email cannot be changed",
+    "saveChanges": "Save Changes"
   },
   "settings": {
     "title": "Settings",
@@ -205,6 +557,34 @@
     "unauthorized": "You are not authorized to perform this action",
     "notFound": "Resource not found",
     "validation": "Please check your input and try again"
+  },
+  "quickActions": {
+    "title": "Quick Actions",
+    "subtitle": "Access your favorite features quickly",
+    "wishlist": {
+      "label": "My Wishlist",
+      "description": "View saved items"
+    },
+    "analytics": {
+      "label": "Analytics",
+      "description": "Track performance"
+    },
+    "search": {
+      "label": "Advanced Search",
+      "description": "Find exactly what you need"
+    },
+    "security": {
+      "label": "Security",
+      "description": "Enable 2FA"
+    }
+  },
+  "socialFeed": {
+    "title": "Latest from Creators",
+    "subtitle": "See what creators you follow are sharing",
+    "viewAll": "View All",
+    "loading": "Loading feed...",
+    "emptyFeed": "Your feed is empty. Follow creators to see their posts!",
+    "discoverCreators": "Discover Creators",
+    "post": "Post"
   }
 }
-

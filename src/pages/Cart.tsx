@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, CreditCard, ShoppingCart, Plus, Minus, X, MapPin, User, Phone, ShoppingBag, Trash2 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { useTranslation } from "react-i18next";
 
 type CartItem = {
   id: string;
@@ -26,6 +27,7 @@ type CartItem = {
 };
 
 const Cart = () => {
+  const { t } = useTranslation();
   const { user, profile } = useContext(AuthContext);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -64,8 +66,8 @@ const Cart = () => {
     } catch (error: any) {
       console.error("Error fetching cart items:", error);
       toast({
-        title: "Error",
-        description: "Failed to load cart items",
+        title: t("common.error"),
+        description: t("cart.failedToLoad"),
         variant: "destructive",
       });
     } finally {
@@ -101,14 +103,14 @@ const Cart = () => {
       await api.removeFromCart(itemId);
       await fetchCartItems();
       toast({
-        title: "Item removed",
-        description: "Item removed from cart",
+        title: t("cart.itemRemoved"),
+        description: t("cart.itemRemovedFromCart"),
       });
     } catch (error: any) {
       console.error("Error removing item:", error);
       toast({
-        title: "Error",
-        description: "Failed to remove item",
+        title: t("common.error"),
+        description: t("cart.failedToRemove"),
         variant: "destructive",
       });
     } finally {
@@ -134,8 +136,8 @@ const Cart = () => {
 
     if (!shippingAddress.street || !shippingAddress.city) {
       toast({
-        title: "Shipping address required",
-        description: "Please provide your shipping address",
+        title: t("cart.shippingAddressRequired"),
+        description: t("cart.provideShippingAddress"),
         variant: "destructive",
       });
       return;
@@ -154,8 +156,8 @@ const Cart = () => {
     } catch (error: any) {
       console.error("Checkout error:", error);
       toast({
-        title: "Checkout Error",
-        description: error.message || "Failed to process checkout",
+        title: t("cart.checkoutError"),
+        description: error.message || t("cart.failedToProcessCheckout"),
         variant: "destructive",
       });
     } finally {
@@ -166,8 +168,8 @@ const Cart = () => {
   const handlePayment = async () => {
     if (!currentOrder || !customerPhone) {
       toast({
-        title: "Phone number required",
-        description: "Please enter your phone number for payment",
+        title: t("cart.phoneRequired"),
+        description: t("cart.enterPhoneForPayment"),
         variant: "destructive",
       });
       return;
@@ -178,8 +180,8 @@ const Cart = () => {
     const cleanPhone = customerPhone.replace(/\s+/g, "");
     if (!phoneRegex.test(cleanPhone)) {
       toast({
-        title: "Invalid phone number",
-        description: "Please enter a valid phone number",
+        title: t("cart.invalidPhone"),
+        description: t("cart.enterValidPhone"),
         variant: "destructive",
       });
       return;
@@ -203,8 +205,8 @@ const Cart = () => {
     } catch (error: any) {
       console.error("Error creating payment:", error);
       toast({
-        title: "Payment Error",
-        description: error.message || "Failed to initiate payment. Please try again.",
+        title: t("cart.paymentError"),
+        description: error.message || t("cart.failedToInitiatePayment"),
         variant: "destructive",
       });
     } finally {
@@ -230,11 +232,11 @@ const Cart = () => {
       <div className="pt-24 pb-16">
         <div className="container mx-auto px-4">
           <div className="mb-8">
-            <h1 className="text-4xl font-bold text-foreground mb-2">Shopping Cart</h1>
+            <h1 className="text-4xl font-bold text-foreground mb-2">{t("cart.title")}</h1>
             <p className="text-muted-foreground">
               {cartItems.length === 0
-                ? "Your cart is empty"
-                : `${cartItems.length} item${cartItems.length > 1 ? "s" : ""} in your cart`}
+                ? t("cart.empty")
+                : t("cart.itemsInCart", { count: cartItems.length })}
             </p>
           </div>
 
@@ -245,9 +247,9 @@ const Cart = () => {
                 <Card>
                   <CardContent className="p-12 text-center">
                     <ShoppingBag className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                    <p className="text-muted-foreground mb-4">Your cart is empty</p>
+                    <p className="text-muted-foreground mb-4">{t("cart.empty")}</p>
                     <Button onClick={() => navigate("/marketplace")}>
-                      Browse Marketplace
+                      {t("cart.browseMarketplace")}
                     </Button>
                   </CardContent>
                 </Card>
@@ -324,59 +326,59 @@ const Cart = () => {
               <div className="lg:col-span-1">
                 <Card className="sticky top-24">
                   <CardHeader>
-                    <CardTitle>Order Summary</CardTitle>
-                    <CardDescription>Review your order details</CardDescription>
+                    <CardTitle>{t("cart.orderSummary")}</CardTitle>
+                    <CardDescription>{t("cart.reviewOrderDetails")}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div className="space-y-2">
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Subtotal</span>
+                        <span className="text-muted-foreground">{t("cart.subtotal")}</span>
                         <MultiCurrencyPrice usdPrice={calculateTotal()} size="sm" />
                       </div>
                       <div className="flex justify-between font-bold text-lg pt-2 border-t">
-                        <span>Total</span>
+                        <span>{t("cart.total")}</span>
                         <MultiCurrencyPrice usdPrice={calculateTotal()} size="md" />
                       </div>
                     </div>
 
                     <div className="space-y-4">
                       <div>
-                        <Label htmlFor="street">Street Address</Label>
+                        <Label htmlFor="street">{t("cart.streetAddress")}</Label>
                         <Input
                           id="street"
                           value={shippingAddress.street}
                           onChange={(e) =>
                             setShippingAddress({ ...shippingAddress, street: e.target.value })
                           }
-                          placeholder="Enter street address"
+                          placeholder={t("cart.enterStreetAddress")}
                         />
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <Label htmlFor="city">City</Label>
+                          <Label htmlFor="city">{t("common.city")}</Label>
                           <Input
                             id="city"
                             value={shippingAddress.city}
                             onChange={(e) =>
                               setShippingAddress({ ...shippingAddress, city: e.target.value })
                             }
-                            placeholder="City"
+                            placeholder={t("common.city")}
                           />
                         </div>
                         <div>
-                          <Label htmlFor="postalCode">Postal Code</Label>
+                          <Label htmlFor="postalCode">{t("cart.postalCode")}</Label>
                           <Input
                             id="postalCode"
                             value={shippingAddress.postalCode}
                             onChange={(e) =>
                               setShippingAddress({ ...shippingAddress, postalCode: e.target.value })
                             }
-                            placeholder="Postal Code"
+                            placeholder={t("cart.postalCode")}
                           />
                         </div>
                       </div>
                       <div>
-                        <Label htmlFor="country">Country</Label>
+                        <Label htmlFor="country">{t("common.country")}</Label>
                         <Input
                           id="country"
                           value={shippingAddress.country}
@@ -396,12 +398,12 @@ const Cart = () => {
                       {checkingOut ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Processing...
+                          {t("cart.processing")}
                         </>
                       ) : (
                         <>
                           <CreditCard className="mr-2 h-4 w-4" />
-                          Proceed to Payment
+                          {t("cart.proceedToPayment")}
                         </>
                       )}
                     </Button>
@@ -417,25 +419,25 @@ const Cart = () => {
       <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Complete Payment</DialogTitle>
+            <DialogTitle>{t("cart.completePayment")}</DialogTitle>
             <DialogDescription>
-              Enter your phone number to proceed with Click Pesa payment
+              {t("cart.enterPhoneForClickPesa")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             {currentOrder && (
               <div className="bg-muted p-4 rounded-lg">
                 <div className="flex justify-between mb-2">
-                  <span className="text-muted-foreground">Order Total:</span>
+                  <span className="text-muted-foreground">{t("cart.orderTotal")}:</span>
                   <div className="font-bold text-lg">
                     <MultiCurrencyPrice usdPrice={parseFloat(currentOrder.total_amount)} size="lg" />
                   </div>
                 </div>
-                <p className="text-sm text-muted-foreground">Order ID: {currentOrder.id.slice(0, 8)}...</p>
+                <p className="text-sm text-muted-foreground">{t("orders.orderNumber")} {currentOrder.id.slice(0, 8)}...</p>
               </div>
             )}
             <div>
-              <Label htmlFor="phone">Phone Number</Label>
+              <Label htmlFor="phone">{t("common.phone")}</Label>
               <Input
                 id="phone"
                 type="tel"
@@ -444,7 +446,7 @@ const Cart = () => {
                 onChange={(e) => setCustomerPhone(e.target.value)}
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Enter your mobile money number (M-Pesa, Tigo Pesa, Airtel Money, etc.)
+                {t("cart.enterMobileMoneyNumber")}
               </p>
             </div>
             <div className="flex gap-2">
@@ -456,7 +458,7 @@ const Cart = () => {
                 }}
                 className="flex-1"
               >
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button
                 onClick={handlePayment}
@@ -466,18 +468,18 @@ const Cart = () => {
                 {paymentProcessing ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
+                    {t("cart.processing")}
                   </>
                 ) : (
                   <>
                     <CreditCard className="mr-2 h-4 w-4" />
-                    Pay with Click Pesa
+                    {t("cart.payWithClickPesa")}
                   </>
                 )}
               </Button>
             </div>
             <p className="text-xs text-center text-muted-foreground">
-              You will be redirected to Click Pesa to complete your payment securely
+              {t("cart.redirectToClickPesa")}
             </p>
           </div>
         </DialogContent>

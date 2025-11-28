@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { AuthContext } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 import { formatPrice as formatCurrency } from "@/lib/currency";
@@ -17,6 +17,7 @@ import { CategoriesGrid } from "@/components/CategoriesGrid";
 import { AnimatedSection } from "@/components/AnimatedSection";
 import { SEO } from "@/components/SEO";
 import { generateProductSchema } from '@/lib/schemaMarkup';
+import { useTranslation } from "react-i18next";
 
 type Product = {
   id: string;
@@ -52,16 +53,26 @@ type Course = {
 };
 
 const Marketplace = () => {
+  const { t } = useTranslation();
   const { user } = useContext(AuthContext);
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
   const [products, setProducts] = useState<(Product | Course)[]>([]);
   const [loading, setLoading] = useState(true);
   const [addingToCart, setAddingToCart] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState(searchParams.get("category") || "all");
   const [locationFilter, setLocationFilter] = useState("all");
+
+  // Update category filter when URL query parameter changes
+  useEffect(() => {
+    const categoryParam = searchParams.get("category");
+    if (categoryParam) {
+      setCategoryFilter(categoryParam);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     fetchProducts();
@@ -106,14 +117,14 @@ const Marketplace = () => {
         setProducts([]);
         // Show a helpful message to user
         toast({
-          title: "Loading...",
-          description: "Products table is being set up. Please refresh in a moment.",
+          title: t("common.loading"),
+          description: t("marketplace.settingUp"),
           duration: 3000,
         });
       } else {
         toast({
-          title: "Error",
-          description: error.message || "Failed to load products. Please try again later.",
+          title: t("common.error"),
+          description: error.message || t("marketplace.failedToLoad"),
           variant: "destructive",
         });
       }
@@ -125,8 +136,8 @@ const Marketplace = () => {
   const addToCart = async (productId: string) => {
     if (!user) {
       toast({
-        title: "Sign in required",
-        description: "Please sign in to add items to your cart",
+        title: t("marketplace.signInRequired"),
+        description: t("marketplace.signInToAddToCart"),
         variant: "destructive",
       });
       navigate("/auth");
@@ -137,14 +148,14 @@ const Marketplace = () => {
     try {
       await api.addToCart(productId, 1);
       toast({
-        title: "Added to cart",
-        description: "Item added to your cart",
+        title: t("marketplace.addedToCart"),
+        description: t("marketplace.itemAddedToCart"),
       });
     } catch (error: any) {
       console.error("Error adding to cart:", error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to add item to cart",
+        title: t("common.error"),
+        description: error.message || t("marketplace.failedToAddToCart"),
         variant: "destructive",
       });
     } finally {
@@ -223,8 +234,8 @@ const Marketplace = () => {
       <div className="pt-24 pb-16">
         <div className="container mx-auto px-4">
           <div className="mb-8">
-            <h1 className="text-4xl font-bold text-foreground mb-2">Marketplace</h1>
-            <p className="text-muted-foreground">Shop authentic local products and courses from sellers worldwide</p>
+            <h1 className="text-4xl font-bold text-foreground mb-2">{t("marketplace.title")}</h1>
+            <p className="text-muted-foreground">{t("marketplace.subtitle")}</p>
           </div>
 
           {/* Search and Filters */}
@@ -233,14 +244,14 @@ const Marketplace = () => {
               {/* Active Filters Display */}
               {(categoryFilter !== "all" || locationFilter !== "all" || searchQuery) && (
                 <div className="mb-4 flex flex-wrap items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Active filters:</span>
+                  <span className="text-sm text-muted-foreground">{t("marketplace.activeFilters")}:</span>
                   {categoryFilter !== "all" && (
                     <Badge variant="secondary" className="gap-1">
-                      Category: {categoryFilter}
+                      {t("marketplace.category")}: {categoryFilter}
                       <button
                         onClick={() => setCategoryFilter("all")}
                         className="ml-1 hover:text-destructive"
-                        aria-label="Remove category filter"
+                        aria-label={t("marketplace.removeCategoryFilter")}
                       >
                         <X className="h-3 w-3" />
                       </button>
@@ -248,11 +259,11 @@ const Marketplace = () => {
                   )}
                   {locationFilter !== "all" && (
                     <Badge variant="secondary" className="gap-1">
-                      Location: {locationFilter}
+                      {t("marketplace.location")}: {locationFilter}
                       <button
                         onClick={() => setLocationFilter("all")}
                         className="ml-1 hover:text-destructive"
-                        aria-label="Remove location filter"
+                        aria-label={t("marketplace.removeLocationFilter")}
                       >
                         <X className="h-3 w-3" />
                       </button>
@@ -260,11 +271,11 @@ const Marketplace = () => {
                   )}
                   {searchQuery && (
                     <Badge variant="secondary" className="gap-1">
-                      Search: "{searchQuery}"
+                      {t("common.search")}: "{searchQuery}"
                       <button
                         onClick={() => setSearchQuery("")}
                         className="ml-1 hover:text-destructive"
-                        aria-label="Clear search"
+                        aria-label={t("marketplace.clearSearch")}
                       >
                         <X className="h-3 w-3" />
                       </button>
@@ -280,7 +291,7 @@ const Marketplace = () => {
                     }}
                     className="h-6 text-xs"
                   >
-                    Clear All
+                    {t("marketplace.clearAll")}
                   </Button>
                 </div>
               )}
@@ -290,7 +301,7 @@ const Marketplace = () => {
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                     <Input
-                      placeholder="Search products and courses..."
+                      placeholder={t("marketplace.searchPlaceholder")}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="pl-10 h-10"
@@ -304,13 +315,13 @@ const Marketplace = () => {
                     <SelectTrigger className="h-10">
                       <div className="flex items-center gap-2 flex-1">
                         <Filter className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                        <SelectValue placeholder="Category">
-                          {categoryFilter === "all" ? "All Categories" : categoryFilter}
+                        <SelectValue placeholder={t("marketplace.category")}>
+                          {categoryFilter === "all" ? t("marketplace.allCategories") : categoryFilter}
                         </SelectValue>
                       </div>
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Categories</SelectItem>
+                      <SelectItem value="all">{t("marketplace.allCategories")}</SelectItem>
                       {getUniqueCategories().map((category) => (
                         <SelectItem key={category} value={category}>
                           {category}
@@ -326,13 +337,13 @@ const Marketplace = () => {
                     <SelectTrigger className="h-10">
                       <div className="flex items-center gap-2 flex-1">
                         <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                        <SelectValue placeholder="Location">
-                          {locationFilter === "all" ? "All Locations" : locationFilter}
+                        <SelectValue placeholder={t("marketplace.location")}>
+                          {locationFilter === "all" ? t("marketplace.allLocations") : locationFilter}
                         </SelectValue>
                       </div>
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Locations</SelectItem>
+                      <SelectItem value="all">{t("marketplace.allLocations")}</SelectItem>
                       {getUniqueLocations().map((location) => (
                         <SelectItem key={location} value={location}>
                           {location}
@@ -348,7 +359,7 @@ const Marketplace = () => {
           {/* Results Count */}
           {(categoryFilter !== "all" || locationFilter !== "all" || searchQuery) && (
             <div className="mb-4 text-sm text-muted-foreground">
-              Showing {filteredProducts.length} of {products.length} items
+              {t("marketplace.showingItems", { filtered: filteredProducts.length, total: products.length })}
             </div>
           )}
 
@@ -356,7 +367,7 @@ const Marketplace = () => {
           {filteredProducts.length === 0 ? (
             <Card>
               <CardContent className="p-12 text-center">
-                <p className="text-muted-foreground mb-2">No products or courses found.</p>
+                <p className="text-muted-foreground mb-2">{t("marketplace.noProducts")}</p>
                 {(categoryFilter !== "all" || locationFilter !== "all" || searchQuery) && (
                   <Button
                     variant="outline"
@@ -368,7 +379,7 @@ const Marketplace = () => {
                     }}
                     className="mt-4"
                   >
-                    Clear Filters
+                    {t("marketplace.clearAll")}
                   </Button>
                 )}
               </CardContent>
@@ -391,14 +402,14 @@ const Marketplace = () => {
                     />
                     {"stock_quantity" in item && item.stock_quantity === 0 && (
                       <div className="absolute top-4 left-4">
-                        <Badge variant="destructive">Out of Stock</Badge>
+                        <Badge variant="destructive">{t("marketplace.outOfStock")}</Badge>
                       </div>
                     )}
                     {"type" in item && item.type === "course" && (
                       <div className="absolute top-4 right-4">
                         <Badge variant="default" className="flex items-center gap-1">
                           <BookOpen className="h-3 w-3" />
-                          Course
+                          {t("marketplace.course")}
                         </Badge>
                       </div>
                     )}
@@ -420,7 +431,7 @@ const Marketplace = () => {
                           </div>
                           {'reviews_count' in item && item.reviews_count && item.reviews_count > 0 && (
                             <span className="text-sm text-muted-foreground">
-                              ({item.reviews_count} reviews)
+                              ({item.reviews_count} {t("marketplace.reviews")})
                             </span>
                           )}
                         </div>
@@ -428,7 +439,7 @@ const Marketplace = () => {
 
                       <div className="space-y-2 mb-4">
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <span className="truncate">By {('display_name' in item && (item as Product).display_name) || "Unknown Seller"}</span>
+                          <span className="truncate">{t("marketplace.by")} {('display_name' in item && (item as Product).display_name) || t("marketplace.unknownSeller")}</span>
                         </div>
                         
                         {'location' in item && (item as Product).location && (
@@ -440,7 +451,7 @@ const Marketplace = () => {
 
                         {"stock_quantity" in item && item.stock_quantity !== null && item.stock_quantity > 0 && (
                           <div className="text-sm text-muted-foreground">
-                            {item.stock_quantity} in stock
+                            {item.stock_quantity} {t("marketplace.inStock")}
                           </div>
                         )}
                       </div>
@@ -461,8 +472,8 @@ const Marketplace = () => {
                           onClick={() => navigate(`/course/${item.id}`)}
                         >
                           <BookOpen className="h-4 w-4" />
-                          <span className="hidden sm:inline">View Course</span>
-                          <span className="sm:hidden">View</span>
+                          <span className="hidden sm:inline">{t("marketplace.viewCourse")}</span>
+                          <span className="sm:hidden">{t("common.view")}</span>
                         </Button>
                       ) : (
                         <Button 
@@ -477,10 +488,10 @@ const Marketplace = () => {
                             <ShoppingCart className="h-4 w-4" />
                           )}
                           <span className="hidden sm:inline">
-                            {("stock_quantity" in item && item.stock_quantity === 0) ? "Out of Stock" : "Add to Cart"}
+                            {("stock_quantity" in item && item.stock_quantity === 0) ? t("marketplace.outOfStock") : t("marketplace.addToCart")}
                           </span>
                           <span className="sm:hidden">
-                            {("stock_quantity" in item && item.stock_quantity === 0) ? "Out" : "Add"}
+                            {("stock_quantity" in item && item.stock_quantity === 0) ? t("marketplace.out") : t("marketplace.add")}
                           </span>
                         </Button>
                       )}

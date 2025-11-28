@@ -111,11 +111,11 @@ export function RequestPayout() {
       return;
     }
 
-    // Check minimum payout amount (100 USD)
-    if (amountValue < 100) {
+    // Check minimum payout amount (25 USD)
+    if (amountValue < 25) {
       toast({
         title: "Error",
-        description: "Minimum payout amount is 100 USD",
+        description: "Minimum payout amount is 25 USD",
         variant: "destructive",
       });
       return;
@@ -193,12 +193,12 @@ export function RequestPayout() {
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     placeholder="Enter amount"
-                    min="10000"
+                    min="25"
                     max={earnings?.pendingEarnings}
                     required
                   />
                   <p className="text-sm text-muted-foreground">
-                    Minimum payout: USD 10,000
+                    Minimum payout: USD 25
                   </p>
                 </div>
 

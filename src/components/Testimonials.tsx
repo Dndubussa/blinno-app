@@ -10,6 +10,7 @@ import { Star } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { CarouselApi } from "@/components/ui/carousel";
+import { useTranslation } from "react-i18next";
 
 const testimonials = [
   {
@@ -50,6 +51,7 @@ const testimonials = [
 ];
 
 export const Testimonials = () => {
+  const { t } = useTranslation();
   const [api, setApi] = useState<CarouselApi>();
   const navigate = useNavigate();
 
@@ -68,10 +70,10 @@ export const Testimonials = () => {
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
-            Success Stories
+            {t("homepage.testimonials.title")}
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Hear from creators who have transformed their careers with BLINNO
+            {t("homepage.testimonials.subtitle")}
           </p>
         </div>
 
@@ -127,9 +129,9 @@ export const Testimonials = () => {
             onClick={() => navigate("/auth?tab=signup")}
             className="inline-block bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-8 rounded-lg transition-colors duration-300"
           >
-            Get Started Today
+            {t("homepage.hero.getStartedToday")}
           </button>
-          <p className="mt-4 text-muted-foreground">Join thousands of successful creators on BLINNO</p>
+          <p className="mt-4 text-muted-foreground">{t("homepage.testimonials.joinSuccessful")}</p>
         </div>
       </div>
     </section>

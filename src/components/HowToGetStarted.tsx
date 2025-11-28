@@ -26,51 +26,53 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { AnimatedSection } from "./AnimatedSection";
-
-const roles = [
-  { name: "Creator", icon: Sparkles, description: "Showcase your work and sell products" },
-  { name: "Freelancer", icon: Briefcase, description: "Offer professional services" },
-  { name: "Seller", icon: Store, description: "Sell products in the marketplace" },
-  { name: "Event Organizer", icon: Calendar, description: "Create and manage events" },
-  { name: "Musician", icon: Music, description: "Share music and book performances" },
-  { name: "Educator", icon: GraduationCap, description: "Create and sell courses" },
-  { name: "Journalist", icon: Newspaper, description: "Publish articles and news" },
-  { name: "Artisan", icon: Hammer, description: "Showcase handmade crafts" },
-  { name: "Restaurant Owner", icon: UtensilsCrossed, description: "List your restaurant" },
-  { name: "Lodging Provider", icon: Home, description: "Offer accommodations" },
-  { name: "Employer", icon: Building2, description: "Post jobs and hire talent" },
-];
+import { useTranslation } from "react-i18next";
 
 export function HowToGetStarted() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
+
+  const roles = [
+    { name: t("homepage.howToGetStarted.roleSelection.creator"), icon: Sparkles, description: t("homepage.howToGetStarted.roleSelection.creatorDesc"), key: "creator" },
+    { name: t("homepage.howToGetStarted.roleSelection.freelancer"), icon: Briefcase, description: t("homepage.howToGetStarted.roleSelection.freelancerDesc"), key: "freelancer" },
+    { name: t("homepage.howToGetStarted.roleSelection.seller"), icon: Store, description: t("homepage.howToGetStarted.roleSelection.sellerDesc"), key: "seller" },
+    { name: t("homepage.howToGetStarted.roleSelection.eventOrganizer"), icon: Calendar, description: t("homepage.howToGetStarted.roleSelection.eventOrganizerDesc"), key: "event_organizer" },
+    { name: t("homepage.howToGetStarted.roleSelection.musician"), icon: Music, description: t("homepage.howToGetStarted.roleSelection.musicianDesc"), key: "musician" },
+    { name: t("homepage.howToGetStarted.roleSelection.educator"), icon: GraduationCap, description: t("homepage.howToGetStarted.roleSelection.educatorDesc"), key: "educator" },
+    { name: t("homepage.howToGetStarted.roleSelection.journalist"), icon: Newspaper, description: t("homepage.howToGetStarted.roleSelection.journalistDesc"), key: "journalist" },
+    { name: t("homepage.howToGetStarted.roleSelection.artisan"), icon: Hammer, description: t("homepage.howToGetStarted.roleSelection.artisanDesc"), key: "artisan" },
+    { name: t("homepage.howToGetStarted.roleSelection.restaurantOwner"), icon: UtensilsCrossed, description: t("homepage.howToGetStarted.roleSelection.restaurantOwnerDesc"), key: "restaurant" },
+    { name: t("homepage.howToGetStarted.roleSelection.lodgingProvider"), icon: Home, description: t("homepage.howToGetStarted.roleSelection.lodgingProviderDesc"), key: "lodging" },
+    { name: t("homepage.howToGetStarted.roleSelection.employer"), icon: Building2, description: t("homepage.howToGetStarted.roleSelection.employerDesc"), key: "employer" },
+  ];
 
   const steps = [
     {
       number: 1,
       icon: UserPlus,
-      title: "Create Your Account",
-      description: "Sign up with your email address. It's free and takes less than 2 minutes!",
+      title: t("homepage.howToGetStarted.step1.title"),
+      description: t("homepage.howToGetStarted.step1.description"),
       details: [
-        "Click 'Sign Up' in the top right corner",
-        "Enter your email and create a password",
-        "Fill in your basic information (name, country, phone)",
-        "Choose your role based on what you want to do on the platform"
+        t("homepage.howToGetStarted.step1.detail1"),
+        t("homepage.howToGetStarted.step1.detail2"),
+        t("homepage.howToGetStarted.step1.detail3"),
+        t("homepage.howToGetStarted.step1.detail4")
       ],
-      action: "Sign Up Now",
+      action: t("homepage.howToGetStarted.step1.action"),
       actionLink: "/auth?tab=signup"
     },
     {
       number: 2,
       icon: Mail,
-      title: "Verify Your Email",
-      description: "Check your inbox and click the verification link to activate your account.",
+      title: t("homepage.howToGetStarted.step2.title"),
+      description: t("homepage.howToGetStarted.step2.description"),
       details: [
-        "We'll send you a verification email",
-        "Click the link in the email to verify",
-        "Your account will be activated immediately",
-        "You can start using the platform right away"
+        t("homepage.howToGetStarted.step2.detail1"),
+        t("homepage.howToGetStarted.step2.detail2"),
+        t("homepage.howToGetStarted.step2.detail3"),
+        t("homepage.howToGetStarted.step2.detail4")
       ],
       action: null,
       actionLink: null
@@ -78,43 +80,43 @@ export function HowToGetStarted() {
     {
       number: 3,
       icon: Store,
-      title: "Complete Your Profile",
-      description: "Add your profile picture, bio, and showcase your work to attract customers.",
+      title: t("homepage.howToGetStarted.step3.title"),
+      description: t("homepage.howToGetStarted.step3.description"),
       details: [
-        "Upload a professional profile picture",
-        "Write a compelling bio about yourself",
-        "Add your portfolio, products, or services",
-        "Set up your payment preferences"
+        t("homepage.howToGetStarted.step3.detail1"),
+        t("homepage.howToGetStarted.step3.detail2"),
+        t("homepage.howToGetStarted.step3.detail3"),
+        t("homepage.howToGetStarted.step3.detail4")
       ],
-      action: user ? "Go to Dashboard" : null,
+      action: user ? t("homepage.howToGetStarted.step3.action") : null,
       actionLink: user ? "/dashboard" : null
     },
     {
       number: 4,
       icon: TrendingUp,
-      title: "Start Earning",
-      description: "Begin selling, offering services, or monetizing your content on the platform.",
+      title: t("homepage.howToGetStarted.step4.title"),
+      description: t("homepage.howToGetStarted.step4.description"),
       details: [
-        "List your products or services",
-        "Set your pricing and availability",
-        "Respond to inquiries and bookings",
-        "Track your earnings in your dashboard"
+        t("homepage.howToGetStarted.step4.detail1"),
+        t("homepage.howToGetStarted.step4.detail2"),
+        t("homepage.howToGetStarted.step4.detail3"),
+        t("homepage.howToGetStarted.step4.detail4")
       ],
-      action: user ? "Explore Features" : null,
+      action: user ? t("homepage.howToGetStarted.step4.action") : null,
       actionLink: user ? "/marketplace" : null
     },
     {
       number: 5,
       icon: CreditCard,
-      title: "Get Paid Securely",
-      description: "Receive payments through Click Pesa and request payouts whenever you're ready.",
+      title: t("homepage.howToGetStarted.step5.title"),
+      description: t("homepage.howToGetStarted.step5.description"),
       details: [
-        "Customers pay securely via Click Pesa",
-        "Funds are held safely until delivery",
-        "Request payouts to your mobile money account",
-        "Track all transactions in your dashboard"
+        t("homepage.howToGetStarted.step5.detail1"),
+        t("homepage.howToGetStarted.step5.detail2"),
+        t("homepage.howToGetStarted.step5.detail3"),
+        t("homepage.howToGetStarted.step5.detail4")
       ],
-      action: user ? "View Earnings" : null,
+      action: user ? t("homepage.howToGetStarted.step5.action") : null,
       actionLink: user ? "/earnings" : null
     }
   ];
@@ -125,12 +127,11 @@ export function HowToGetStarted() {
         <AnimatedSection>
           <div className="text-center mb-12">
             <Badge variant="outline" className="mb-4">
-              Getting Started
+              {t("homepage.howToGetStarted.badge")}
             </Badge>
-            <h2 className="text-4xl font-bold mb-4">How to Get Started on BLINNO</h2>
+            <h2 className="text-4xl font-bold mb-4">{t("homepage.howToGetStarted.title")}</h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Join thousands of creators and businesses already making money on our platform. 
-              Get started in just 5 simple steps!
+              {t("homepage.howToGetStarted.subtitle")}
             </p>
           </div>
         </AnimatedSection>
@@ -188,9 +189,9 @@ export function HowToGetStarted() {
         <AnimatedSection delay={500}>
           <Card className="max-w-5xl mx-auto">
             <CardHeader>
-              <CardTitle className="text-2xl mb-2">Choose Your Role</CardTitle>
+              <CardTitle className="text-2xl mb-2">{t("homepage.howToGetStarted.roleSelection.title")}</CardTitle>
               <CardDescription>
-                Select the role that best describes what you want to do on BLINNO
+                {t("homepage.howToGetStarted.roleSelection.subtitle")}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -230,31 +231,19 @@ export function HowToGetStarted() {
               {selectedRole && (
                 <div className="mt-6 p-4 bg-primary/5 rounded-lg border border-primary/20">
                   <p className="text-sm text-muted-foreground mb-3">
-                    You've selected <strong className="text-foreground">{selectedRole}</strong>. 
-                    This role will be set when you create your account.
+                    {t("homepage.howToGetStarted.roleSelection.selected")} <strong className="text-foreground">{selectedRole}</strong>. 
+                    {t("homepage.howToGetStarted.roleSelection.roleSetOnSignup")}
                   </p>
                   {!user && (
                     <Button
                       onClick={() => {
-                        const roleMap: Record<string, string> = {
-                          'Creator': 'creator',
-                          'Freelancer': 'freelancer',
-                          'Seller': 'seller',
-                          'Event Organizer': 'event_organizer',
-                          'Musician': 'musician',
-                          'Educator': 'educator',
-                          'Journalist': 'journalist',
-                          'Artisan': 'artisan',
-                          'Restaurant Owner': 'restaurant',
-                          'Lodging Provider': 'lodging',
-                          'Employer': 'employer'
-                        };
-                        const roleParam = roleMap[selectedRole] || 'user';
+                        const selectedRoleObj = roles.find(r => r.name === selectedRole);
+                        const roleParam = selectedRoleObj?.key || 'user';
                         navigate(`/auth?tab=signup&role=${roleParam}`);
                       }}
                       className="w-full sm:w-auto"
                     >
-                      Sign Up as {selectedRole}
+                      {t("homepage.howToGetStarted.roleSelection.signUpAs")} {selectedRole}
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   )}
@@ -270,13 +259,12 @@ export function HowToGetStarted() {
             <div className="inline-flex items-center gap-2 mb-4">
               <Users className="h-5 w-5 text-primary" />
               <span className="text-sm font-semibold text-muted-foreground">
-                Join 10,000+ active users
+                {t("homepage.howToGetStarted.cta.joinUsers")}
               </span>
             </div>
-            <h3 className="text-2xl font-bold mb-4">Ready to Get Started?</h3>
+            <h3 className="text-2xl font-bold mb-4">{t("homepage.howToGetStarted.cta.readyToStart")}</h3>
             <p className="text-muted-foreground mb-6 max-w-xl mx-auto">
-              Create your free account today and start monetizing your skills, products, or services. 
-              No credit card required.
+              {t("homepage.howToGetStarted.cta.description")}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               {!user ? (
@@ -287,7 +275,7 @@ export function HowToGetStarted() {
                     className="text-lg px-8 py-6"
                   >
                     <UserPlus className="mr-2 h-5 w-5" />
-                    Create Free Account
+                    {t("homepage.howToGetStarted.cta.createFreeAccount")}
                   </Button>
                   <Button
                     size="lg"
@@ -295,7 +283,7 @@ export function HowToGetStarted() {
                     onClick={() => navigate("/auth")}
                     className="text-lg px-8 py-6"
                   >
-                    Sign In
+                    {t("homepage.howToGetStarted.cta.signIn")}
                   </Button>
                 </>
               ) : (
@@ -305,22 +293,22 @@ export function HowToGetStarted() {
                   className="text-lg px-8 py-6"
                 >
                   <Shield className="mr-2 h-5 w-5" />
-                  Go to Dashboard
+                  {t("homepage.howToGetStarted.cta.goToDashboard")}
                 </Button>
               )}
             </div>
             <div className="mt-8 flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-primary" />
-                <span>Free to join</span>
+                <span>{t("homepage.howToGetStarted.cta.freeToJoin")}</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-primary" />
-                <span>No credit card required</span>
+                <span>{t("homepage.howToGetStarted.cta.noCreditCard")}</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-primary" />
-                <span>Start earning immediately</span>
+                <span>{t("homepage.howToGetStarted.cta.startEarning")}</span>
               </div>
             </div>
           </div>

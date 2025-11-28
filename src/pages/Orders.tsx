@@ -15,8 +15,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MultiCurrencyPrice } from "@/components/MultiCurrencyPrice";
+import { useTranslation } from "react-i18next";
 
 export default function Orders() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -45,8 +47,8 @@ export default function Orders() {
     } catch (error: any) {
       console.error("Error fetching orders:", error);
       toast({
-        title: "Error",
-        description: "Failed to load orders",
+        title: t("common.error"),
+        description: t("orders.failedToLoad"),
         variant: "destructive",
       });
     } finally {
@@ -81,19 +83,19 @@ export default function Orders() {
   };
 
   const handleCancelOrder = async (orderId: string) => {
-    if (!confirm("Are you sure you want to cancel this order?")) return;
+    if (!confirm(t("orders.confirmCancel"))) return;
 
     try {
-      await api.cancelOrder(orderId, "Cancelled by buyer");
+      await api.cancelOrder(orderId, t("orders.cancelledByBuyer"));
       toast({
-        title: "Order cancelled",
-        description: "Your order has been cancelled",
+        title: t("orders.orderCancelled"),
+        description: t("orders.orderCancelledDesc"),
       });
       await fetchOrders();
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: error.message || "Failed to cancel order",
+        title: t("common.error"),
+        description: error.message || t("orders.failedToCancel"),
         variant: "destructive",
       });
     }
@@ -103,14 +105,14 @@ export default function Orders() {
     try {
       await api.confirmDelivery(orderId);
       toast({
-        title: "Delivery confirmed",
-        description: "Thank you for confirming delivery!",
+        title: t("orders.deliveryConfirmed"),
+        description: t("orders.thankYouForConfirming"),
       });
       await fetchOrders();
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: error.message || "Failed to confirm delivery",
+        title: t("common.error"),
+        description: error.message || t("orders.failedToConfirmDelivery"),
         variant: "destructive",
       });
     }
@@ -133,7 +135,7 @@ export default function Orders() {
         <div className="pt-24 pb-16 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading orders...</p>
+            <p className="text-muted-foreground">{t("orders.loading")}</p>
           </div>
         </div>
         <Footer />
@@ -152,19 +154,19 @@ export default function Orders() {
       <div className="pt-24 pb-16">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="mb-8">
-            <h1 className="text-4xl font-bold mb-2">My Orders</h1>
+            <h1 className="text-4xl font-bold mb-2">{t("orders.title")}</h1>
             <p className="text-muted-foreground">
-              Track and manage your orders
+              {t("orders.trackAndManage")}
             </p>
           </div>
 
           <Tabs defaultValue="all" className="w-full">
             <TabsList>
-              <TabsTrigger value="all">All ({orders.length})</TabsTrigger>
-              <TabsTrigger value="pending">Pending ({pendingOrders.length})</TabsTrigger>
-              <TabsTrigger value="active">Active ({activeOrders.length})</TabsTrigger>
-              <TabsTrigger value="completed">Completed ({completedOrders.length})</TabsTrigger>
-              <TabsTrigger value="cancelled">Cancelled ({cancelledOrders.length})</TabsTrigger>
+              <TabsTrigger value="all">{t("orders.all")} ({orders.length})</TabsTrigger>
+              <TabsTrigger value="pending">{t("orders.status.pending")} ({pendingOrders.length})</TabsTrigger>
+              <TabsTrigger value="active">{t("orders.active")} ({activeOrders.length})</TabsTrigger>
+              <TabsTrigger value="completed">{t("orders.completed")} ({completedOrders.length})</TabsTrigger>
+              <TabsTrigger value="cancelled">{t("orders.status.cancelled")} ({cancelledOrders.length})</TabsTrigger>
             </TabsList>
 
             <TabsContent value="all" className="mt-6">
@@ -203,12 +205,14 @@ export default function Orders() {
 }
 
 function OrderList({ orders, onView, onCancel, onConfirmDelivery, formatPrice, getStatusIcon, getStatusColor }: any) {
+  const { t } = useTranslation();
+  
   if (orders.length === 0) {
     return (
       <Card>
         <CardContent className="p-12 text-center">
           <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-          <p className="text-muted-foreground">No orders found</p>
+          <p className="text-muted-foreground">{t("orders.empty")}</p>
         </CardContent>
       </Card>
     );
@@ -224,19 +228,19 @@ function OrderList({ orders, onView, onCancel, onConfirmDelivery, formatPrice, g
                 <div className="flex items-center gap-3 mb-3">
                   {getStatusIcon(order.status)}
                   <div>
-                    <h3 className="font-semibold">Order #{order.id.slice(0, 8)}</h3>
+                    <h3 className="font-semibold">{t("orders.orderNumber")} {order.id.slice(0, 8)}</h3>
                     <p className="text-sm text-muted-foreground">
                       {formatDistanceToNow(new Date(order.created_at), { addSuffix: true })}
                     </p>
                   </div>
                   <Badge variant={getStatusColor(order.status) as any}>
-                    {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                    {t(`orders.status.${order.status}`)}
                   </Badge>
                 </div>
 
                 {order.items && order.items.length > 0 && (
                   <div className="mb-3">
-                    <p className="text-sm font-medium mb-1">Items:</p>
+                    <p className="text-sm font-medium mb-1">{t("orders.items")}:</p>
                     <div className="space-y-1">
                       {order.items.slice(0, 3).map((item: any, idx: number) => (
                         <p key={idx} className="text-sm text-muted-foreground">
@@ -245,7 +249,7 @@ function OrderList({ orders, onView, onCancel, onConfirmDelivery, formatPrice, g
                       ))}
                       {order.items.length > 3 && (
                         <p className="text-sm text-muted-foreground">
-                          +{order.items.length - 3} more items
+                          +{order.items.length - 3} {t("orders.moreItems")}
                         </p>
                       )}
                     </div>
@@ -258,7 +262,7 @@ function OrderList({ orders, onView, onCancel, onConfirmDelivery, formatPrice, g
                   </div>
                   {order.tracking_number && (
                     <span className="text-muted-foreground">
-                      Tracking: {order.tracking_number}
+                      {t("orders.tracking")}: {order.tracking_number}
                     </span>
                   )}
                 </div>
@@ -271,7 +275,7 @@ function OrderList({ orders, onView, onCancel, onConfirmDelivery, formatPrice, g
                   onClick={() => onView(order)}
                 >
                   <Eye className="h-4 w-4 mr-2" />
-                  View
+                  {t("common.view")}
                 </Button>
                 {order.status === "pending" && (
                   <Button
@@ -279,7 +283,7 @@ function OrderList({ orders, onView, onCancel, onConfirmDelivery, formatPrice, g
                     size="sm"
                     onClick={() => onCancel(order.id)}
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </Button>
                 )}
                 {order.status === "shipped" && (
@@ -287,7 +291,7 @@ function OrderList({ orders, onView, onCancel, onConfirmDelivery, formatPrice, g
                     size="sm"
                     onClick={() => onConfirmDelivery(order.id)}
                   >
-                    Confirm Delivery
+                    {t("orders.confirmDelivery")}
                   </Button>
                 )}
               </div>
@@ -300,6 +304,7 @@ function OrderList({ orders, onView, onCancel, onConfirmDelivery, formatPrice, g
 }
 
 function OrderDetailsDialog({ order, open, onClose, onConfirmDelivery, formatPrice }: any) {
+  const { t } = useTranslation();
   const [orderDetails, setOrderDetails] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
@@ -325,32 +330,32 @@ function OrderDetailsDialog({ order, open, onClose, onConfirmDelivery, formatPri
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Order Details</DialogTitle>
+          <DialogTitle>{t("orders.viewDetails")}</DialogTitle>
         </DialogHeader>
         {loading ? (
-          <div className="text-center py-8">Loading...</div>
+          <div className="text-center py-8">{t("common.loading")}</div>
         ) : orderDetails ? (
           <div className="space-y-6">
             {/* Order Info */}
             <div>
-              <h3 className="font-semibold mb-2">Order Information</h3>
+              <h3 className="font-semibold mb-2">{t("orders.orderInformation")}</h3>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <p className="text-muted-foreground">Order ID</p>
+                  <p className="text-muted-foreground">{t("orders.orderId")}</p>
                   <p className="font-medium">{orderDetails.id}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Status</p>
-                  <p className="font-medium capitalize">{orderDetails.status}</p>
+                  <p className="text-muted-foreground">{t("common.status")}</p>
+                  <p className="font-medium">{t(`orders.status.${orderDetails.status}`)}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Total Amount</p>
+                  <p className="text-muted-foreground">{t("orders.totalAmount")}</p>
                   <div className="font-medium">
                     <MultiCurrencyPrice usdPrice={parseFloat(orderDetails.total_amount)} size="md" />
                   </div>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Order Date</p>
+                  <p className="text-muted-foreground">{t("orders.orderDate")}</p>
                   <p className="font-medium">
                     {new Date(orderDetails.created_at).toLocaleDateString()}
                   </p>
@@ -361,16 +366,16 @@ function OrderDetailsDialog({ order, open, onClose, onConfirmDelivery, formatPri
             {/* Status History */}
             {orderDetails.statusHistory && orderDetails.statusHistory.length > 0 && (
               <div>
-                <h3 className="font-semibold mb-2">Status History</h3>
+                <h3 className="font-semibold mb-2">{t("orders.statusHistory")}</h3>
                 <div className="space-y-2">
                   {orderDetails.statusHistory.map((status: any, idx: number) => (
                     <div key={idx} className="flex items-center gap-3 text-sm">
                       <div className="h-2 w-2 rounded-full bg-primary" />
                       <div className="flex-1">
-                        <p className="font-medium capitalize">{status.status}</p>
+                        <p className="font-medium">{t(`orders.status.${status.status}`)}</p>
                         <p className="text-muted-foreground text-xs">
                           {new Date(status.created_at).toLocaleString()}
-                          {status.changed_by_name && ` by ${status.changed_by_name}`}
+                          {status.changed_by_name && ` ${t("orders.by")} ${status.changed_by_name}`}
                         </p>
                       </div>
                     </div>
@@ -382,7 +387,7 @@ function OrderDetailsDialog({ order, open, onClose, onConfirmDelivery, formatPri
             {/* Items */}
             {orderDetails.items && orderDetails.items.length > 0 && (
               <div>
-                <h3 className="font-semibold mb-2">Items</h3>
+                <h3 className="font-semibold mb-2">{t("orders.items")}</h3>
                 <div className="space-y-2">
                   {orderDetails.items.map((item: any) => (
                     <div key={item.id} className="flex items-center gap-4 p-3 border rounded">
@@ -396,7 +401,7 @@ function OrderDetailsDialog({ order, open, onClose, onConfirmDelivery, formatPri
                       <div className="flex-1">
                         <p className="font-medium">{item.product_title}</p>
                         <div className="text-sm text-muted-foreground flex items-center gap-1">
-                          <span>Quantity: {item.quantity} ×</span>
+                          <span>{t("common.quantity")}: {item.quantity} ×</span>
                           <MultiCurrencyPrice usdPrice={parseFloat(item.price_at_purchase)} size="sm" />
                         </div>
                       </div>
@@ -412,21 +417,21 @@ function OrderDetailsDialog({ order, open, onClose, onConfirmDelivery, formatPri
             {/* Tracking Info */}
             {orderDetails.tracking_number && (
               <div>
-                <h3 className="font-semibold mb-2">Tracking Information</h3>
+                <h3 className="font-semibold mb-2">{t("orders.trackingInformation")}</h3>
                 <div className="space-y-2 text-sm">
                   <div>
-                    <p className="text-muted-foreground">Tracking Number</p>
+                    <p className="text-muted-foreground">{t("orders.trackingNumber")}</p>
                     <p className="font-medium">{orderDetails.tracking_number}</p>
                   </div>
                   {orderDetails.shipping_carrier && (
                     <div>
-                      <p className="text-muted-foreground">Carrier</p>
+                      <p className="text-muted-foreground">{t("orders.carrier")}</p>
                       <p className="font-medium">{orderDetails.shipping_carrier}</p>
                     </div>
                   )}
                   {orderDetails.estimated_delivery_date && (
                     <div>
-                      <p className="text-muted-foreground">Estimated Delivery</p>
+                      <p className="text-muted-foreground">{t("orders.estimatedDelivery")}</p>
                       <p className="font-medium">
                         {new Date(orderDetails.estimated_delivery_date).toLocaleDateString()}
                       </p>
@@ -446,13 +451,13 @@ function OrderDetailsDialog({ order, open, onClose, onConfirmDelivery, formatPri
                   }}
                   className="w-full"
                 >
-                  Confirm Delivery
+                  {t("orders.confirmDelivery")}
                 </Button>
               </div>
             )}
           </div>
         ) : (
-          <div className="text-center py-8">Failed to load order details</div>
+          <div className="text-center py-8">{t("orders.failedToLoadDetails")}</div>
         )}
       </DialogContent>
     </Dialog>

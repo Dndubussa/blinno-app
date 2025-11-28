@@ -15,8 +15,10 @@ import { SEO } from "@/components/SEO";
 import { countries } from "@/lib/countries";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function Auth() {
+  const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const [selectedRole, setSelectedRole] = useState<'user' | 'creator' | 'freelancer' | 'seller' | 'lodging' | 'restaurant' | 'educator' | 'journalist' | 'artisan' | 'employer' | 'event_organizer' | 'musician'>('user');
   const [selectedCountry, setSelectedCountry] = useState("");
@@ -160,7 +162,7 @@ export default function Auth() {
             className="text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Home
+            {t("common.back")} {t("common.home")}
           </Button>
         </div>
       </header>
@@ -170,30 +172,29 @@ export default function Auth() {
           {user && user.email_verified === false && (
             <Alert className="mb-6">
               <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Email Verification Required</AlertTitle>
+              <AlertTitle>{t("auth.emailVerificationRequired")}</AlertTitle>
               <AlertDescription>
-                Please check your email ({user.email}) and click the verification link to activate your account. 
-                You will be automatically redirected to your dashboard once your email is verified.
+                {t("auth.emailVerificationDescription", { email: user.email })}
               </AlertDescription>
             </Alert>
           )}
           
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              <TabsTrigger value="signin">{t("auth.signIn.title")}</TabsTrigger>
+              <TabsTrigger value="signup">{t("auth.signUp.title")}</TabsTrigger>
             </TabsList>
             
             <TabsContent value="signin">
               <Card>
                 <CardHeader>
-                  <CardTitle>Welcome Back</CardTitle>
-                  <CardDescription>Sign in to your BLINNO account</CardDescription>
+                  <CardTitle>{t("auth.signIn.welcomeBack")}</CardTitle>
+                  <CardDescription>{t("auth.signIn.description")}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleSignIn} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="signin-email">Email</Label>
+                      <Label htmlFor="signin-email">{t("auth.signIn.email")}</Label>
                       <Input
                         id="signin-email"
                         name="email"
@@ -203,7 +204,7 @@ export default function Auth() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="signin-password">Password</Label>
+                      <Label htmlFor="signin-password">{t("auth.signIn.password")}</Label>
                       <Input
                         id="signin-password"
                         name="password"
@@ -217,17 +218,17 @@ export default function Auth() {
                       onClick={() => navigate("/auth/forgot-password")}
                       className="px-0 text-sm text-muted-foreground hover:text-foreground"
                     >
-                      Forgot password?
+                      {t("auth.signIn.forgotPassword")}
                     </Button>
                     <Button type="submit" className="w-full" disabled={isLoading}>
                       {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Sign In
+                      {t("auth.signIn.title")}
                     </Button>
                     
                     <div className="relative my-4">
                       <Separator />
                       <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
-                        Or continue with
+                        {t("auth.orContinueWith")}
                       </span>
                     </div>
                     
@@ -256,7 +257,7 @@ export default function Auth() {
                           d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                         />
                       </svg>
-                      {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Continue with Google"}
+                      {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : t("auth.continueWithGoogle")}
                     </Button>
                   </form>
                 </CardContent>
@@ -266,45 +267,45 @@ export default function Auth() {
             <TabsContent value="signup">
               <Card>
                 <CardHeader>
-                  <CardTitle>Create Account</CardTitle>
-                  <CardDescription>Join BLINNO today</CardDescription>
+                  <CardTitle>{t("auth.signUp.title")}</CardTitle>
+                  <CardDescription>{t("auth.signUp.joinToday")}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleSignUp} className="space-y-4">
                     <div className="grid grid-cols-3 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="signup-first-name">First Name</Label>
+                        <Label htmlFor="signup-first-name">{t("auth.signUp.firstName")}</Label>
                         <Input
                           id="signup-first-name"
                           name="firstName"
                           type="text"
-                          placeholder="First name"
+                          placeholder={t("auth.signUp.firstName")}
                           required
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="signup-middle-name">Middle Name</Label>
+                        <Label htmlFor="signup-middle-name">{t("auth.signUp.middleName")}</Label>
                         <Input
                           id="signup-middle-name"
                           name="middleName"
                           type="text"
-                          placeholder="Middle name"
+                          placeholder={t("auth.signUp.middleName")}
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="signup-last-name">Last Name</Label>
+                        <Label htmlFor="signup-last-name">{t("auth.signUp.lastName")}</Label>
                         <Input
                           id="signup-last-name"
                           name="lastName"
                           type="text"
-                          placeholder="Last name"
+                          placeholder={t("auth.signUp.lastName")}
                           required
                         />
                       </div>
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="signup-email">Email</Label>
+                      <Label htmlFor="signup-email">{t("auth.signUp.email")}</Label>
                       <Input
                         id="signup-email"
                         name="email"
@@ -315,7 +316,7 @@ export default function Auth() {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="signup-password">Password</Label>
+                      <Label htmlFor="signup-password">{t("auth.signUp.password")}</Label>
                       <Input
                         id="signup-password"
                         name="password"
@@ -326,10 +327,10 @@ export default function Auth() {
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="signup-country">Country</Label>
+                        <Label htmlFor="signup-country">{t("auth.signUp.country")}</Label>
                         <Select value={selectedCountry} onValueChange={setSelectedCountry}>
                           <SelectTrigger id="signup-country">
-                            <SelectValue placeholder="Select your country" />
+                            <SelectValue placeholder={t("auth.signUp.selectCountry")} />
                           </SelectTrigger>
                           <SelectContent>
                             {countries.map((country) => (
@@ -342,7 +343,7 @@ export default function Auth() {
                       </div>
                       
                       <div className="space-y-2">
-                        <Label htmlFor="signup-phone">Phone Number</Label>
+                        <Label htmlFor="signup-phone">{t("auth.signUp.phoneNumber")}</Label>
                         <div className="flex gap-2">
                           <Select value={selectedPhoneCode} onValueChange={setSelectedPhoneCode}>
                             <SelectTrigger className="w-[120px]">
@@ -360,7 +361,7 @@ export default function Auth() {
                             id="signup-phone"
                             name="phoneNumber"
                             type="tel"
-                            placeholder="Phone number"
+                            placeholder={t("auth.signUp.phoneNumber")}
                             className="flex-1 min-w-[120px]"
                             required
                           />
@@ -369,94 +370,100 @@ export default function Auth() {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="signup-role">I want to join as</Label>
+                      <Label htmlFor="signup-role">{t("auth.signUp.iWantToJoinAs")}</Label>
                       <Select value={selectedRole} onValueChange={(value: 'user' | 'creator' | 'freelancer' | 'seller' | 'lodging' | 'restaurant' | 'educator' | 'journalist' | 'artisan' | 'employer' | 'event_organizer' | 'musician') => setSelectedRole(value)}>
                         <SelectTrigger id="signup-role">
-                          <SelectValue placeholder="Select your role" />
+                          <SelectValue placeholder={t("auth.signUp.role")} />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="user">
                             <div className="flex items-center gap-2">
                               <User className="h-4 w-4" />
-                              <span>User</span>
+                              <span>{t("auth.roles.user")}</span>
                             </div>
                           </SelectItem>
                           <SelectItem value="creator">
                             <div className="flex items-center gap-2">
                               <Palette className="h-4 w-4" />
-                              <span>Creator</span>
+                              <span>{t("homepage.howToGetStarted.roleSelection.creator")}</span>
                             </div>
                           </SelectItem>
                           <SelectItem value="seller">
                             <div className="flex items-center gap-2">
                               <Store className="h-4 w-4" />
-                              <span>Seller</span>
+                              <span>{t("homepage.howToGetStarted.roleSelection.seller")}</span>
                             </div>
                           </SelectItem>
                           <SelectItem value="lodging">
                             <div className="flex items-center gap-2">
                               <Home className="h-4 w-4" />
-                              <span>Lodging</span>
+                              <span>{t("homepage.howToGetStarted.roleSelection.lodgingProvider")}</span>
                             </div>
                           </SelectItem>
                           <SelectItem value="restaurant">
                             <div className="flex items-center gap-2">
                               <UtensilsCrossed className="h-4 w-4" />
-                              <span>Restaurant</span>
+                              <span>{t("homepage.howToGetStarted.roleSelection.restaurantOwner")}</span>
                             </div>
                           </SelectItem>
                           <SelectItem value="educator">
                             <div className="flex items-center gap-2">
                               <GraduationCap className="h-4 w-4" />
-                              <span>Educator</span>
+                              <span>{t("homepage.howToGetStarted.roleSelection.educator")}</span>
                             </div>
                           </SelectItem>
                           <SelectItem value="freelancer">
                             <div className="flex items-center gap-2">
                               <Briefcase className="h-4 w-4" />
-                              <span>Freelancer</span>
+                              <span>{t("homepage.howToGetStarted.roleSelection.freelancer")}</span>
                             </div>
                           </SelectItem>
                           <SelectItem value="journalist">
                             <div className="flex items-center gap-2">
                               <Newspaper className="h-4 w-4" />
-                              <span>Journalist</span>
+                              <span>{t("homepage.howToGetStarted.roleSelection.journalist")}</span>
                             </div>
                           </SelectItem>
                           <SelectItem value="artisan">
                             <div className="flex items-center gap-2">
                               <Wrench className="h-4 w-4" />
-                              <span>Artisan</span>
+                              <span>{t("homepage.howToGetStarted.roleSelection.artisan")}</span>
                             </div>
                           </SelectItem>
                           <SelectItem value="employer">
                             <div className="flex items-center gap-2">
                               <Briefcase className="h-4 w-4" />
-                              <span>Employer</span>
+                              <span>{t("homepage.howToGetStarted.roleSelection.employer")}</span>
                             </div>
                           </SelectItem>
                           <SelectItem value="event_organizer">
                             <div className="flex items-center gap-2">
                               <Calendar className="h-4 w-4" />
-                              <span>Event Organizer</span>
+                              <span>{t("homepage.howToGetStarted.roleSelection.eventOrganizer")}</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="musician">
+                            <div className="flex items-center gap-2">
+                              <Music className="h-4 w-4" />
+                              <span>{t("homepage.howToGetStarted.roleSelection.musician")}</span>
                             </div>
                           </SelectItem>
                         </SelectContent>
                       </Select>
                       <p className="text-xs text-muted-foreground">
-                        Choose how you want to use BLINNO
+                        {t("auth.signUp.chooseHowToUse")}
                       </p>
                     </div>
                     
                     <Button type="submit" className="w-full" disabled={isLoading}>
                       {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Sign Up
+                      {t("auth.signUp.title")}
                     </Button>
                     
                     <div className="relative my-4">
                       <Separator />
                       <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
-                        Or continue with
+                        {t("auth.orContinueWith")}
                       </span>
                     </div>
                     
@@ -485,10 +492,10 @@ export default function Auth() {
                           d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                         />
                       </svg>
-                      {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Continue with Google"}
+                      {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : t("auth.continueWithGoogle")}
                     </Button>
                     <p className="text-xs text-center text-muted-foreground mt-2">
-                      Google sign-in allows you to quickly access your account
+                      {t("auth.googleSignInDescription")}
                     </p>
                   </form>
                 </CardContent>

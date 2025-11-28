@@ -30,7 +30,22 @@
     "previous": "Précédent",
     "confirm": "Confirmer",
     "yes": "Oui",
-    "no": "Non"
+    "no": "Non",
+    "name": "Nom",
+    "email": "Email",
+    "phone": "Téléphone",
+    "address": "Adresse",
+    "country": "Pays",
+    "city": "Ville",
+    "description": "Description",
+    "price": "Prix",
+    "quantity": "Quantité",
+    "total": "Total",
+    "subtotal": "Sous-total",
+    "date": "Date",
+    "time": "Heure",
+    "status": "Statut",
+    "actions": "Actions"
   },
   "header": {
     "title": "BLINNO",
@@ -50,31 +65,216 @@
   },
   "homepage": {
     "hero": {
-      "title": "Connectez, Créez et Prospérez",
-      "subtitle": "La plateforme ultime pour les créateurs, les entreprises et les prestataires de services à travers l'Afrique et au-delà",
-      "cta": "Commencer"
+      "title": "BLISSFUL INNOVATIONS",
+      "titlePart1": "BLISSFUL INNOVATIONS",
+      "titlePart2": "Découvrir",
+      "titlePart3": ", Créer et Connecter",
+      "subtitle": "Découvrez, Créez et Connectez-vous avec des Créateurs et des Entreprises Locales dans le Monde Entier",
+      "exploreContent": "Explorer le Contenu",
+      "submitContent": "Soumettre du Contenu",
+      "getStartedToday": "Commencer Aujourd'hui",
+      "creators": "Créateurs",
+      "events": "Événements",
+      "products": "Produits",
+      "worldwidePlatform": "🌍 Plateforme Mondiale",
+      "creatorOwned": "🌟 100% Propriété des Créateurs",
+      "verifiedCreators": "✓ Créateurs Vérifiés"
     },
     "categories": {
       "title": "Explorer les Catégories",
-      "subtitle": "Découvrez ce que vous cherchez"
+      "subtitle": "Découvrez ce que vous cherchez",
+      "news": {
+        "title": "Actualités et Médias",
+        "description": "Derniers titres",
+        "stats": "Mises à jour quotidiennes",
+        "badge": "🔥 Tendance"
+      },
+      "creativity": {
+        "title": "Créativité",
+        "description": "Présentez votre art",
+        "stats": "15K+ Œuvres"
+      },
+      "marketplace": {
+        "title": "Marché",
+        "description": "Acheter et vendre des produits",
+        "stats": "2K+ Produits",
+        "badge": "⭐ En vedette"
+      },
+      "events": {
+        "title": "Événements",
+        "description": "Découvrir et organiser des événements",
+        "stats": "500+ Événements",
+        "badge": "🔥 Tendance"
+      },
+      "music": {
+        "title": "Musique",
+        "description": "Découvrir la musique locale",
+        "stats": "1K+ Morceaux"
+      },
+      "restaurants": {
+        "title": "Restaurants",
+        "description": "Trouvez de la bonne nourriture",
+        "stats": "200+ Restaurants"
+      },
+      "lodging": {
+        "title": "Hébergement",
+        "description": "Réservez des séjours uniques",
+        "stats": "350+ Propriétés"
+      },
+      "education": {
+        "title": "Éducation",
+        "description": "Apprendre et enseigner",
+        "stats": "100+ Cours"
+      },
+      "jobs": {
+        "title": "Emplois",
+        "description": "Trouvez des opportunités",
+        "stats": "250+ Postes"
+      },
+      "artisans": {
+        "title": "Artisans",
+        "description": "Embaucher des travailleurs qualifiés",
+        "stats": "150+ Artisans"
+      },
+      "movies": {
+        "title": "Films",
+        "description": "Regardez des films locaux",
+        "stats": "500+ Films"
+      },
+      "community": {
+        "title": "Communauté",
+        "description": "Connectez-vous avec d'autres",
+        "stats": "10K+ Membres"
+      }
     },
+    "getStartedToday": "Commencer Aujourd'hui",
+    "joinCommunity": "Rejoignez notre communauté mondiale de créateurs et d'entreprises",
     "howToGetStarted": {
-      "title": "Comment Commencer",
-      "step1": "Créer un Compte",
-      "step1Desc": "Inscrivez-vous et choisissez votre rôle",
-      "step2": "Compléter le Profil",
-      "step2Desc": "Ajoutez vos informations et préférences",
-      "step3": "Commencer à Créer",
-      "step3Desc": "Listez des produits, services ou contenus",
-      "step4": "Connecter",
-      "step4Desc": "Interagissez avec les clients et créateurs",
-      "step5": "Grandir",
-      "step5Desc": "Construisez votre présence et gagnez"
+      "title": "Comment Commencer sur BLINNO",
+      "badge": "Pour Commencer",
+      "subtitle": "Rejoignez des milliers de créateurs et d'entreprises qui gagnent déjà de l'argent sur notre plateforme. Commencez en seulement 5 étapes simples !",
+      "step1": {
+        "title": "Créez Votre Compte",
+        "description": "Inscrivez-vous avec votre adresse e-mail. C'est gratuit et prend moins de 2 minutes !",
+        "detail1": "Cliquez sur 'S'inscrire' en haut à droite",
+        "detail2": "Entrez votre e-mail et créez un mot de passe",
+        "detail3": "Remplissez vos informations de base (nom, pays, téléphone)",
+        "detail4": "Choisissez votre rôle en fonction de ce que vous voulez faire sur la plateforme",
+        "action": "S'inscrire Maintenant"
+      },
+      "step2": {
+        "title": "Vérifiez Votre E-mail",
+        "description": "Vérifiez votre boîte de réception et cliquez sur le lien de vérification pour activer votre compte.",
+        "detail1": "Nous vous enverrons un e-mail de vérification",
+        "detail2": "Cliquez sur le lien dans l'e-mail pour vérifier",
+        "detail3": "Votre compte sera activé immédiatement",
+        "detail4": "Vous pouvez commencer à utiliser la plateforme tout de suite"
+      },
+      "step3": {
+        "title": "Complétez Votre Profil",
+        "description": "Ajoutez votre photo de profil, votre biographie et présentez votre travail pour attirer les clients.",
+        "detail1": "Téléchargez une photo de profil professionnelle",
+        "detail2": "Rédigez une biographie convaincante sur vous",
+        "detail3": "Ajoutez votre portfolio, produits ou services",
+        "detail4": "Configurez vos préférences de paiement",
+        "action": "Aller au Tableau de Bord"
+      },
+      "step4": {
+        "title": "Commencez à Gagner",
+        "description": "Commencez à vendre, offrir des services ou monétiser votre contenu sur la plateforme.",
+        "detail1": "Listez vos produits ou services",
+        "detail2": "Définissez vos prix et disponibilité",
+        "detail3": "Répondez aux demandes et réservations",
+        "detail4": "Suivez vos gains dans votre tableau de bord",
+        "action": "Explorer les Fonctionnalités"
+      },
+      "step5": {
+        "title": "Recevez des Paiements en Toute Sécurité",
+        "description": "Recevez des paiements via Click Pesa et demandez des retraits quand vous êtes prêt.",
+        "detail1": "Les clients paient en toute sécurité via Click Pesa",
+        "detail2": "Les fonds sont conservés en sécurité jusqu'à la livraison",
+        "detail3": "Demandez des retraits sur votre compte mobile money",
+        "detail4": "Suivez toutes les transactions dans votre tableau de bord",
+        "action": "Voir les Gains"
+      },
+      "roleSelection": {
+        "title": "Choisissez Votre Rôle",
+        "subtitle": "Sélectionnez le rôle qui décrit le mieux ce que vous voulez faire sur BLINNO",
+        "creator": "Créateur",
+        "creatorDesc": "Présentez votre travail et vendez des produits",
+        "freelancer": "Freelance",
+        "freelancerDesc": "Offrez des services professionnels",
+        "seller": "Vendeur",
+        "sellerDesc": "Vendez des produits sur le marché",
+        "eventOrganizer": "Organisateur d'Événements",
+        "eventOrganizerDesc": "Créez et gérez des événements",
+        "musician": "Musicien",
+        "musicianDesc": "Partagez de la musique et réservez des performances",
+        "educator": "Éducateur",
+        "educatorDesc": "Créez et vendez des cours",
+        "journalist": "Journaliste",
+        "journalistDesc": "Publiez des articles et des nouvelles",
+        "artisan": "Artisan",
+        "artisanDesc": "Présentez des créations artisanales",
+        "restaurantOwner": "Propriétaire de Restaurant",
+        "restaurantOwnerDesc": "Listez votre restaurant",
+        "lodgingProvider": "Fournisseur d'Hébergement",
+        "lodgingProviderDesc": "Offrez des hébergements",
+        "employer": "Employeur",
+        "employerDesc": "Publiez des offres d'emploi et embauchez des talents",
+        "selected": "Vous avez sélectionné",
+        "roleSetOnSignup": "Ce rôle sera défini lorsque vous créerez votre compte.",
+        "signUpAs": "S'inscrire en tant que"
+      },
+      "cta": {
+        "joinUsers": "Rejoignez plus de 10 000 utilisateurs actifs",
+        "readyToStart": "Prêt à Commencer ?",
+        "description": "Créez votre compte gratuit aujourd'hui et commencez à monétiser vos compétences, produits ou services. Aucune carte de crédit requise.",
+        "createFreeAccount": "Créer un Compte Gratuit",
+        "signIn": "Se connecter",
+        "goToDashboard": "Aller au Tableau de Bord",
+        "freeToJoin": "Gratuit de rejoindre",
+        "noCreditCard": "Aucune carte de crédit requise",
+        "startEarning": "Commencez à gagner immédiatement"
+      }
     },
     "pricing": {
       "title": "Choisissez Votre Plan",
       "subtitle": "Tarification flexible pour tous"
+    },
+    "featuredCreators": {
+      "title": "Créateurs en Vedette",
+      "subtitle": "Meilleurs artistes, entrepreneurs et influenceurs du monde entier",
+      "followers": "abonnés",
+      "joinThousands": "Rejoignez des milliers de créateurs déjà sur BLINNO"
+    },
+    "testimonials": {
+      "title": "Histoires de Succès",
+      "subtitle": "Écoutez les créateurs qui ont transformé leur carrière avec BLINNO",
+      "joinSuccessful": "Rejoignez des milliers de créateurs prospères sur BLINNO"
     }
+  },
+  "footer": {
+    "about": "Votre plateforme pour découvrir, créer et vous connecter avec des créateurs et des entreprises locales. Soutenir les talents et la culture dans le monde entier grâce à notre plateforme accessible mondialement.",
+    "quickLinks": "Liens Rapides",
+    "aboutUs": "À Propos de Nous",
+    "howItWorks": "Comment Ça Marche",
+    "featuredCreators": "Créateurs en Vedette",
+    "successStories": "Histoires de Succès",
+    "blog": "Blog",
+    "categories": "Catégories",
+    "events": "Événements",
+    "marketplace": "Marché",
+    "musicEntertainment": "Musique et Divertissement",
+    "jobsOpportunities": "Emplois et Opportunités",
+    "education": "Éducation",
+    "contactUs": "Contactez-Nous",
+    "worldwide": "Mondial",
+    "globalPlatform": "Plateforme Mondiale",
+    "copyright": "© 2024 BLINNO. Tous droits réservés. Plateforme Mondiale.",
+    "privacyPolicy": "Politique de Confidentialité",
+    "termsOfService": "Conditions d'Utilisation",
+    "cookiePolicy": "Politique des Cookies"
   },
   "auth": {
     "signIn": {
@@ -83,16 +283,35 @@
       "password": "Mot de passe",
       "forgotPassword": "Mot de passe oublié?",
       "noAccount": "Vous n'avez pas de compte?",
-      "signUpLink": "S'inscrire"
+      "signUpLink": "S'inscrire",
+      "welcomeBack": "Bon Retour",
+      "description": "Connectez-vous à votre compte BLINNO"
     },
     "signUp": {
       "title": "Créer un Compte",
       "email": "Email",
       "password": "Mot de passe",
       "confirmPassword": "Confirmer le Mot de passe",
+      "firstName": "Prénom",
+      "middleName": "Nom du Milieu",
+      "lastName": "Nom de Famille",
+      "phoneNumber": "Numéro de Téléphone",
+      "country": "Pays",
+      "selectCountry": "Sélectionnez votre pays",
       "role": "Sélectionnez Votre Rôle",
       "hasAccount": "Vous avez déjà un compte?",
-      "signInLink": "Se connecter"
+      "signInLink": "Se connecter",
+      "joinToday": "Rejoignez BLINNO aujourd'hui"
+    },
+    "emailVerificationRequired": "Vérification de l'E-mail Requise",
+    "emailVerificationDescription": "Veuillez vérifier votre e-mail ({{email}}) et cliquer sur le lien de vérification pour activer votre compte. Vous serez automatiquement redirigé vers votre tableau de bord une fois votre e-mail vérifié.",
+    "orContinueWith": "Ou continuer avec",
+    "continueWithGoogle": "Continuer avec Google",
+    "googleSignInDescription": "La connexion Google vous permet d'accéder rapidement à votre compte",
+    "iWantToJoinAs": "Je veux m'inscrire en tant que",
+    "chooseHowToUse": "Choisissez comment vous voulez utiliser BLINNO",
+    "roles": {
+      "user": "Utilisateur"
     }
   },
   "marketplace": {
@@ -102,7 +321,36 @@
     "viewDetails": "Voir les Détails",
     "price": "Prix",
     "outOfStock": "Rupture de Stock",
-    "inStock": "En Stock"
+    "inStock": "En Stock",
+    "settingUp": "La table des produits est en cours de configuration. Veuillez actualiser dans un instant.",
+    "failedToLoad": "Échec du chargement des produits. Veuillez réessayer plus tard.",
+    "signInRequired": "Connexion requise",
+    "signInToAddToCart": "Veuillez vous connecter pour ajouter des articles à votre panier",
+    "addedToCart": "Ajouté au panier",
+    "itemAddedToCart": "Article ajouté à votre panier",
+    "failedToAddToCart": "Échec de l'ajout de l'article au panier",
+    "activeFilters": "Filtres actifs",
+    "category": "Catégorie",
+    "location": "Emplacement",
+    "removeCategoryFilter": "Retirer le filtre de catégorie",
+    "removeLocationFilter": "Retirer le filtre d'emplacement",
+    "clearSearch": "Effacer la recherche",
+    "clearAll": "Tout Effacer",
+    "searchPlaceholder": "Rechercher des produits et des cours...",
+    "allCategories": "Toutes les Catégories",
+    "allLocations": "Tous les Emplacements",
+    "noProducts": "Aucun produit trouvé",
+    "tryAdjustingFilters": "Essayez d'ajuster votre recherche ou vos filtres",
+    "beFirstToSell": "Soyez le premier à vendre sur notre marché !",
+    "showingItems": "Affichage de {{filtered}} sur {{total}} articles",
+    "by": "Par",
+    "unknownSeller": "Vendeur Inconnu",
+    "course": "Cours",
+    "viewCourse": "Voir le Cours",
+    "inStock": "en stock",
+    "out": "Hors",
+    "add": "Ajouter",
+    "reviews": "avis"
   },
   "cart": {
     "title": "Panier d'Achat",
@@ -111,7 +359,39 @@
     "total": "Total",
     "checkout": "Commander",
     "remove": "Retirer",
-    "quantity": "Quantité"
+    "quantity": "Quantité",
+    "shippingAddress": "Adresse de Livraison",
+    "notes": "Notes de Commande (Optionnel)",
+    "proceedToPayment": "Procéder au Paiement",
+    "orderTotal": "Total de la Commande",
+    "itemsInCart": "{{count}} article dans votre panier",
+    "itemsInCart_plural": "{{count}} articles dans votre panier",
+    "browseMarketplace": "Parcourir le Marché",
+    "orderSummary": "Résumé de la Commande",
+    "reviewOrderDetails": "Examinez les détails de votre commande",
+    "streetAddress": "Adresse de la Rue",
+    "enterStreetAddress": "Entrez l'adresse de la rue",
+    "postalCode": "Code Postal",
+    "processing": "Traitement...",
+    "completePayment": "Finaliser le Paiement",
+    "enterPhoneForClickPesa": "Entrez votre numéro de téléphone pour procéder au paiement Click Pesa",
+    "enterMobileMoneyNumber": "Entrez votre numéro de mobile money (M-Pesa, Tigo Pesa, Airtel Money, etc.)",
+    "payWithClickPesa": "Payer avec Click Pesa",
+    "redirectToClickPesa": "Vous serez redirigé vers Click Pesa pour finaliser votre paiement en toute sécurité",
+    "failedToLoad": "Échec du chargement des articles du panier",
+    "itemRemoved": "Article retiré",
+    "itemRemovedFromCart": "Article retiré du panier",
+    "failedToRemove": "Échec du retrait de l'article",
+    "shippingAddressRequired": "Adresse de livraison requise",
+    "provideShippingAddress": "Veuillez fournir votre adresse de livraison",
+    "checkoutError": "Erreur de Commande",
+    "failedToProcessCheckout": "Échec du traitement de la commande",
+    "phoneRequired": "Numéro de téléphone requis",
+    "enterPhoneForPayment": "Veuillez entrer votre numéro de téléphone pour le paiement",
+    "invalidPhone": "Numéro de téléphone invalide",
+    "enterValidPhone": "Veuillez entrer un numéro de téléphone valide",
+    "paymentError": "Erreur de Paiement",
+    "failedToInitiatePayment": "Échec de l'initiation du paiement. Veuillez réessayer."
   },
   "orders": {
     "title": "Mes Commandes",
@@ -128,7 +408,34 @@
     "tracking": "Suivi",
     "viewDetails": "Voir les Détails",
     "cancelOrder": "Annuler la Commande",
-    "confirmDelivery": "Confirmer la Livraison"
+    "confirmDelivery": "Confirmer la Livraison",
+    "trackAndManage": "Suivez et gérez vos commandes",
+    "all": "Toutes",
+    "active": "Actives",
+    "completed": "Terminées",
+    "loading": "Chargement des commandes...",
+    "failedToLoad": "Échec du chargement des commandes",
+    "confirmCancel": "Êtes-vous sûr de vouloir annuler cette commande ?",
+    "cancelledByBuyer": "Annulée par l'acheteur",
+    "orderCancelled": "Commande annulée",
+    "orderCancelledDesc": "Votre commande a été annulée",
+    "failedToCancel": "Échec de l'annulation de la commande",
+    "deliveryConfirmed": "Livraison confirmée",
+    "thankYouForConfirming": "Merci d'avoir confirmé la livraison !",
+    "failedToConfirmDelivery": "Échec de la confirmation de la livraison",
+    "items": "Articles",
+    "moreItems": "articles supplémentaires",
+    "orderInformation": "Informations de la Commande",
+    "orderId": "ID de la Commande",
+    "totalAmount": "Montant Total",
+    "orderDate": "Date de la Commande",
+    "statusHistory": "Historique des Statuts",
+    "by": "par",
+    "trackingInformation": "Informations de Suivi",
+    "trackingNumber": "Numéro de Suivi",
+    "carrier": "Transporteur",
+    "estimatedDelivery": "Date de Livraison Estimée",
+    "failedToLoadDetails": "Échec du chargement des détails de la commande"
   },
   "services": {
     "title": "Services",
@@ -155,6 +462,51 @@
     "pricing": "Tarification",
     "fixed": "fixe"
   },
+  "music": {
+    "title": "Musique",
+    "subtitle": "Découvrez et écoutez de la musique de créateurs talentueux",
+    "play": "Lire",
+    "pause": "Pause",
+    "genre": "Genre",
+    "allGenres": "Tous les Genres",
+    "duration": "Durée",
+    "plays": "Lectures",
+    "noTracks": "Aucune piste trouvée",
+    "failedToLoad": "Échec du chargement des pistes musicales",
+    "searchPlaceholder": "Rechercher des pistes ou des artistes...",
+    "nowPlaying": "En Cours de Lecture",
+    "unknownTrack": "Piste Inconnue",
+    "showingTracks": "Affichage de {{count}} piste",
+    "showingTracks_plural": "Affichage de {{count}} pistes",
+    "tryAdjustingFilters": "Essayez d'ajuster votre recherche ou vos filtres",
+    "beFirstToUpload": "Soyez le premier à télécharger de la musique !",
+    "likes": "J'aime"
+  },
+  "events": {
+    "title": "Événements",
+    "subtitle": "Découvrez les événements à venir et les expériences",
+    "upcoming": "À Venir",
+    "past": "Passé",
+    "attending": "Participation",
+    "attendance": "Assistance",
+    "register": "S'inscrire",
+    "viewDetails": "Voir les Détails",
+    "noEvents": "Aucun événement trouvé",
+    "failedToFetch": "Échec de la récupération des événements",
+    "registerFor": "S'inscrire pour",
+    "fillFormToRegister": "Remplissez le formulaire ci-dessous pour vous inscrire à cet événement",
+    "checkBackLater": "Revenez plus tard pour les événements à venir !",
+    "soldOut": "Complet",
+    "pastEvent": "Événement Passé",
+    "cancelled": "Annulé",
+    "location": "Emplacement",
+    "date": "Date",
+    "time": "Heure",
+    "ticketPrice": "Prix du Billet",
+    "free": "Gratuit",
+    "full": "plein",
+    "registerNow": "S'inscrire Maintenant"
+  },
   "dashboard": {
     "title": "Tableau de bord",
     "overview": "Aperçu",
@@ -162,7 +514,57 @@
     "orders": "Commandes",
     "earnings": "Gains",
     "analytics": "Analyses",
-    "settings": "Paramètres"
+    "settings": "Paramètres",
+    "myPortfolio": "Mon Portfolio",
+    "bookings": "Réservations",
+    "profileSettings": "Paramètres du Profil",
+    "failedToFetch": "Échec de la récupération des données",
+    "itemTitle": "Titre",
+    "selectCategory": "Veuillez sélectionner une catégorie",
+    "portfolioItemAdded": "Élément de portfolio ajouté !",
+    "failedToAddPortfolio": "Échec de l'ajout du portfolio",
+    "profileUpdated": "Profil mis à jour !",
+    "failedToUpdateProfile": "Échec de la mise à jour du profil",
+    "avatarUpdated": "Avatar mis à jour !",
+    "failedToUpdateAvatar": "Échec de la mise à jour de l'avatar",
+    "portfolioItemDeleted": "Élément de portfolio supprimé",
+    "failedToDeletePortfolio": "Échec de la suppression du portfolio",
+    "portfolioItems": "Éléments du Portfolio",
+    "totalItemsAcrossCategories": "{{count}} éléments au total dans {{categories}} catégories",
+    "addItem": "Ajouter un Élément",
+    "categoryOverview": "Aperçu des Catégories",
+    "all": "Tout",
+    "filterByCategory": "Filtrer par catégorie",
+    "allCategories": "Toutes les Catégories",
+    "clearFilter": "Effacer le Filtre",
+    "showing": "Affichage : {{category}} ({{count}} éléments)",
+    "addPortfolioItem": "Ajouter un Élément au Portfolio",
+    "category": "Catégorie",
+    "tags": "Tags (séparés par des virgules)",
+    "tagsPlaceholder": "design, art, photographie",
+    "noItemsInCategory": "Aucun élément de portfolio trouvé dans la catégorie \"{{category}}\".",
+    "viewAllCategories": "Voir Toutes les Catégories",
+    "noPortfolioItemsYet": "Aucun élément de portfolio pour le moment",
+    "addYourFirstItem": "Ajoutez Votre Premier Élément",
+    "noBookingsYet": "Aucune réservation pour le moment",
+    "service": "Service",
+    "client": "Client",
+    "unknown": "Inconnu",
+    "at": "à",
+    "profileAvatar": "Avatar du Profil",
+    "currentAvatar": "Avatar actuel",
+    "displayName": "Nom d'Affichage",
+    "bio": "Biographie",
+    "bioPlaceholder": "Parlez-nous de vous et de vos services...",
+    "location": "Emplacement",
+    "locationPlaceholder": "Ville, Pays",
+    "phone": "Téléphone",
+    "phonePlaceholder": "+33 X XX XX XX XX",
+    "website": "Site Web",
+    "websitePlaceholder": "https://votresite.com",
+    "email": "Email",
+    "emailCannotBeChanged": "L'email ne peut pas être modifié",
+    "saveChanges": "Enregistrer les Modifications"
   },
   "settings": {
     "title": "Paramètres",
@@ -205,6 +607,34 @@
     "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action",
     "notFound": "Ressource introuvable",
     "validation": "Veuillez vérifier votre saisie et réessayer"
+  },
+  "quickActions": {
+    "title": "Actions Rapides",
+    "subtitle": "Accédez rapidement à vos fonctionnalités préférées",
+    "wishlist": {
+      "label": "Ma Liste de Souhaits",
+      "description": "Voir les éléments enregistrés"
+    },
+    "analytics": {
+      "label": "Analyses",
+      "description": "Suivre les performances"
+    },
+    "search": {
+      "label": "Recherche Avancée",
+      "description": "Trouvez exactement ce dont vous avez besoin"
+    },
+    "security": {
+      "label": "Sécurité",
+      "description": "Activer 2FA"
+    }
+  },
+  "socialFeed": {
+    "title": "Dernières Nouvelles des Créateurs",
+    "subtitle": "Voyez ce que partagent les créateurs que vous suivez",
+    "viewAll": "Voir Tout",
+    "loading": "Chargement du fil...",
+    "emptyFeed": "Votre fil est vide. Suivez des créateurs pour voir leurs publications !",
+    "discoverCreators": "Découvrir des Créateurs",
+    "post": "Publication"
   }
 }
-

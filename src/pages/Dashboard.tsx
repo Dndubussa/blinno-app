@@ -16,6 +16,7 @@ import { Trash2, Plus, Loader2, Filter } from "lucide-react";
 import { ImageUpload } from "@/components/ImageUpload";
 import { optimizeAvatar } from "@/lib/imageOptimizer";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useTranslation } from "react-i18next";
 
 // Available categories matching the platform
 const CATEGORIES = [
@@ -34,6 +35,7 @@ const CATEGORIES = [
 ];
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -75,8 +77,8 @@ export default function Dashboard() {
     } catch (error: any) {
       console.error('Error fetching data:', error);
       toast({ 
-        title: "Error", 
-        description: error.message || "Failed to fetch data", 
+        title: t("common.error"), 
+        description: error.message || t("dashboard.failedToFetch"), 
         variant: "destructive" 
       });
     }
@@ -88,8 +90,8 @@ export default function Dashboard() {
 
     if (!newPortfolioCategory) {
       toast({ 
-        title: "Error", 
-        description: "Please select a category", 
+        title: t("common.error"), 
+        description: t("dashboard.selectCategory"), 
         variant: "destructive" 
       });
       return;
@@ -106,13 +108,13 @@ export default function Dashboard() {
       }
 
       await api.createPortfolio(portfolioFormData);
-      toast({ title: "Success", description: "Portfolio item added!" });
+      toast({ title: t("common.success"), description: t("dashboard.portfolioItemAdded") });
       setShowAddPortfolio(false);
       setPortfolioImageUrl("");
       setNewPortfolioCategory("");
       fetchData();
     } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to add portfolio", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("dashboard.failedToAddPortfolio"), variant: "destructive" });
     }
   };
 
@@ -132,10 +134,10 @@ export default function Dashboard() {
 
     try {
       await api.updateProfile(profileFormData);
-      toast({ title: "Success", description: "Profile updated!" });
+      toast({ title: t("common.success"), description: t("dashboard.profileUpdated") });
       window.location.reload();
     } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to update profile", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("dashboard.failedToUpdateProfile"), variant: "destructive" });
     }
     setIsUpdatingProfile(false);
   };
@@ -147,20 +149,20 @@ export default function Dashboard() {
       const formData = new FormData();
       formData.append('avatar_url', url);
       await api.updateProfile(formData);
-      toast({ title: "Success", description: "Avatar updated!" });
+      toast({ title: t("common.success"), description: t("dashboard.avatarUpdated") });
       window.location.reload();
     } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to update avatar", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("dashboard.failedToUpdateAvatar"), variant: "destructive" });
     }
   };
 
   const handleDeletePortfolio = async (id: string) => {
     try {
       await api.deletePortfolio(id);
-      toast({ title: "Success", description: "Portfolio item deleted" });
+      toast({ title: t("common.success"), description: t("dashboard.portfolioItemDeleted") });
       fetchData();
     } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to delete portfolio", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("dashboard.failedToDeletePortfolio"), variant: "destructive" });
     }
   };
 
@@ -189,14 +191,14 @@ export default function Dashboard() {
   if (!user) return null;
 
   const navigationTabs = [
-    { id: "portfolio", label: "My Portfolio", icon: Filter },
-    { id: "bookings", label: "Bookings", icon: Filter },
-    { id: "profile", label: "Profile Settings", icon: Filter },
+    { id: "portfolio", label: t("dashboard.myPortfolio"), icon: Filter },
+    { id: "bookings", label: t("dashboard.bookings"), icon: Filter },
+    { id: "profile", label: t("dashboard.profileSettings"), icon: Filter },
   ];
 
   return (
     <DashboardLayout
-      title="Dashboard"
+      title={t("dashboard.title")}
       navigationTabs={navigationTabs}
       defaultSection="portfolio"
     >
@@ -206,14 +208,14 @@ export default function Dashboard() {
       <div>
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                   <div>
-                    <h2 className="text-2xl font-semibold mb-2">Portfolio Items</h2>
+                    <h2 className="text-2xl font-semibold mb-2">{t("dashboard.portfolioItems")}</h2>
                     <p className="text-sm text-muted-foreground">
-                      {portfolios.length} total items across {getUserCategories().length} categories
+                      {t("dashboard.totalItemsAcrossCategories", { count: portfolios.length, categories: getUserCategories().length })}
                     </p>
                   </div>
                   <Button onClick={() => setShowAddPortfolio(!showAddPortfolio)}>
                     <Plus className="mr-2 h-4 w-4" />
-                    Add Item
+                    {t("dashboard.addItem")}
                   </Button>
                 </div>
 
@@ -223,7 +225,7 @@ export default function Dashboard() {
                     <CardContent className="p-4">
                       <div className="flex items-center gap-2 mb-3">
                         <Filter className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">Category Overview</span>
+                        <span className="text-sm font-medium">{t("dashboard.categoryOverview")}</span>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {Object.entries(categoryStats).map(([category, count]) => (
@@ -241,7 +243,7 @@ export default function Dashboard() {
                           className="cursor-pointer"
                           onClick={() => setSelectedCategory("all")}
                         >
-                          All ({portfolios.length})
+                          {t("dashboard.all")} ({portfolios.length})
                         </Badge>
                       </div>
                     </CardContent>
@@ -255,13 +257,13 @@ export default function Dashboard() {
                       <SelectTrigger className="w-[200px]">
                         <div className="flex items-center gap-2 flex-1">
                           <Filter className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                          <SelectValue placeholder="Filter by category">
-                            {selectedCategory === "all" ? "All Categories" : selectedCategory}
+                          <SelectValue placeholder={t("dashboard.filterByCategory")}>
+                            {selectedCategory === "all" ? t("dashboard.allCategories") : selectedCategory}
                           </SelectValue>
                         </div>
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All Categories</SelectItem>
+                        <SelectItem value="all">{t("dashboard.allCategories")}</SelectItem>
                         {getUserCategories().map((category) => (
                           <SelectItem key={category} value={category}>
                             {category} ({categoryStats[category] || 0})
@@ -275,14 +277,14 @@ export default function Dashboard() {
                         size="sm"
                         onClick={() => setSelectedCategory("all")}
                       >
-                        Clear Filter
+                        {t("dashboard.clearFilter")}
                       </Button>
                     )}
                   </div>
                   {selectedCategory !== "all" && (
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary" className="gap-1">
-                        Showing: {selectedCategory} ({filteredPortfolios.length} items)
+                        {t("dashboard.showing", { category: selectedCategory, count: filteredPortfolios.length })}
                       </Badge>
                     </div>
                   )}
@@ -291,12 +293,12 @@ export default function Dashboard() {
                 {showAddPortfolio && (
                   <Card className="mb-6">
                     <CardHeader>
-                      <CardTitle>Add Portfolio Item</CardTitle>
+                      <CardTitle>{t("dashboard.addPortfolioItem")}</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <form onSubmit={handleAddPortfolio} className="space-y-4">
                         <div>
-                          <Label htmlFor="portfolio-image">Image</Label>
+                          <Label htmlFor="portfolio-image">{t("common.image")}</Label>
                           <ImageUpload
                             bucket="portfolios"
                             userId={user?.id || ""}
@@ -305,22 +307,22 @@ export default function Dashboard() {
                           />
                         </div>
                         <div>
-                          <Label htmlFor="title">Title</Label>
+                          <Label htmlFor="title">{t("dashboard.itemTitle")}</Label>
                           <Input id="title" name="title" required />
                         </div>
                         <div>
-                          <Label htmlFor="description">Description</Label>
+                          <Label htmlFor="description">{t("common.description")}</Label>
                           <Textarea id="description" name="description" />
                         </div>
                         <div>
-                          <Label htmlFor="category">Category</Label>
+                          <Label htmlFor="category">{t("dashboard.category")}</Label>
                           <Select 
                             value={newPortfolioCategory} 
                             onValueChange={setNewPortfolioCategory}
                             required
                           >
                             <SelectTrigger id="category">
-                              <SelectValue placeholder="Select a category" />
+                              <SelectValue placeholder={t("dashboard.selectCategory")} />
                             </SelectTrigger>
                             <SelectContent>
                               {CATEGORIES.map((category) => (
@@ -332,11 +334,11 @@ export default function Dashboard() {
                           </Select>
                         </div>
                         <div>
-                          <Label htmlFor="tags">Tags (comma separated)</Label>
-                          <Input id="tags" name="tags" placeholder="design, art, photography" />
+                          <Label htmlFor="tags">{t("dashboard.tags")}</Label>
+                          <Input id="tags" name="tags" placeholder={t("dashboard.tagsPlaceholder")} />
                         </div>
                         <Button type="submit" disabled={!portfolioImageUrl}>
-                          Add Portfolio Item
+                          {t("dashboard.addPortfolioItem")}
                         </Button>
                       </form>
                     </CardContent>
@@ -347,14 +349,14 @@ export default function Dashboard() {
                   <Card className="mb-6">
                     <CardContent className="p-12 text-center">
                       <p className="text-muted-foreground">
-                        No portfolio items found in "{selectedCategory}" category.
+                        {t("dashboard.noItemsInCategory", { category: selectedCategory })}
                       </p>
                       <Button 
                         variant="outline" 
                         className="mt-4"
                         onClick={() => setSelectedCategory("all")}
                       >
-                        View All Categories
+                        {t("dashboard.viewAllCategories")}
                       </Button>
                     </CardContent>
                   </Card>
@@ -395,10 +397,10 @@ export default function Dashboard() {
                 {filteredPortfolios.length === 0 && selectedCategory === "all" && (
                   <Card>
                     <CardContent className="p-12 text-center">
-                      <p className="text-muted-foreground mb-4">No portfolio items yet</p>
+                      <p className="text-muted-foreground mb-4">{t("dashboard.noPortfolioItemsYet")}</p>
                       <Button onClick={() => setShowAddPortfolio(true)}>
                         <Plus className="mr-2 h-4 w-4" />
-                        Add Your First Item
+                        {t("dashboard.addYourFirstItem")}
                       </Button>
                     </CardContent>
                   </Card>
@@ -409,12 +411,12 @@ export default function Dashboard() {
       {/* Bookings Section */}
       {currentSection === 'bookings' && (
       <div>
-        <h2 className="text-2xl font-semibold mb-6">Bookings</h2>
+        <h2 className="text-2xl font-semibold mb-6">{t("dashboard.bookings")}</h2>
                 <div className="space-y-4">
                   {bookings.length === 0 ? (
                     <Card>
                       <CardContent className="p-12 text-center">
-                        <p className="text-muted-foreground">No bookings yet</p>
+                        <p className="text-muted-foreground">{t("dashboard.noBookingsYet")}</p>
                       </CardContent>
                     </Card>
                   ) : (
@@ -424,16 +426,16 @@ export default function Dashboard() {
                           <div className="flex justify-between items-start">
                             <div>
                               <h3 className="font-semibold mb-2">
-                                {booking.services?.title || "Service"}
+                                {booking.services?.title || t("dashboard.service")}
                               </h3>
                               <p className="text-sm text-muted-foreground mb-2">
-                                Client: {booking.profiles?.display_name || "Unknown"}
+                                {t("dashboard.client")}: {booking.profiles?.display_name || t("dashboard.unknown")}
                               </p>
                               <p className="text-sm text-muted-foreground mb-2">
-                                {new Date(booking.booking_date).toLocaleDateString()} at {booking.booking_time}
+                                {new Date(booking.booking_date).toLocaleDateString()} {t("dashboard.at")} {booking.booking_time}
                               </p>
                               <p className="text-sm text-muted-foreground">
-                                Status: {booking.status}
+                                {t("common.status")}: {booking.status}
                               </p>
                             </div>
                             <Badge variant={
@@ -458,18 +460,18 @@ export default function Dashboard() {
       <div>
                 <Card>
                   <CardHeader>
-                    <CardTitle>Profile Settings</CardTitle>
+                    <CardTitle>{t("dashboard.profileSettings")}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <form onSubmit={handleUpdateProfile} className="space-y-6">
                       <div>
-                        <Label htmlFor="avatar">Profile Avatar</Label>
+                        <Label htmlFor="avatar">{t("dashboard.profileAvatar")}</Label>
                         <div className="mt-2">
                           {profile?.avatar_url ? (
                             <div className="flex items-start gap-4 mb-4">
                               <img
                                 src={profile.avatar_url}
-                                alt="Current avatar"
+                                alt={t("dashboard.currentAvatar")}
                                 className="w-24 h-24 rounded-full object-cover"
                               />
                             </div>
@@ -485,7 +487,7 @@ export default function Dashboard() {
                       </div>
 
                       <div>
-                        <Label htmlFor="displayName">Display Name</Label>
+                        <Label htmlFor="displayName">{t("dashboard.displayName")}</Label>
                         <Input
                           id="displayName"
                           name="displayName"
@@ -495,59 +497,59 @@ export default function Dashboard() {
                       </div>
 
                       <div>
-                        <Label htmlFor="bio">Bio</Label>
+                        <Label htmlFor="bio">{t("dashboard.bio")}</Label>
                         <Textarea
                           id="bio"
                           name="bio"
                           defaultValue={profile?.bio || ""}
-                          placeholder="Tell us about yourself and your services..."
+                          placeholder={t("dashboard.bioPlaceholder")}
                           rows={4}
                         />
                       </div>
 
                       <div>
-                        <Label htmlFor="location">Location</Label>
+                        <Label htmlFor="location">{t("dashboard.location")}</Label>
                         <Input
                           id="location"
                           name="location"
                           defaultValue={profile?.location || ""}
-                          placeholder="City, Country"
+                          placeholder={t("dashboard.locationPlaceholder")}
                         />
                       </div>
 
                       <div>
-                        <Label htmlFor="phone">Phone</Label>
+                        <Label htmlFor="phone">{t("dashboard.phone")}</Label>
                         <Input
                           id="phone"
                           name="phone"
                           type="tel"
                           defaultValue={profile?.phone || ""}
-                          placeholder="+1 (XXX) XXX-XXXX"
+                          placeholder={t("dashboard.phonePlaceholder")}
                         />
                       </div>
 
                       <div>
-                        <Label htmlFor="website">Website</Label>
+                        <Label htmlFor="website">{t("dashboard.website")}</Label>
                         <Input
                           id="website"
                           name="website"
                           type="url"
                           defaultValue={profile?.website || ""}
-                          placeholder="https://yourwebsite.com"
+                          placeholder={t("dashboard.websitePlaceholder")}
                         />
                       </div>
 
                       <div>
-                        <Label>Email</Label>
+                        <Label>{t("dashboard.email")}</Label>
                         <Input value={user?.email || ""} disabled />
                         <p className="text-xs text-muted-foreground mt-1">
-                          Email cannot be changed
+                          {t("dashboard.emailCannotBeChanged")}
                         </p>
                       </div>
 
                       <Button type="submit" disabled={isUpdatingProfile}>
                         {isUpdatingProfile && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Save Changes
+                        {t("dashboard.saveChanges")}
                       </Button>
                     </form>
                   </CardContent>

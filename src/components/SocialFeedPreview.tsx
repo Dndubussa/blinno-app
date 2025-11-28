@@ -9,8 +9,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Heart, MessageCircle, ArrowRight } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { AnimatedSection } from "./AnimatedSection";
+import { useTranslation } from "react-i18next";
 
 export function SocialFeedPreview() {
+  const { t } = useTranslation();
   // Safely access auth context
   const authContext = useContext(AuthContext);
   const user = authContext?.user || null;
@@ -46,7 +48,7 @@ export function SocialFeedPreview() {
         <div className="container mx-auto px-4 py-12">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading feed...</p>
+            <p className="text-muted-foreground">{t("socialFeed.loading")}</p>
           </div>
         </div>
       </AnimatedSection>
@@ -59,23 +61,23 @@ export function SocialFeedPreview() {
         <div className="container mx-auto px-4 py-12">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-3xl font-bold mb-2">Latest from Creators</h2>
+              <h2 className="text-3xl font-bold mb-2">{t("socialFeed.title")}</h2>
               <p className="text-muted-foreground">
-                See what creators you follow are sharing
+                {t("socialFeed.subtitle")}
               </p>
             </div>
             <Button onClick={() => navigate("/social")} variant="outline">
-              View All
+              {t("socialFeed.viewAll")}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </div>
           <Card>
             <CardContent className="p-12 text-center">
               <p className="text-muted-foreground mb-4">
-                Your feed is empty. Follow creators to see their posts!
+                {t("socialFeed.emptyFeed")}
               </p>
               <Button onClick={() => navigate("/")}>
-                Discover Creators
+                {t("socialFeed.discoverCreators")}
               </Button>
             </CardContent>
           </Card>
@@ -89,13 +91,13 @@ export function SocialFeedPreview() {
       <div className="container mx-auto px-4 py-12">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-3xl font-bold mb-2">Latest from Creators</h2>
+            <h2 className="text-3xl font-bold mb-2">{t("socialFeed.title")}</h2>
             <p className="text-muted-foreground">
-              See what creators you follow are sharing
+              {t("socialFeed.subtitle")}
             </p>
           </div>
           <Button onClick={() => navigate("/social")} variant="outline">
-            View All
+            {t("socialFeed.viewAll")}
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
@@ -125,7 +127,7 @@ export function SocialFeedPreview() {
                   <div className="mb-4">
                     <img
                       src={post.media_urls[0]}
-                      alt="Post"
+                      alt={t("socialFeed.post")}
                       loading="lazy"
                       className="w-full h-32 object-cover rounded-md"
                       style={{

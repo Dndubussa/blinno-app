@@ -2,6 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const creators = [
   {
@@ -34,13 +35,14 @@ const creators = [
 ];
 
 export const FeaturedCreators = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   
   return (
     <section className="container mx-auto px-4 py-16">
       <div className="mb-8">
-        <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-2">Featured Creators</h2>
-        <p className="text-muted-foreground">Top artists, entrepreneurs, and influencers from around the world</p>
+        <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-2">{t("homepage.featuredCreators.title")}</h2>
+        <p className="text-muted-foreground">{t("homepage.featuredCreators.subtitle")}</p>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -88,7 +90,7 @@ export const FeaturedCreators = () => {
                     <span>{creator.location}</span>
                   </div>
                   <div className="text-sm font-semibold text-primary">
-                    {creator.followers} followers
+                    {creator.followers} {t("homepage.featuredCreators.followers")}
                   </div>
                 </div>
               </div>
@@ -103,9 +105,9 @@ export const FeaturedCreators = () => {
           onClick={() => navigate("/auth?tab=signup")}
           className="inline-block bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-8 rounded-lg transition-colors duration-300"
         >
-          Get Started Today
+          {t("homepage.hero.getStartedToday")}
         </button>
-        <p className="mt-4 text-muted-foreground">Join thousands of creators already on BLINNO</p>
+        <p className="mt-4 text-muted-foreground">{t("homepage.featuredCreators.joinThousands")}</p>
       </div>
     </section>
   );

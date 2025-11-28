@@ -596,8 +596,8 @@ router.post('/request-payout', authenticate, async (req: AuthRequest, res) => {
       });
     }
 
-    // Check minimum payout amount (e.g., 100 USD)
-    const MIN_PAYOUT = 100;
+    // Check minimum payout amount (e.g., 25 USD)
+    const MIN_PAYOUT = 25;
     if (amount < MIN_PAYOUT) {
       return res.status(400).json({ 
         error: `Minimum payout amount is ${MIN_PAYOUT} USD` 

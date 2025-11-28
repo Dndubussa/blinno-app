@@ -10,6 +10,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { MultiCurrencyPrice } from "@/components/MultiCurrencyPrice";
 import { Calendar, MapPin, Users, Clock, Loader2, Ticket, ArrowLeft } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface Event {
   id: string;
@@ -30,6 +31,7 @@ interface Event {
 }
 
 export default function Events() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,8 +48,8 @@ export default function Events() {
       setEvents(data || []);
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: error.message || "Failed to fetch events",
+        title: t("common.error"),
+        description: error.message || t("events.failedToFetch"),
         variant: "destructive",
       });
       setEvents([]);
@@ -94,15 +96,15 @@ export default function Events() {
     const now = new Date();
     
     if (event.current_attendees >= event.max_attendees) {
-      return { label: "Sold Out", variant: "destructive" as const };
+      return { label: t("events.soldOut"), variant: "destructive" as const };
     }
     if (eventDate < now) {
-      return { label: "Past Event", variant: "secondary" as const };
+      return { label: t("events.pastEvent"), variant: "secondary" as const };
     }
     if (event.status === 'cancelled') {
-      return { label: "Cancelled", variant: "destructive" as const };
+      return { label: t("events.cancelled"), variant: "destructive" as const };
     }
-    return { label: "Upcoming", variant: "default" as const };
+    return { label: t("events.upcoming"), variant: "default" as const };
   };
 
   const getAttendancePercentage = (event: Event) => {
@@ -133,9 +135,9 @@ export default function Events() {
       <div className="pt-24 pb-16">
         <div className="container mx-auto px-4">
           <div className="mb-8">
-            <h1 className="text-4xl font-bold text-foreground mb-2">Events</h1>
+            <h1 className="text-4xl font-bold text-foreground mb-2">{t("events.title")}</h1>
             <p className="text-muted-foreground text-lg">
-              Discover upcoming events and register to attend
+              {t("events.subtitle")}
             </p>
           </div>
 
@@ -147,13 +149,13 @@ export default function Events() {
                 className="mb-4"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Events
+                {t("common.back")} {t("events.title")}
               </Button>
               <Card>
                 <CardHeader>
-                  <CardTitle>Register for: {selectedEvent.title}</CardTitle>
+                  <CardTitle>{t("events.registerFor")}: {selectedEvent.title}</CardTitle>
                   <CardDescription>
-                    Fill out the form below to register for this event
+                    {t("events.fillFormToRegister")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -170,7 +172,7 @@ export default function Events() {
                     onClick={() => setShowRegistrationForm(false)}
                     className="w-full"
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </Button>
                 </CardFooter>
               </Card>
@@ -181,9 +183,9 @@ export default function Events() {
                 <Card>
                   <CardContent className="p-12 text-center">
                     <Calendar className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-                    <p className="text-lg font-medium text-foreground mb-2">No events found</p>
+                    <p className="text-lg font-medium text-foreground mb-2">{t("events.noEvents")}</p>
                     <p className="text-muted-foreground">
-                      Check back later for upcoming events!
+                      {t("events.checkBackLater")}
                     </p>
                   </CardContent>
                 </Card>
@@ -261,7 +263,7 @@ export default function Events() {
                               {event.ticket_price > 0 ? (
                                 <MultiCurrencyPrice usdPrice={event.ticket_price} size="sm" />
                               ) : (
-                                <Badge variant="secondary" className="text-sm">Free</Badge>
+                                <Badge variant="secondary" className="text-sm">{t("events.free")}</Badge>
                               )}
                             </div>
                           </div>
@@ -271,7 +273,7 @@ export default function Events() {
                             <div className="flex items-center justify-between text-sm">
                               <div className="flex items-center gap-2">
                                 <Users className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-muted-foreground">Attendees</span>
+                                <span className="text-muted-foreground">{t("events.attending")}</span>
                               </div>
                               <span className="font-medium text-foreground">
                                 {event.current_attendees}/{event.max_attendees}
@@ -284,7 +286,7 @@ export default function Events() {
                               />
                             </div>
                             <div className="text-xs text-muted-foreground text-right">
-                              {attendancePercent}% full
+                              {attendancePercent}% {t("events.full")}
                             </div>
                           </div>
                         </CardContent>
@@ -299,14 +301,14 @@ export default function Events() {
                             {isSoldOut ? (
                               <>
                                 <Ticket className="h-4 w-4 mr-2" />
-                                Sold Out
+                                {t("events.soldOut")}
                               </>
                             ) : event.status === 'cancelled' ? (
-                              'Cancelled'
+                              t("events.cancelled")
                             ) : (
                               <>
                                 <Ticket className="h-4 w-4 mr-2" />
-                                Register Now
+                                {t("events.registerNow")}
                               </>
                             )}
                           </Button>
