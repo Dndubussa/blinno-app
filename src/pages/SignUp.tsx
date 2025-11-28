@@ -126,10 +126,20 @@ export default function SignUp() {
       });
       setIsLoading(false);
     } else {
-      toast({
-        title: t("common.success"),
-        description: t("auth.signUp.accountCreatedSuccess") || "Account created successfully! Please check your email to verify your account before accessing the platform.",
-      });
+      // Check if there's a warning (e.g., email couldn't be sent)
+      const warning = (result as any)?.warning;
+      if (warning) {
+        toast({
+          title: t("common.success"),
+          description: warning,
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: t("common.success"),
+          description: t("auth.signUp.accountCreatedSuccess") || "Account created successfully! Please check your email to verify your account before accessing the platform.",
+        });
+      }
       // Navigation is handled by AuthContext.signUp
     }
   };

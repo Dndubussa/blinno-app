@@ -23,7 +23,7 @@ interface SignUpAdditionalData {
 interface AuthContextType {
   user: User | null;
   profile: any | null;
-  signUp: (email: string, password: string, displayName: string, role?: 'user' | 'creator' | 'freelancer' | 'seller' | 'lodging' | 'restaurant' | 'educator' | 'journalist' | 'artisan' | 'employer' | 'event_organizer' | 'musician', additionalData?: SignUpAdditionalData) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, displayName: string, role?: 'user' | 'creator' | 'freelancer' | 'seller' | 'lodging' | 'restaurant' | 'educator' | 'journalist' | 'artisan' | 'employer' | 'event_organizer' | 'musician', additionalData?: SignUpAdditionalData) => Promise<{ error: any; warning?: string }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signInWithGoogle: () => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -150,7 +150,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             // Continue anyway - the token is set in the API client
           }
         }
-      
+        
+        // Check if there's a warning (e.g., email couldn't be sent)
+        const warning = (result as any).warning;
+        
         // Fetch profile
         try {
           const profileData = await api.getCurrentUser();
@@ -179,7 +182,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }
         }
         
-        return { error: null };
+        return { error: null, warning: warning || undefined };
       } else {
         return { error: { message: 'Failed to create user' } };
       }

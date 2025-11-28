@@ -59,7 +59,7 @@ class ApiClient {
   // Auth
   async register(data: { email: string; password: string; displayName: string; role?: string; firstName?: string; middleName?: string; lastName?: string; phoneNumber?: string; country?: string; termsAccepted?: boolean }) {
     try {
-      const result = await this.request<{ user: any; token: string | null; session: any }>('/auth/register', {
+      const result = await this.request<{ user: any; token: string | null; session: any; warning?: string }>('/auth/register', {
         method: 'POST',
         body: JSON.stringify(data),
       });

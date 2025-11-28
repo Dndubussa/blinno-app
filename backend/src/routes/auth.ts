@@ -42,15 +42,112 @@ router.post('/register', async (req, res) => {
     }
 
     // Create user with Supabase Auth
+    // Add emailRedirectTo to ensure proper callback URL
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: email.toLowerCase(),
       password: password,
+      options: {
+        emailRedirectTo: `${process.env.APP_URL || 'https://www.blinno.app'}/auth/callback`,
+      },
     });
 
+    // Handle auth errors
     if (authError) {
-      if (authError.message.includes('already registered')) {
+      console.error('Supabase auth error:', {
+        message: authError.message,
+        status: authError.status,
+        name: authError.name,
+      });
+      
+      // Check if it's an email sending error - user might still be created
+      if (authError.message.includes('Error sending confirmation email') || 
+          authError.message.includes('email') && authError.message.includes('send') ||
+          authError.message.includes('confirmation')) {
+        console.warn('Email sending error detected, checking if user was created:', email);
+        // User might have been created despite email error - check if user exists
+        try {
+          const { data: existingUser, error: getUserError } = await supabaseAdmin.auth.admin.getUserByEmail(email.toLowerCase());
+          
+          if (existingUser?.user && !getUserError) {
+            console.log('User was created despite email error, continuing registration');
+            // User was created, continue with registration
+            const userId = existingUser.user.id;
+            
+            // Create profile with additional fields
+            const { error: profileError } = await supabase
+              .from('profiles')
+              .insert({
+                user_id: userId,
+                display_name: displayName,
+                first_name: firstName,
+                middle_name: middleName,
+                last_name: lastName,
+                phone: phoneNumber,
+                location: country,
+                is_creator: ['creator', 'freelancer', 'seller', 'lodging', 'restaurant', 'educator', 'journalist', 'artisan', 'employer', 'event_organizer'].includes(role),
+                terms_accepted: true,
+                terms_accepted_at: new Date().toISOString(),
+              });
+
+            if (profileError) {
+              console.error('Profile creation error:', profileError);
+            }
+
+            // Assign roles
+            const rolesToInsert = [role];
+            if (role !== 'user') {
+              rolesToInsert.push('user');
+            }
+
+            for (const roleToInsert of rolesToInsert) {
+              const { error: roleError } = await supabase
+                .from('user_roles')
+                .insert({
+                  user_id: userId,
+                  role: roleToInsert,
+                })
+                .select();
+
+              if (roleError && !roleError.message.includes('duplicate')) {
+                console.error('Role assignment error:', roleError);
+              }
+            }
+
+            // Send welcome email (non-blocking)
+            sendWelcomeEmail(existingUser.user.email || '', displayName).catch((err) => {
+              console.error('Failed to send welcome email:', err);
+            });
+
+            return res.status(201).json({
+              user: {
+                id: existingUser.user.id,
+                email: existingUser.user.email,
+                created_at: existingUser.user.created_at,
+                email_confirmed_at: existingUser.user.email_confirmed_at,
+              },
+              token: null, // No token - email confirmation required
+              session: null,
+              warning: 'Account created successfully. However, the confirmation email could not be sent. Please use the "Resend Verification Email" feature to verify your account.',
+            });
+          }
+        } catch (checkError) {
+          console.error('Error checking for existing user:', checkError);
+          // Fall through to return the original error
+        }
+      }
+      
+      if (authError.message.includes('already registered') || authError.message.includes('already exists')) {
         return res.status(400).json({ error: 'User already exists' });
       }
+      
+      // Return the error - but make it more user-friendly for email errors
+      if (authError.message.includes('Error sending confirmation email')) {
+        return res.status(400).json({ 
+          error: 'Account creation failed. Please check your email configuration or try again later.',
+          details: authError.message 
+        });
+      }
+      
       return res.status(400).json({ error: authError.message });
     }
 
