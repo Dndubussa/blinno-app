@@ -238,6 +238,38 @@ router.post('/login', async (req, res) => {
     });
 
     if (authError) {
+      console.error('Login error:', {
+        message: authError.message,
+        status: authError.status,
+        name: authError.name,
+      });
+
+      // Check if user exists but password is wrong
+      if (authError.message.includes('Invalid login credentials') || 
+          authError.message.includes('Invalid credentials') ||
+          authError.message.includes('Email not confirmed')) {
+        // Check if user exists
+        try {
+          const { data: existingUser } = await supabaseAdmin.auth.admin.getUserByEmail(email.toLowerCase());
+          if (existingUser?.user) {
+            // User exists - provide more specific error
+            if (!existingUser.user.email_confirmed_at) {
+              return res.status(401).json({ 
+                error: 'Email not verified. Please verify your email before signing in.',
+                requiresVerification: true
+              });
+            } else {
+              return res.status(401).json({ 
+                error: 'Invalid password. Please check your password and try again.',
+                requiresPasswordReset: true
+              });
+            }
+          }
+        } catch (checkError) {
+          console.error('Error checking user existence:', checkError);
+        }
+      }
+
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
