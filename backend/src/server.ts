@@ -52,6 +52,9 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Trust proxy for Vercel and other platforms (needed for proper IP and path handling)
+app.set('trust proxy', true);
+
 // Configure CORS with specific origins - production only
 const corsOptions = {
   origin: [
