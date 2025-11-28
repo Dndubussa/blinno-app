@@ -420,7 +420,9 @@
       "joinToday": "Jiunge na BLINNO leo",
       "mustAcceptTerms": "Lazima ukubali Masharti ya Huduma ili kuunda akaunti.",
       "passwordsDoNotMatch": "Nenosiri hazifanani. Tafadhali jaribu tena.",
-      "accountCreatedSuccess": "Akaunti imeundwa kwa mafanikio! Tafadhali angalia barua pepe yako ili kuthibitisha akaunti yako kabla ya kufikia jukwaa."
+      "accountCreatedSuccess": "Akaunti imeundwa kwa mafanikio! Tafadhali angalia barua pepe yako ili kuthibitisha akaunti yako kabla ya kufikia jukwaa.",
+      "signupSuccessful": "Kujiandikisha Kufanikiwa!",
+      "confirmEmailMessage": "Akaunti yako imeundwa kwa mafanikio! Tafadhali angalia barua pepe yako na ubofye kiungo cha uthibitishaji ili kuthibitisha akaunti yako. Utaweza kufikia jukwaa mara barua pepe yako ikiwa imethibitishwa."
     },
     "emailVerificationRequired": "Uthibitishaji wa Barua Pepe Unahitajika",
     "emailVerificationDescription": "Tafadhali angalia barua pepe yako ({{email}}) na ubofye kiungo cha uthibitishaji ili kuamsha akaunti yako. Utaelekezwa kiotomatiki kwenye dashibodi yako mara barua pepe yako ikiwa imethibitishwa.",

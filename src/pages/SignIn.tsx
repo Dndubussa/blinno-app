@@ -77,6 +77,19 @@ export default function SignIn() {
       </header>
       <div className="container mx-auto px-4 pt-24 pb-12">
         <div className="max-w-md mx-auto">
+          {/* Signup success message - show if redirected from signup */}
+          {location.state?.fromSignup && (
+            <Alert className="mb-6 border-green-500 bg-green-50 dark:bg-green-950">
+              <AlertCircle className="h-4 w-4 text-green-600" />
+              <AlertTitle className="text-green-800 dark:text-green-200">
+                {t("auth.signUp.signupSuccessful") || "Sign Up Successful!"}
+              </AlertTitle>
+              <AlertDescription className="text-green-700 dark:text-green-300">
+                {t("auth.signUp.confirmEmailMessage") || "Your account has been created successfully! Please check your email and click the confirmation link to verify your account. You'll be able to access the platform once your email is confirmed."}
+              </AlertDescription>
+            </Alert>
+          )}
+          
           {/* Email verification alert */}
           {user && user.email_verified === false && (
             <Alert className="mb-6">

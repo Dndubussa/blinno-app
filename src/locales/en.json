@@ -432,7 +432,9 @@
       "joinToday": "Join BLINNO today",
       "mustAcceptTerms": "You must accept the Terms of Service to create an account.",
       "passwordsDoNotMatch": "Passwords do not match. Please try again.",
-      "accountCreatedSuccess": "Account created successfully! Please check your email to verify your account before accessing the platform."
+      "accountCreatedSuccess": "Account created successfully! Please check your email to verify your account before accessing the platform.",
+      "signupSuccessful": "Sign Up Successful!",
+      "confirmEmailMessage": "Your account has been created successfully! Please check your email and click the confirmation link to verify your account. You'll be able to access the platform once your email is confirmed."
     },
     "emailVerificationRequired": "Email Verification Required",
     "emailVerificationDescription": "Please check your email ({{email}}) and click the verification link to activate your account. You will be automatically redirected to your dashboard once your email is verified.",

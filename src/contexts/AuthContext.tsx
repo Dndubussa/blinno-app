@@ -174,19 +174,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               navigate(dashboardRoute, { replace: true });
             } else {
               // Stay on auth page and show email verification message
-              navigate('/signin', { replace: true });
+              // Pass state to show success message on signin page
+              navigate('/signin', { 
+                replace: true,
+                state: { fromSignup: true }
+              });
             }
           } catch (profileError) {
             console.error('Error fetching profile:', profileError);
             // Still navigate to signin if email not verified
             if (!result.user.email_confirmed_at) {
-              navigate('/signin', { replace: true });
+              navigate('/signin', { 
+                replace: true,
+                state: { fromSignup: true }
+              });
             }
           }
         } else {
           // No token - user needs to sign in (happens when created via Admin API)
-          // Navigate to signin page
-          navigate('/signin', { replace: true });
+          // Navigate to signin page with success message
+          navigate('/signin', { 
+            replace: true,
+            state: { fromSignup: true }
+          });
         }
         
         return { error: null, warning: warning || undefined };

@@ -151,13 +151,18 @@ export default function SignUp() {
           title: t("common.success"),
           description: warning,
           variant: "default",
+          duration: 10000, // Show for 10 seconds
         });
       } else {
+        // Show prominent success message with email verification instructions
         toast({
-          title: t("common.success"),
-          description: t("auth.signUp.accountCreatedSuccess") || "Account created successfully! Please check your email to verify your account before accessing the platform.",
+          title: t("auth.signUp.signupSuccessful") || "Sign Up Successful!",
+          description: t("auth.signUp.confirmEmailMessage") || "Your account has been created successfully! Please check your email and click the confirmation link to verify your account. You'll be able to access the platform once your email is confirmed.",
+          variant: "default",
+          duration: 10000, // Show for 10 seconds
         });
       }
+      setIsLoading(false);
       // Navigation is handled by AuthContext.signUp
     }
   };
