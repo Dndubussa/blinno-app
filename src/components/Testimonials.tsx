@@ -130,16 +130,6 @@ export const Testimonials = () => {
         {/* TrustPilot Widget */}
         <div className="mt-12 mb-8">
           <div className="text-center mb-4">
-            <div className="flex items-center justify-center gap-3 mb-2">
-              <img 
-                src="/TrustPilot.png" 
-                alt="TrustPilot" 
-                className="h-8 w-auto"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
-              />
-            </div>
             <h3 className="text-lg font-semibold text-foreground mb-2">See what others are saying</h3>
             <p className="text-sm text-muted-foreground">Read reviews from our community on TrustPilot</p>
           </div>
