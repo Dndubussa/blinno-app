@@ -6,9 +6,21 @@
  */
 import app from '../backend/src/server.js';
 
-// Export as handler for Vercel
-// The Express app handles all routing internally
-// Vercel routes /api/* requests to this function
-// The path includes /api, so Express routes match correctly
-export default app;
+// Vercel serverless function handler
+// Vercel routes /api/* requests here, and the path includes /api
+export default (req: any, res: any) => {
+  // Log request for debugging (only in development or with DEBUG env var)
+  if (process.env.DEBUG === 'true' || process.env.NODE_ENV === 'development') {
+    console.log('[Vercel Handler]', {
+      method: req.method,
+      url: req.url,
+      path: req.path,
+      originalUrl: req.originalUrl,
+      query: req.query
+    });
+  }
+  
+  // Handle the request with Express
+  return app(req, res);
+};
 
