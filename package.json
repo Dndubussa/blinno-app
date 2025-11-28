@@ -18,7 +18,10 @@
     "type-check": "tsc --noEmit",
     "supabase:migrate": "node run-supabase-migrations.js",
     "test:onboarding-email": "node backend/src/scripts/testOnboardingEmail.js",
-    "test:payout-requests": "node test-payout-requests.js"
+    "test:payout-requests": "node test-payout-requests.js",
+    "marketing:send": "node backend/src/scripts/sendMarketingEmail.js",
+    "marketing:test": "node backend/src/scripts/testMarketingEmail.js",
+    "marketing:stats": "node -e \"import('./backend/src/scripts/sendMarketingEmail.js').then(m => m.getMarketingStats().then(s => console.log(JSON.stringify(s, null, 2))))\""
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

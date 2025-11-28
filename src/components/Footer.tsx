@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import logo from "@/assets/logo.png";
+import { TrustPilotWidget } from "@/components/TrustPilotWidget";
 
 export const Footer = () => {
   const { t } = useTranslation();
@@ -202,6 +203,14 @@ export const Footer = () => {
                 </span>
               </li>
             </ul>
+          </div>
+        </div>
+
+        {/* TrustPilot Widget */}
+        <div className="border-t border-border mt-8 pt-8">
+          <div className="mb-6">
+            <h3 className="font-semibold text-foreground mb-4 text-center">Trusted by our community</h3>
+            <TrustPilotWidget className="flex justify-center" />
           </div>
         </div>
 

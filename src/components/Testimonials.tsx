@@ -13,10 +13,11 @@ import type { CarouselApi } from "@/components/ui/carousel";
 import { useTranslation } from "react-i18next";
 import { api } from "@/lib/api";
 import { PLACEHOLDER_IMAGE } from "@/lib/constants";
+import { TrustPilotWidget } from "@/components/TrustPilotWidget";
 
 export const Testimonials = () => {
   const { t } = useTranslation();
-  const [api, setApi] = useState<CarouselApi>();
+  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
   const navigate = useNavigate();
   const [testimonials, setTestimonials] = useState<any[]>([]);
 
@@ -36,14 +37,14 @@ export const Testimonials = () => {
   };
 
   useEffect(() => {
-    if (!api) return;
+    if (!carouselApi) return;
 
     const intervalId = setInterval(() => {
-      api.scrollNext();
+      carouselApi.scrollNext();
     }, 5000);
 
     return () => clearInterval(intervalId);
-  }, [api]);
+  }, [carouselApi]);
 
   return (
     <section className="py-20 bg-muted/30">
@@ -58,7 +59,7 @@ export const Testimonials = () => {
         </div>
 
         <Carousel
-          setApi={setApi}
+          setApi={setCarouselApi}
           className="w-full max-w-5xl mx-auto"
           opts={{
             align: "start",
@@ -126,6 +127,15 @@ export const Testimonials = () => {
           <CarouselNext className="-right-12" />
         </Carousel>
         
+        {/* TrustPilot Widget */}
+        <div className="mt-12 mb-8">
+          <div className="text-center mb-4">
+            <h3 className="text-lg font-semibold text-foreground mb-2">See what others are saying</h3>
+            <p className="text-sm text-muted-foreground">Read reviews from our community on TrustPilot</p>
+          </div>
+          <TrustPilotWidget className="flex justify-center" />
+        </div>
+
         {/* Get Started Today Button */}
         <div className="mt-16 text-center">
           <button 

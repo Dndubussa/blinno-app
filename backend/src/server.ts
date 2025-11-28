@@ -48,6 +48,8 @@ import musicRoutes from './routes/music.js';
 import creatorRoutes from './routes/creators.js';
 import testimonialRoutes from './routes/testimonials.js';
 import searchRoutes from './routes/search.js';
+import marketingRoutes from './routes/marketing.js';
+import unsubscribeRoutes from './routes/unsubscribe.js';
 import { initializeStorageBuckets } from './middleware/upload.js';
 
 dotenv.config();
@@ -171,6 +173,8 @@ app.use('/api/testimonials', testimonialRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/search', searchRoutes);
+app.use('/api/marketing', marketingRoutes);
+app.use('/api/unsubscribe', unsubscribeRoutes);
 
 // Health check endpoint (accessible at /api/health or /health)
 app.get('/api/health', (req, res) => {

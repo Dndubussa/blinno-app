@@ -18,6 +18,7 @@ import { SocialFeedPreview } from "@/components/SocialFeedPreview";
 import { QuickActions } from "@/components/QuickActions";
 import { HowToGetStarted } from "@/components/HowToGetStarted";
 import { SEO } from "@/components/SEO";
+import { TrustPilotWidget } from "@/components/TrustPilotWidget";
 
 const Index = () => {
   const { t } = useTranslation();
