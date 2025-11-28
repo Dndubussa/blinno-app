@@ -109,7 +109,7 @@ export async function sendEmail(options: EmailOptions): Promise<{ success: boole
       subject: options.subject,
       html: options.html,
       text: options.text,
-      reply_to: options.replyTo,
+      replyTo: options.replyTo,
       tags: options.tags,
     });
 
@@ -322,8 +322,7 @@ View Details: ${notificationUrl}` : ''}`,
   }
 }
 
-// Export email addresses getter for use in other modules
-export type { EmailType };
+// EmailType is already exported above, no need to re-export
 
 // Helper to get all email addresses (read-only)
 export function getEmailAddresses() {

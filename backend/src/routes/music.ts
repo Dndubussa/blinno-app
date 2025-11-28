@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate, requireRole } from '../middleware/auth';
+import { authenticate, requireRole } from '../middleware/auth.js';
 import { 
   createTrack, 
   getTracks, 
