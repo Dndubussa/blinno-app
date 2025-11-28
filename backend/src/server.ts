@@ -130,15 +130,31 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({ error: 'Route not found' });
+// 404 handler - must be before error handler
+app.use((req: express.Request, res: express.Response) => {
+  res.status(404).json({ 
+    error: 'Route not found',
+    path: req.path,
+    method: req.method
+  });
 });
 
-// Error handler
-app.use((err: any, req: any, res: any, next: any) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Something went wrong!' });
+// Error handler - must be last
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('Error:', err);
+  console.error('Stack:', err.stack);
+  
+  // Ensure response hasn't been sent
+  if (res.headersSent) {
+    return next(err);
+  }
+  
+  // Send proper error response
+  const statusCode = err.statusCode || err.status || 500;
+  res.status(statusCode).json({ 
+    error: err.message || 'Internal server error',
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  });
 });
 
 // Initialize Supabase Storage buckets on startup
