@@ -1,191 +1,389 @@
-# Deployment Guide
+# BLINNO Platform - Multi-Platform Deployment Guide
 
-This guide covers deploying the BLINNO platform to production with Supabase.
+This guide covers deploying the BLINNO platform on various hosting providers and platforms.
 
-## Prerequisites
+## 🚀 Supported Deployment Platforms
 
-1. **Supabase Account**: Create an account at https://supabase.com
-2. **Domain**: A domain name (e.g., www.blinno.app)
-3. **Server**: A server/VPS for backend (Node.js 18+)
-4. **Click Pesa Account**: For payment processing (optional)
+- ✅ **Vercel** (Serverless Functions)
+- ✅ **Docker** (Any container platform)
+- ✅ **Traditional Servers** (PM2, systemd, etc.)
+- ✅ **Kubernetes**
+- ✅ **AWS EC2/ECS/Lambda**
+- ✅ **Google Cloud Run**
+- ✅ **Azure App Service**
+- ✅ **DigitalOcean App Platform**
+- ✅ **Railway**
+- ✅ **Render**
+- ✅ **Fly.io**
 
-## Deployment Steps
+## 📋 Prerequisites
 
-### 1. Supabase Setup
+- Node.js 20+ 
+- npm or yarn
+- Environment variables configured
+- Supabase project set up
 
-1. **Create Supabase project**:
-   - Go to Supabase Dashboard
-   - Create new project
-   - Note your project credentials
+## 🔧 Environment Variables
 
-2. **Run database migrations**:
-   - Go to SQL Editor in Supabase Dashboard
-   - Run migration files from `supabase/migrations/`
+Create a `.env` file in the root directory:
 
-   OR use Supabase CLI:
-   ```bash
-   supabase link --project-ref YOUR_PROJECT_REF
-   supabase db push
-   ```
+```env
+# Server Configuration
+NODE_ENV=production
+PORT=3001
+APP_URL=https://www.blinno.app
 
-### 2. Backend Deployment
+# Supabase
+SUPABASE_URL=your_supabase_url
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
-1. **Install dependencies**:
-   ```bash
-   cd backend
-   npm install --production
-   ```
+# ClickPesa Payment Gateway
+CLICKPESA_CLIENT_ID=your_client_id
+CLICKPESA_API_KEY=your_api_key
+CLICKPESA_BASE_URL=https://api.clickpesa.com
 
-2. **Build TypeScript**:
-   ```bash
-   npm run build
-   ```
+# Email (Resend)
+RESEND_API_KEY=your_resend_api_key
+RESEND_FROM_EMAIL=BLINNO <noreply@blinno.app>
 
-3. **Start backend server**:
-   ```bash
-   npm start
-   ```
-
-   Or use a process manager like PM2:
-   ```bash
-   pm2 start npm --name "blinno-backend" -- start
-   ```
-
-4. **Configure reverse proxy** (Nginx example):
-   ```nginx
-   server {
-       listen 80;
-       server_name www.blinno.app;
-
-       location /api {
-           proxy_pass http://localhost:3001;
-           proxy_http_version 1.1;
-           proxy_set_header Upgrade $http_upgrade;
-           proxy_set_header Connection 'upgrade';
-           proxy_set_header Host $host;
-           proxy_cache_bypass $http_upgrade;
-           proxy_set_header X-Real-IP $remote_addr;
-           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-           proxy_set_header X-Forwarded-Proto $scheme;
-       }
-
-       location / {
-           root /path/to/frontend/dist;
-           try_files $uri $uri/ /index.html;
-       }
-   }
-   ```
-
-### 3. Frontend Deployment
-
-1. **Install dependencies**:
-   ```bash
-   npm install
-   ```
-
-2. **Build for production**:
-   ```bash
-   npm run build
-   ```
-
-3. **Deploy dist folder**:
-   - Copy `dist/` folder to your web server
-   - Configure Nginx/Apache to serve static files
-   - Ensure all routes redirect to `index.html` for SPA routing
-
-### 4. SSL Certificate
-
-Set up SSL certificate for HTTPS:
-
-```bash
-# Using Let's Encrypt with Certbot
-sudo certbot --nginx -d www.blinno.app
+# Optional: Set to '1' for serverless platforms (Vercel, Lambda)
+# VERCEL=1
 ```
 
-### 5. Click Pesa Webhook Configuration
+## 🐳 Docker Deployment
 
-1. Log in to Click Pesa Dashboard
-2. Navigate to Settings > Developers > Webhooks
-3. Add webhook URL: `https://www.blinno.app/api/payments/webhook`
-4. Select events:
-   - `PAYMENT RECEIVED`
-   - `PAYMENT FAILED`
-   - `PAYMENT CANCELLED`
+### Build and Run
 
-### 6. File Uploads
+```bash
+# Build the image
+docker build -t blinno-platform .
 
-For production, consider using cloud storage (S3, Cloudinary, etc.) instead of local file storage.
+# Run the container
+docker run -d \
+  --name blinno-app \
+  -p 3001:3001 \
+  --env-file .env \
+  blinno-platform
 
-## Production Checklist
+# Or use docker-compose
+docker-compose up -d
+```
 
-- [ ] Supabase project created and migrations run
-- [ ] Environment variables configured
-- [ ] Backend server running
-- [ ] Frontend built and deployed
-- [ ] SSL certificate installed
-- [ ] CORS configured correctly
-- [ ] Click Pesa credentials configured
-- [ ] Webhook URL configured in Click Pesa
-- [ ] Error logging configured
-- [ ] Backup strategy in place
-- [ ] Monitoring set up
+### Docker Compose
 
-## Monitoring
+```bash
+# Start services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+```
+
+### Production Docker Deployment
+
+```bash
+# Build for production
+docker build -t blinno-platform:latest .
+
+# Tag for registry
+docker tag blinno-platform:latest your-registry/blinno-platform:latest
+
+# Push to registry
+docker push your-registry/blinno-platform:latest
+
+# Deploy to server
+docker pull your-registry/blinno-platform:latest
+docker run -d \
+  --name blinno-app \
+  -p 3001:3001 \
+  --env-file .env \
+  --restart unless-stopped \
+  your-registry/blinno-platform:latest
+```
+
+## 🔄 PM2 Deployment (Traditional Servers)
+
+### Installation
+
+```bash
+# Install PM2 globally
+npm install -g pm2
+
+# Build the project
+npm run build
+cd backend && npm run build && cd ..
+```
+
+### Start with PM2
+
+```bash
+# Start the application
+pm2 start ecosystem.config.js
+
+# Save PM2 configuration
+pm2 save
+
+# Setup PM2 to start on system boot
+pm2 startup
+# Follow the instructions provided
+
+# View logs
+pm2 logs blinno-backend
+
+# Monitor
+pm2 monit
+
+# Restart
+pm2 restart blinno-backend
+
+# Stop
+pm2 stop blinno-backend
+```
+
+## ☁️ Cloud Platform Deployments
+
+### Vercel (Serverless)
+
+1. Push code to GitHub
+2. Import project in Vercel
+3. Set environment variables in Vercel dashboard
+4. Deploy (automatic on push)
+
+The `vercel.json` and `api/index.ts` files handle Vercel-specific configuration.
+
+### Railway
+
+1. Connect GitHub repository
+2. Railway auto-detects Dockerfile
+3. Set environment variables
+4. Deploy
+
+### Render
+
+1. Create new Web Service
+2. Connect GitHub repository
+3. Build command: `npm run build && cd backend && npm run build`
+4. Start command: `node backend/dist/server.js`
+5. Set environment variables
+6. Deploy
+
+### Fly.io
+
+```bash
+# Install flyctl
+curl -L https://fly.io/install.sh | sh
+
+# Login
+fly auth login
+
+# Launch app
+fly launch
+
+# Deploy
+fly deploy
+```
+
+### AWS EC2
+
+```bash
+# SSH into EC2 instance
+ssh -i your-key.pem ubuntu@your-ec2-ip
+
+# Install Node.js 20
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# Clone repository
+git clone https://github.com/your-org/blinno-app.git
+cd blinno-app
+
+# Install dependencies
+npm install
+cd backend && npm install && npm run build && cd ..
+
+# Install PM2
+sudo npm install -g pm2
+
+# Start with PM2
+pm2 start ecosystem.config.js
+pm2 save
+pm2 startup
+```
+
+### Google Cloud Run
+
+```bash
+# Build and push to GCR
+gcloud builds submit --tag gcr.io/PROJECT-ID/blinno-platform
+
+# Deploy to Cloud Run
+gcloud run deploy blinno-platform \
+  --image gcr.io/PROJECT-ID/blinno-platform \
+  --platform managed \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --port 3001 \
+  --set-env-vars NODE_ENV=production
+```
+
+### Azure App Service
+
+1. Create App Service in Azure Portal
+2. Configure deployment from GitHub
+3. Set environment variables in Configuration
+4. Deploy
+
+## 🔒 Reverse Proxy Setup (Nginx)
+
+For production deployments, use Nginx as a reverse proxy:
+
+```nginx
+server {
+    listen 80;
+    server_name www.blinno.app blinno.app;
+    
+    # Redirect HTTP to HTTPS
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name www.blinno.app blinno.app;
+
+    ssl_certificate /path/to/cert.pem;
+    ssl_certificate_key /path/to/key.pem;
+
+    # Frontend static files
+    location / {
+        root /app/dist;
+        try_files $uri $uri/ /index.html;
+    }
+
+    # API backend
+    location /api {
+        proxy_pass http://localhost:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    # Health check
+    location /api/health {
+        proxy_pass http://localhost:3001/api/health;
+        access_log off;
+    }
+}
+```
+
+## 📊 Monitoring & Logging
 
 ### Health Check Endpoint
 
-Monitor backend health:
-```
-GET https://www.blinno.app/api/health
-```
-
-### Logs
-
-Monitor application logs:
 ```bash
-# PM2 logs
-pm2 logs blinno-backend
-
-# Nginx logs
-tail -f /var/log/nginx/access.log
-tail -f /var/log/nginx/error.log
+curl http://localhost:3001/api/health
 ```
 
-## Security Considerations
+Expected response:
+```json
+{
+  "status": "ok",
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
+```
 
-1. **Environment Variables**: Never commit `.env` files
-2. **JWT Secret**: Use a strong, random secret
-3. **HTTPS**: Always use HTTPS in production
-4. **Rate Limiting**: Already configured in backend
-5. **CORS**: Restrict to production domain only
-6. **Database**: Supabase handles security, but use strong passwords
-7. **File Uploads**: Validate file types and sizes
+### Logging
 
-## Troubleshooting
+- **PM2**: Logs stored in `./logs/` directory
+- **Docker**: `docker logs blinno-app`
+- **Systemd**: `journalctl -u blinno-app`
 
-### Backend not accessible
-- Check firewall rules
-- Verify reverse proxy configuration
-- Check backend logs
+## 🔄 Updates & Maintenance
 
-### CORS errors
-- Verify `CORS_ORIGIN` matches frontend domain
-- Check browser console for specific errors
+### Update Application
 
-### Payment webhooks not working
-- Verify webhook URL is accessible
-- Check Click Pesa dashboard for webhook status
-- Review backend logs for incoming requests
+```bash
+# Pull latest changes
+git pull origin main
 
-### File uploads failing
-- Check directory permissions (if using local storage)
-- Verify file storage configuration
-- Check disk space
+# Rebuild
+npm run build
+cd backend && npm run build && cd ..
 
-## Support
+# Restart
+pm2 restart blinno-backend
+# or
+docker-compose restart
+```
 
-For deployment issues:
-- Check server logs
-- Review error messages
-- Verify environment variables
-- Test API endpoints directly
+### Database Migrations
+
+```bash
+# Run migrations using Supabase CLI or MCP
+# See backend/migrations/ directory
+```
+
+## 🆘 Troubleshooting
+
+### Port Already in Use
+
+```bash
+# Find process using port 3001
+lsof -i :3001
+# or
+netstat -tulpn | grep 3001
+
+# Kill process
+kill -9 <PID>
+```
+
+### Check Server Status
+
+```bash
+# PM2
+pm2 status
+pm2 logs
+
+# Docker
+docker ps
+docker logs blinno-app
+
+# Health check
+curl http://localhost:3001/api/health
+```
+
+### Environment Variables
+
+Ensure all required environment variables are set:
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `CLICKPESA_CLIENT_ID`
+- `CLICKPESA_API_KEY`
+- `APP_URL`
+
+## 📚 Additional Resources
+
+- [Docker Documentation](https://docs.docker.com/)
+- [PM2 Documentation](https://pm2.keymetrics.io/docs/)
+- [Nginx Documentation](https://nginx.org/en/docs/)
+- [Vercel Documentation](https://vercel.com/docs)
+
+## ✅ Deployment Checklist
+
+- [ ] Environment variables configured
+- [ ] Database migrations applied
+- [ ] Build completed successfully
+- [ ] Health check endpoint responding
+- [ ] CORS configured correctly
+- [ ] SSL/TLS certificates installed (production)
+- [ ] Reverse proxy configured (if needed)
+- [ ] Monitoring set up
+- [ ] Logs accessible
+- [ ] Backup strategy in place

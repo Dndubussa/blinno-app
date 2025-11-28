@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 // Route imports
 import authRoutes from './routes/auth.js';
@@ -101,6 +103,27 @@ app.use(cors(corsConfig));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Serve static frontend files (only in non-serverless environments)
+// In Vercel, frontend is served separately via vercel.json
+if (process.env.VERCEL !== '1' && !process.env.SERVERLESS) {
+  try {
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+    const frontendPath = path.resolve(__dirname, '../../public');
+    
+    // Serve static assets with caching
+    app.use(express.static(frontendPath, {
+      maxAge: '1y',
+      etag: true,
+      lastModified: true
+    }));
+    
+    console.log(`📁 Serving static files from: ${frontendPath}`);
+  } catch (err) {
+    console.warn('⚠️  Could not set up static file serving:', err);
+  }
+}
+
 // Debug middleware (only in development or for troubleshooting)
 if (process.env.NODE_ENV === 'development' || process.env.DEBUG === 'true') {
   app.use((req, res, next) => {
@@ -167,8 +190,28 @@ app.get('/api', (req, res) => {
   });
 });
 
-// 404 handler - must be before error handler
-app.use((req: express.Request, res: express.Response) => {
+// SPA fallback: serve index.html for non-API routes (only in non-serverless)
+if (process.env.VERCEL !== '1' && !process.env.SERVERLESS) {
+  app.get('*', (req, res, next) => {
+    // Skip API routes - they have their own 404 handler
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    
+    // Serve index.html for SPA routing
+    try {
+      const __filename = fileURLToPath(import.meta.url);
+      const __dirname = path.dirname(__filename);
+      const indexPath = path.join(__dirname, '../../public/index.html');
+      res.sendFile(indexPath);
+    } catch (err) {
+      next();
+    }
+  });
+}
+
+// 404 handler for API routes
+app.use('/api/*', (req: express.Request, res: express.Response) => {
   console.error('404 Not Found:', {
     method: req.method,
     path: req.path,
@@ -216,11 +259,18 @@ initializeStorageBuckets().catch(err => {
   console.error('Failed to initialize storage buckets:', err);
 });
 
-// Only start listening if not in Vercel (serverless) environment
-if (process.env.VERCEL !== '1') {
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+// Start server (works in all environments: Docker, PM2, traditional servers, etc.)
+// Only skip if explicitly in Vercel serverless mode
+const shouldStartServer = process.env.VERCEL !== '1' && !process.env.SERVERLESS;
+
+if (shouldStartServer) {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 BLINNO API Server running on port ${PORT}`);
+    console.log(`📡 Environment: ${env}`);
+    console.log(`🌐 Health check: http://localhost:${PORT}/api/health`);
   });
+} else {
+  console.log('📦 Running in serverless mode (Vercel/Lambda/etc.)');
 }
 
 export default app;

@@ -1,77 +1,66 @@
 # BLINNO Platform
 
-A multi-sided marketplace SaaS platform for creators, businesses, and service providers worldwide.
+A comprehensive multi-sided marketplace platform for creators, businesses, and service providers.
 
-## Production Website
+## 🚀 Quick Start
 
-**Official Website**: https://www.blinno.app
+### Development
 
-## Project Information
+```bash
+# Install dependencies
+npm install
+cd backend && npm install && cd ..
 
-## How can I edit this code?
-
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/2f23d4cb-dd66-40a7-8ab9-f3e67ad5dfa5) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start frontend dev server
 npm run dev
+
+# Start backend dev server (in another terminal)
+cd backend && npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Production Build
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```bash
+# Build frontend and backend
+npm run build:all
 
-**Use GitHub Codespaces**
+# Start production server
+npm start
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 📦 Deployment Options
 
-## What technologies are used for this project?
+The platform can be deployed on **any platform**:
 
-This project is built with:
+- 🐳 **Docker**: `docker-compose up -d`
+- ☁️ **Vercel**: Automatic via `vercel.json`
+- 🔄 **PM2**: `pm2 start ecosystem.config.js`
+- ☸️ **Kubernetes**: Use provided Dockerfile
+- 🌐 **Traditional Servers**: Direct Node.js deployment
+- ☁️ **Cloud Platforms**: AWS, GCP, Azure, Railway, Render, Fly.io, etc.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions.
 
-## How can I deploy this project?
+## 🏗️ Architecture
 
-Simply open [Lovable](https://lovable.dev/projects/2f23d4cb-dd66-40a7-8ab9-f3e67ad5dfa5) and click on Share -> Publish.
+- **Frontend**: React + TypeScript + Vite + Tailwind CSS
+- **Backend**: Node.js + Express + TypeScript
+- **Database**: Supabase (PostgreSQL)
+- **Authentication**: Supabase Auth
+- **Storage**: Supabase Storage
+- **Payments**: ClickPesa
+- **Email**: Resend
 
-## Can I connect a custom domain to my Lovable project?
+## 📚 Documentation
 
-Yes, you can!
+- [Deployment Guide](./DEPLOYMENT.md) - Multi-platform deployment
+- [API Documentation](./API_DOCS.md) - API endpoints
+- [Developer Guide](./DEVELOPER_GUIDE.md) - Development setup
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## 🔧 Environment Variables
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+See `.env.example` for required environment variables.
+
+## 📝 License
+
+Proprietary - All rights reserved
