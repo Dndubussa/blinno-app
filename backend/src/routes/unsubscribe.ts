@@ -35,10 +35,12 @@ router.post('/', async (req, res) => {
 
       // If still no userId, try to find by email in profiles
       if (!targetUserId) {
-        const { data: authUsers } = await supabase.auth.admin.listUsers();
-        const authUser = authUsers?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase());
-        if (authUser) {
-          targetUserId = authUser.id;
+        const { data: authUsers, error: listError } = await supabase.auth.admin.listUsers();
+        if (!listError && authUsers?.users) {
+          const authUser = authUsers.users.find((u: any) => u.email?.toLowerCase() === email.toLowerCase());
+          if (authUser) {
+            targetUserId = authUser.id;
+          }
         }
       }
     }

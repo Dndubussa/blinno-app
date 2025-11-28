@@ -116,89 +116,115 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signUp = async (email: string, password: string, displayName: string, role: 'user' | 'creator' | 'freelancer' | 'seller' | 'lodging' | 'restaurant' | 'educator' | 'journalist' | 'artisan' | 'employer' | 'event_organizer' | 'musician', additionalData?: SignUpAdditionalData) => {
     try {
-      // Sign up with Supabase
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            display_name: displayName,
-            ...(additionalData && {
-              first_name: additionalData?.firstName,
-              middle_name: additionalData?.middleName,
-              last_name: additionalData?.lastName,
-              phone: additionalData?.phoneNumber,
-              country: additionalData?.country
-            })
-          }
-        }
+      // Register user with backend API (which handles Supabase Auth, profile creation, and role assignment)
+      const result = await api.register({ 
+        email, 
+        password, 
+        displayName, 
+        role, 
+        ...additionalData 
       });
 
-      if (error) {
-        return { error: { message: error.message } };
-      }
-
-      if (data.user) {
+      if (result.user) {
         setUser({ 
-          id: data.user.id, 
-          email: data.user.email || '',
-          email_verified: data.user.email_confirmed_at !== null
+          id: result.user.id, 
+          email: result.user.email || '',
+          email_verified: result.user.email_confirmed_at !== null
         });
       
-        // Register user with API to set role and additional data
-        try {
-          await api.register({ email, password, displayName, role, ...additionalData });
-        } catch (apiError) {
-          console.error('API registration error:', apiError);
+        // If we got a session token, set it
+        if (result.token) {
+          // The API client already sets the token, but we should also set it in Supabase session
+          // This ensures the frontend Supabase client is in sync
+          try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session && result.token) {
+              // Set the session manually if we have a token
+              await supabase.auth.setSession({
+                access_token: result.token,
+                refresh_token: result.session?.refresh_token || '',
+              });
+            }
+          } catch (sessionError) {
+            console.error('Error setting session:', sessionError);
+            // Continue anyway - the token is set in the API client
+          }
         }
       
         // Fetch profile
-        const profileData = await api.getCurrentUser();
-        setProfile(profileData);
-      
-        // Extract primary role from roles array (prefer non-'user' role, or use the sign-up role)
-        let primaryRole: string | string[] = role;
-        if (profileData?.roles && Array.isArray(profileData.roles)) {
-          // Use the roles array directly, getDashboardRoute will handle it
-          primaryRole = profileData.roles;
+        try {
+          const profileData = await api.getCurrentUser();
+          setProfile(profileData);
+        
+          // Extract primary role from roles array
+          let primaryRole: string | string[] = role;
+          if (profileData?.roles && Array.isArray(profileData.roles)) {
+            primaryRole = profileData.roles;
+          }
+        
+          // Only redirect if email is verified
+          if (result.user.email_confirmed_at !== null) {
+            // Redirect to appropriate dashboard
+            const dashboardRoute = getDashboardRoute(primaryRole);
+            navigate(dashboardRoute, { replace: true });
+          } else {
+            // Stay on auth page and show email verification message
+            navigate('/signin', { replace: true });
+          }
+        } catch (profileError) {
+          console.error('Error fetching profile:', profileError);
+          // Still navigate to signin if email not verified
+          if (!result.user.email_confirmed_at) {
+            navigate('/signin', { replace: true });
+          }
         }
-      
-        // Only redirect if email is verified
-        if (data.user.email_confirmed_at !== null) {
-          // Redirect to appropriate dashboard
-          const dashboardRoute = getDashboardRoute(primaryRole);
-          navigate(dashboardRoute, { replace: true });
-        } else {
-          // Stay on auth page and show email verification message
-          navigate('/signin', { replace: true });
-        }
+        
         return { error: null };
       } else {
         return { error: { message: 'Failed to create user' } };
       }
     } catch (error: any) {
-      return { error: { message: error.message } };
+      console.error('Signup error:', error);
+      // Extract error message from API response
+      let errorMessage = 'Registration failed. Please try again.';
+      
+      if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      
+      return { error: { message: errorMessage } };
     }
   };
 
   const signIn = async (email: string, password: string) => {
     try {
-      // Sign in with Supabase
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
+      // Sign in with backend API
+      const result = await api.login(email, password);
 
-      if (error) {
-        return { error: { message: error.message } };
-      }
-
-      if (data.user) {
+      if (result.user) {
         setUser({ 
-          id: data.user.id, 
-          email: data.user.email || '',
-          email_verified: data.user.email_confirmed_at !== null
+          id: result.user.id, 
+          email: result.user.email || '',
+          email_verified: result.user.email_confirmed_at !== null
         });
+        
+        // If we got a session token, sync with Supabase client
+        if (result.token && result.session) {
+          try {
+            await supabase.auth.setSession({
+              access_token: result.token,
+              refresh_token: result.session.refresh_token || '',
+            });
+          } catch (sessionError) {
+            console.error('Error setting session:', sessionError);
+            // Continue anyway - the token is set in the API client
+          }
+        }
+        
         // Fetch profile
         const profileData = await api.getCurrentUser();
         setProfile(profileData);
@@ -211,7 +237,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       
         // Only redirect if email is verified
-        if (data.user.email_confirmed_at !== null) {
+        if (result.user.email_confirmed_at !== null) {
           // Redirect to appropriate dashboard
           const dashboardRoute = getDashboardRoute(primaryRole);
           navigate(dashboardRoute, { replace: true });
@@ -224,7 +250,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return { error: { message: 'Failed to sign in' } };
       }
     } catch (error: any) {
-      return { error: { message: error.message } };
+      console.error('Signin error:', error);
+      // Extract error message from API response
+      let errorMessage = 'Sign in failed. Please try again.';
+      
+      if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      
+      return { error: { message: errorMessage } };
     }
   };
 

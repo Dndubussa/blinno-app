@@ -92,6 +92,7 @@ router.post('/register', async (req, res) => {
         id: authData.user.id,
         email: authData.user.email,
         created_at: authData.user.created_at,
+        email_confirmed_at: authData.user.email_confirmed_at,
       },
       token: token || null, // Token might be null if email confirmation is required
       session: authData.session,
@@ -129,6 +130,7 @@ router.post('/login', async (req, res) => {
       user: {
         id: authData.user.id,
         email: authData.user.email,
+        email_confirmed_at: authData.user.email_confirmed_at,
       },
       token: authData.session.access_token,
       session: authData.session,
@@ -259,6 +261,50 @@ router.post('/reset-password', async (req, res) => {
   } catch (error: any) {
     console.error('Reset password error:', error);
     res.status(500).json({ error: 'Failed to reset password' });
+  }
+});
+
+// Resend verification email
+router.post('/resend-verification', authenticate, async (req: AuthRequest, res) => {
+  try {
+    if (!req.userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    // Get user email from Supabase Auth
+    const { data: { user }, error: userError } = await supabase.auth.admin.getUserById(req.userId);
+    
+    if (userError || !user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (!user.email) {
+      return res.status(400).json({ error: 'User email not found' });
+    }
+
+    // Check if already verified
+    if (user.email_confirmed_at) {
+      return res.json({ message: 'Email is already verified' });
+    }
+
+    // Resend verification email using Supabase Auth
+    const { error: resendError } = await supabaseAdmin.auth.resend({
+      type: 'signup',
+      email: user.email,
+      options: {
+        emailRedirectTo: `${process.env.APP_URL || 'https://www.blinno.app'}/auth/callback`,
+      },
+    });
+
+    if (resendError) {
+      console.error('Resend verification error:', resendError);
+      return res.status(500).json({ error: 'Failed to resend verification email' });
+    }
+
+    res.json({ message: 'Verification email sent successfully' });
+  } catch (error: any) {
+    console.error('Resend verification error:', error);
+    res.status(500).json({ error: 'Failed to resend verification email' });
   }
 });
 

@@ -279,10 +279,11 @@ initializeStorageBuckets().catch(err => {
 const shouldStartServer = process.env.VERCEL !== '1' && !process.env.SERVERLESS;
 
 if (shouldStartServer) {
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 BLINNO API Server running on port ${PORT}`);
+  const port = typeof PORT === 'string' ? parseInt(PORT, 10) : PORT;
+  app.listen(port, '0.0.0.0', () => {
+    console.log(`🚀 BLINNO API Server running on port ${port}`);
     console.log(`📡 Environment: ${env}`);
-    console.log(`🌐 Health check: http://localhost:${PORT}/api/health`);
+    console.log(`🌐 Health check: http://localhost:${port}/api/health`);
   });
 } else {
   console.log('📦 Running in serverless mode (Vercel/Lambda/etc.)');

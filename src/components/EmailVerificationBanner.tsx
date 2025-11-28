@@ -3,11 +3,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, X } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 export const EmailVerificationBanner = () => {
   const { user } = useAuth();
   const [isDismissed, setIsDismissed] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const { toast } = useToast();
 
   // Don't show if user is not logged in, email is verified, or banner is dismissed
   if (!user || user.email_verified || isDismissed) {
@@ -17,18 +20,23 @@ export const EmailVerificationBanner = () => {
   const handleResendVerification = async () => {
     if (!user.email) return;
     
+    setIsResending(true);
     try {
-      // Request a new verification email
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email: user.email,
+      // Request a new verification email through backend API
+      await api.resendVerificationEmail();
+      toast({
+        title: "Verification Email Sent",
+        description: "Please check your email for the verification link.",
       });
-      
-      if (error) {
-        console.error('Error resending verification email:', error);
-      }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error resending verification email:', error);
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to resend verification email. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -48,8 +56,9 @@ export const EmailVerificationBanner = () => {
               size="sm" 
               onClick={handleResendVerification}
               className="h-8"
+              disabled={isResending}
             >
-              Resend Verification Email
+              {isResending ? "Sending..." : "Resend Verification Email"}
             </Button>
           </div>
         </div>

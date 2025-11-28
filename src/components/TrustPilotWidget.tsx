@@ -23,7 +23,7 @@ export const TrustPilotWidget = ({ className = "" }: TrustPilotWidgetProps) => {
   }, []);
 
   return (
-    <div className={className}>
+    <div className={`${className} flex flex-col items-center gap-2`}>
       {/* TrustBox widget - Review Collector */}
       <div
         className="trustpilot-widget"
@@ -43,6 +43,16 @@ export const TrustPilotWidget = ({ className = "" }: TrustPilotWidgetProps) => {
         </a>
       </div>
       {/* End TrustBox widget */}
+      
+      {/* TrustPilot Logo */}
+      <img 
+        src="/TrustPilot.png" 
+        alt="TrustPilot" 
+        className="h-6 w-auto mt-2"
+        onError={(e) => {
+          (e.target as HTMLImageElement).style.display = 'none';
+        }}
+      />
     </div>
   );
 };

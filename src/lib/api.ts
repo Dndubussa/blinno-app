@@ -58,21 +58,47 @@ class ApiClient {
 
   // Auth
   async register(data: { email: string; password: string; displayName: string; role?: string; firstName?: string; middleName?: string; lastName?: string; phoneNumber?: string; country?: string; termsAccepted?: boolean }) {
-    const result = await this.request<{ user: any; token: string }>('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-    this.setToken(result.token);
-    return result;
+    try {
+      const result = await this.request<{ user: any; token: string | null; session: any }>('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      if (result.token) {
+        this.setToken(result.token);
+      }
+      return result;
+    } catch (error: any) {
+      // Re-throw with better error message
+      const errorMessage = error?.message || 'Registration failed';
+      const apiError = new Error(errorMessage);
+      (apiError as any).response = error?.response || { data: { error: errorMessage } };
+      throw apiError;
+    }
   }
 
   async login(email: string, password: string) {
-    const result = await this.request<{ user: any; token: string }>('/auth/login', {
+    try {
+      const result = await this.request<{ user: any; token: string | null; session: any }>('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      });
+      if (result.token) {
+        this.setToken(result.token);
+      }
+      return result;
+    } catch (error: any) {
+      // Re-throw with better error message
+      const errorMessage = error?.message || 'Login failed';
+      const apiError = new Error(errorMessage);
+      (apiError as any).response = error?.response || { data: { error: errorMessage } };
+      throw apiError;
+    }
+  }
+
+  async resendVerificationEmail() {
+    return await this.request<{ message: string }>('/auth/resend-verification', {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
     });
-    this.setToken(result.token);
-    return result;
   }
 
   async getCurrentUser() {

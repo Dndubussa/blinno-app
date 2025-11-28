@@ -33,7 +33,7 @@ router.post('/send', authenticate, requireRole('admin'), async (req: AuthRequest
     // Build query to get users
     let profilesQuery = supabase
       .from('profiles')
-      .select('user_id, display_name, email_verified');
+      .select('user_id, display_name, email_verified, marketing_emails_enabled');
 
     // Apply filters
     if (filters.role) {
@@ -93,6 +93,14 @@ router.post('/send', authenticate, requireRole('admin'), async (req: AuthRequest
       .in('user_id', userIds);
 
     const unsubscribedIds = new Set((unsubscribed || []).map((u: any) => u.user_id));
+
+    // Initialize array to collect user emails
+    const userEmails: Array<{
+      userId: string;
+      email: string;
+      displayName: string;
+      verified: boolean;
+    }> = [];
 
     // Get user emails from Supabase Auth (excluding unsubscribed)
     for (const userId of userIds) {
