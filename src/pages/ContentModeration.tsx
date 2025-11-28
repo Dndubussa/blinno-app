@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { Shield, AlertTriangle, CheckCircle, XCircle, Eye, Ban } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -20,6 +21,7 @@ export default function ContentModeration() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [reports, setReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedReport, setSelectedReport] = useState<any>(null);
@@ -46,7 +48,7 @@ export default function ContentModeration() {
     } catch (error: any) {
       console.error("Error fetching reports:", error);
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: "Failed to load reports",
         variant: "destructive",
       });
@@ -58,7 +60,7 @@ export default function ContentModeration() {
   const handleTakeAction = async () => {
     if (!actionForm.actionType || !actionForm.reason) {
       toast({
-        title: "Missing information",
+        title: t("common.missingInformation"),
         description: "Please select an action and provide a reason",
         variant: "destructive",
       });
@@ -74,7 +76,7 @@ export default function ContentModeration() {
       });
       
       toast({
-        title: "Action taken",
+        title: t("common.actionTaken"),
         description: "Moderation action has been applied",
       });
       setSelectedReport(null);
@@ -82,7 +84,7 @@ export default function ContentModeration() {
       await fetchReports();
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: error.message || "Failed to take action",
         variant: "destructive",
       });
@@ -203,7 +205,7 @@ export default function ContentModeration() {
                   }
                 >
                   <SelectTrigger className="mt-2">
-                    <SelectValue placeholder="Select action" />
+                    <SelectValue placeholder={t("common.selectAction")} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="warn">Warn User</SelectItem>

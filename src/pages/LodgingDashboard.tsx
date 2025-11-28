@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 import { 
   Trash2, 
   Plus, 
@@ -34,6 +35,7 @@ export default function LodgingDashboard() {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { t } = useTranslation();
   
   // Get current section from URL hash or default to overview
   const currentSection = location.hash.replace('#', '') || 'overview';
@@ -82,7 +84,7 @@ export default function LodgingDashboard() {
 
       if (!userHasRole && primaryRole !== 'lodging') {
         toast({
-          title: "Access Denied",
+          title: t("common.accessDenied"),
           description: "This dashboard is only available for lodging owners.",
           variant: "destructive",
         });
@@ -94,7 +96,7 @@ export default function LodgingDashboard() {
     } catch (error: any) {
       console.error('Error checking role:', error);
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: "Failed to verify access.",
         variant: "destructive",
       });
@@ -132,7 +134,7 @@ export default function LodgingDashboard() {
     } catch (error: any) {
       console.error("Error fetching data:", error);
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: "Failed to load dashboard data",
         variant: "destructive",
       });
@@ -156,11 +158,11 @@ export default function LodgingDashboard() {
         amenities: [],
       });
       
-      toast({ title: "Success", description: "Property created!" });
+      toast({ title: t("common.success"), description: t("common.propertyCreated") });
       setShowAddProperty(false);
       fetchData();
     } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to create property", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("common.failedToCreate"), variant: "destructive" });
     }
   };
 
@@ -181,82 +183,82 @@ export default function LodgingDashboard() {
         amenities: (formData.get("amenities") as string).split(",").map(a => a.trim()).filter(a => a),
       });
 
-      toast({ title: "Success", description: "Room added!" });
+      toast({ title: t("common.success"), description: t("common.roomAdded") });
       setShowAddRoom(false);
       setSelectedProperty("");
       fetchData();
     } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to add room", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("common.failedToCreate"), variant: "destructive" });
     }
   };
 
   const handleUpdateProperty = async (id: string, data: any) => {
     try {
       await api.updateLodgingProperty(id, data);
-      toast({ title: "Success", description: "Property updated!" });
+      toast({ title: t("common.success"), description: t("common.propertyUpdated") });
       fetchData();
     } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to update property", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("common.failedToUpdate"), variant: "destructive" });
     }
   };
 
   const handleDeleteProperty = async (id: string) => {
     try {
       await api.deleteLodgingProperty(id);
-      toast({ title: "Success", description: "Property deleted!" });
+      toast({ title: t("common.success"), description: t("common.propertyDeleted") });
       fetchData();
     } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to delete property", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("common.failedToDelete"), variant: "destructive" });
     }
   };
 
   const handleUpdateRoom = async (id: string, data: any) => {
     try {
       await api.updateLodgingRoom(id, data);
-      toast({ title: "Success", description: "Room updated!" });
+      toast({ title: t("common.success"), description: t("common.roomUpdated") });
       fetchData();
     } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to update room", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("common.failedToUpdate"), variant: "destructive" });
     }
   };
 
   const handleDeleteRoom = async (id: string) => {
     try {
       await api.deleteLodgingRoom(id);
-      toast({ title: "Success", description: "Room deleted!" });
+      toast({ title: t("common.success"), description: t("common.roomDeleted") });
       fetchData();
     } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to delete room", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("common.failedToDelete"), variant: "destructive" });
     }
   };
 
   const handleUpdateBooking = async (id: string, data: any) => {
     try {
       await api.updateLodgingBooking(id, data);
-      toast({ title: "Success", description: "Booking updated!" });
+      toast({ title: t("common.success"), description: t("common.bookingUpdated") });
       fetchData();
     } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to update booking", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("common.failedToUpdate"), variant: "destructive" });
     }
   };
 
   const handleDeleteBooking = async (id: string) => {
     try {
       await api.deleteLodgingBooking(id);
-      toast({ title: "Success", description: "Booking deleted!" });
+      toast({ title: t("common.success"), description: t("common.bookingDeleted") });
       fetchData();
     } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to delete booking", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("common.failedToDelete"), variant: "destructive" });
     }
   };
 
   const handleUpdateBookingStatus = async (bookingId: string, status: string) => {
     try {
       await api.updateLodgingBookingStatus(bookingId, status);
-      toast({ title: "Success", description: "Booking status updated!" });
+      toast({ title: t("common.success"), description: t("common.bookingStatusUpdated") });
       fetchData();
     } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to update booking status", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("common.failedToUpdate"), variant: "destructive" });
     }
   };
 
@@ -531,7 +533,7 @@ export default function LodgingDashboard() {
                           <Label htmlFor="property-select">Property</Label>
                           <Select value={selectedProperty} onValueChange={setSelectedProperty} required>
                             <SelectTrigger id="property-select">
-                              <SelectValue placeholder="Select a property" />
+                              <SelectValue placeholder={t("common.selectProperty")} />
                             </SelectTrigger>
                             <SelectContent>
                               {properties.map((property) => (

@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 import { 
   Trash2, 
   Plus, 
@@ -34,6 +35,7 @@ export default function FreelancerDashboard() {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { t } = useTranslation();
   
   // Get current section from URL hash or default to overview
   const currentSection = location.hash.replace('#', '') || 'overview';
@@ -105,7 +107,7 @@ export default function FreelancerDashboard() {
     } catch (error: any) {
       console.error('Error checking role:', error);
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: "Failed to verify access.",
         variant: "destructive",
       });
@@ -154,7 +156,7 @@ export default function FreelancerDashboard() {
     } catch (error: any) {
       console.error("Error fetching data:", error);
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: "Failed to load dashboard data",
         variant: "destructive",
       });
@@ -178,11 +180,11 @@ export default function FreelancerDashboard() {
         endDate: formData.get("end_date") || null,
       });
       
-      toast({ title: "Success", description: "Project created!" });
+      toast({ title: t("common.success"), description: t("common.projectCreated") });
       setShowAddProject(false);
       fetchData();
     } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to create project", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("common.failedToCreate"), variant: "destructive" });
     }
   };
 
@@ -201,11 +203,11 @@ export default function FreelancerDashboard() {
         status: formData.get("status") as string || "draft",
       });
       
-      toast({ title: "Success", description: "Proposal created!" });
+      toast({ title: t("common.success"), description: t("common.proposalCreated") });
       setShowAddProposal(false);
       fetchData();
     } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to create proposal", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("common.failedToCreate"), variant: "destructive" });
     }
   };
 
@@ -219,7 +221,7 @@ export default function FreelancerDashboard() {
 
     if (!contactName) {
       toast({ 
-        title: "Error", 
+        title: t("common.error"), 
         description: "Contact name is required", 
         variant: "destructive" 
       });
@@ -435,7 +437,7 @@ export default function FreelancerDashboard() {
       
       if (amount > availableBalance) {
         toast({
-          title: "Error",
+          title: t("common.error"),
           description: `Insufficient funds. Available: ${formatCurrency(availableBalance)}`,
           variant: "destructive",
         });
@@ -444,7 +446,7 @@ export default function FreelancerDashboard() {
 
       if (amount < 25) {
         toast({
-          title: "Error",
+          title: t("common.error"),
           description: "Minimum payout amount is USD 25",
           variant: "destructive",
         });
@@ -457,7 +459,7 @@ export default function FreelancerDashboard() {
       });
 
       toast({
-        title: "Success",
+        title: t("common.success"),
         description: "Payout request submitted successfully!",
       });
 
@@ -465,7 +467,7 @@ export default function FreelancerDashboard() {
       fetchData(); // Refresh data
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: error.message || "Failed to request payout",
         variant: "destructive",
       });
@@ -1110,7 +1112,7 @@ export default function FreelancerDashboard() {
                             <Label htmlFor="payment-method">Payment Method</Label>
                             <Select name="paymentMethod" required>
                               <SelectTrigger id="payment-method">
-                                <SelectValue placeholder="Select payment method" />
+                                <SelectValue placeholder={t("common.selectPaymentMethod")} />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="clickpesa">Click Pesa</SelectItem>

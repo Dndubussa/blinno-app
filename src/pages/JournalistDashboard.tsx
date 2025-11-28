@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 import { 
   Trash2, 
   Plus, 
@@ -46,6 +47,7 @@ export default function JournalistDashboard() {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { t } = useTranslation();
   
   // Get current section from URL hash or default to overview
   const currentSection = location.hash.replace('#', '') || 'overview';
@@ -94,7 +96,7 @@ export default function JournalistDashboard() {
 
       if (!userHasRole && primaryRole !== 'journalist') {
         toast({
-          title: "Access Denied",
+          title: t("common.accessDenied"),
           description: "This dashboard is only available for journalists.",
           variant: "destructive",
         });
@@ -106,7 +108,7 @@ export default function JournalistDashboard() {
     } catch (error: any) {
       console.error('Error checking role:', error);
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: "Failed to verify access.",
         variant: "destructive",
       });
@@ -138,7 +140,7 @@ export default function JournalistDashboard() {
     } catch (error: any) {
       console.error("Error fetching articles:", error);
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: "Failed to fetch articles.",
         variant: "destructive",
       });
@@ -165,7 +167,7 @@ export default function JournalistDashboard() {
       });
 
       toast({
-        title: "Success",
+        title: t("common.success"),
         description: "Article created successfully!",
       });
       
@@ -176,7 +178,7 @@ export default function JournalistDashboard() {
       fetchData();
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: error.message || "Failed to create article",
         variant: "destructive",
       });
@@ -190,13 +192,13 @@ export default function JournalistDashboard() {
       await api.deleteNewsArticle(id);
 
       toast({
-        title: "Success",
+        title: t("common.success"),
         description: "Article deleted successfully!",
       });
       fetchData();
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -208,13 +210,13 @@ export default function JournalistDashboard() {
       await api.updateNewsArticle(id, data);
 
       toast({
-        title: "Success",
+        title: t("common.success"),
         description: "Article updated successfully!",
       });
       fetchData();
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -238,12 +240,12 @@ export default function JournalistDashboard() {
       await api.updateProfile(profileData);
 
       toast({
-        title: "Success",
+        title: t("common.success"),
         description: "Profile updated successfully!",
       });
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -409,7 +411,7 @@ export default function JournalistDashboard() {
                             <Label htmlFor="category">Category</Label>
                             <Select name="category" required>
                               <SelectTrigger>
-                                <SelectValue placeholder="Select category" />
+                                <SelectValue placeholder={t("common.selectCategory")} />
                               </SelectTrigger>
                               <SelectContent>
                                 {NEWS_CATEGORIES.map((cat) => (

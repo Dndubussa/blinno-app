@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 import { Loader2, Play, Lock, CheckCircle } from "lucide-react";
 
 interface Course {
@@ -41,6 +42,7 @@ export default function CourseViewer() {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [course, setCourse] = useState<Course | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [enrolled, setEnrolled] = useState(false);
@@ -75,7 +77,7 @@ export default function CourseViewer() {
     } catch (error: any) {
       console.error("Error fetching course data:", error);
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: error.message || "Failed to load course data",
         variant: "destructive",
       });
@@ -95,7 +97,7 @@ export default function CourseViewer() {
       // In a real implementation, you would call an enroll API endpoint
       setEnrolled(true);
       toast({
-        title: "Success",
+        title: t("common.success"),
         description: "You have been enrolled in this course!",
       });
       
@@ -106,7 +108,7 @@ export default function CourseViewer() {
     } catch (error: any) {
       console.error("Error enrolling in course:", error);
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: error.message || "Failed to enroll in course",
         variant: "destructive",
       });

@@ -49,7 +49,7 @@ export default function FeaturedCreators() {
         ) : creators.length === 0 ? (
           <Card>
             <CardContent className="p-6 text-center">
-              <p className="text-muted-foreground">{t("common.noResults") || "No featured creators found."}</p>
+              <p className="text-muted-foreground">{t("common.noResults")}</p>
             </CardContent>
           </Card>
         ) : (
@@ -80,7 +80,7 @@ export default function FeaturedCreators() {
                     <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                     <span className="text-sm font-semibold">{creator.rating || 0}</span>
                     <span className="text-sm text-muted-foreground">
-                      ({creator.reviews_count || 0} {t("common.reviews") || "reviews"})
+                      ({creator.reviews_count || 0} {t("common.reviews")})
                     </span>
                   </div>
                   {creator.location && (

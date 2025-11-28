@@ -209,7 +209,7 @@ export const Footer = () => {
         {/* TrustPilot Widget */}
         <div className="border-t border-border mt-8 pt-8">
           <div className="mb-6">
-            <h3 className="font-semibold text-foreground mb-4 text-center">Trusted by our community</h3>
+            <h3 className="font-semibold text-foreground mb-4 text-center">{t("footer.trustedByCommunity")}</h3>
             <TrustPilotWidget className="flex justify-center" />
           </div>
         </div>

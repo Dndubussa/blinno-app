@@ -5,6 +5,23 @@ import { sendWelcomeEmail, sendPasswordResetEmail } from '../services/emailServi
 
 const router = express.Router();
 
+// Password validation function
+const validatePasswordRequirements = (password: string): { isValid: boolean; error?: string } => {
+  if (password.length < 8) {
+    return { isValid: false, error: 'Password must be at least 8 characters long' };
+  }
+  if (!/[A-Z]/.test(password)) {
+    return { isValid: false, error: 'Password must contain at least one capital letter' };
+  }
+  if (!/[0-9]/.test(password)) {
+    return { isValid: false, error: 'Password must contain at least one number' };
+  }
+  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+    return { isValid: false, error: 'Password must contain at least one special character' };
+  }
+  return { isValid: true };
+};
+
 // Register
 router.post('/register', async (req, res) => {
   try {
@@ -16,6 +33,12 @@ router.post('/register', async (req, res) => {
 
     if (!termsAccepted) {
       return res.status(400).json({ error: 'You must accept the Terms of Service to create an account' });
+    }
+
+    // Validate password requirements
+    const passwordValidation = validatePasswordRequirements(password);
+    if (!passwordValidation.isValid) {
+      return res.status(400).json({ error: passwordValidation.error });
     }
 
     // Create user with Supabase Auth

@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 import { 
   Plus, 
   Loader2, 
@@ -33,6 +34,7 @@ export default function EducatorDashboard() {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { t } = useTranslation();
   
   // Get current section from URL hash or default to overview
   const currentSection = location.hash.replace('#', '') || 'overview';
@@ -91,7 +93,7 @@ export default function EducatorDashboard() {
 
       if (!userHasRole && primaryRole !== 'educator') {
         toast({
-          title: "Access Denied",
+          title: t("common.accessDenied"),
           description: "This dashboard is only available for educators.",
           variant: "destructive",
         });
@@ -103,7 +105,7 @@ export default function EducatorDashboard() {
     } catch (error: any) {
       console.error('Error checking role:', error);
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: "Failed to verify access.",
         variant: "destructive",
       });
@@ -140,7 +142,7 @@ export default function EducatorDashboard() {
     } catch (error: any) {
       console.error("Error fetching data:", error);
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: "Failed to load dashboard data",
         variant: "destructive",
       });
@@ -163,13 +165,13 @@ export default function EducatorDashboard() {
         isPublished,
       });
       
-      toast({ title: "Success", description: "Course created!" });
+      toast({ title: t("common.success"), description: t("common.courseCreated") });
       setShowAddCourse(false);
       setFormData({ title: "", description: "", category: "", level: "all", price: "", image_url: "" });
       setIsPublished(false);
       fetchData();
     } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to create course", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("common.failedToCreate"), variant: "destructive" });
     }
   };
 
@@ -197,63 +199,63 @@ export default function EducatorDashboard() {
         isPreview,
       });
       
-      toast({ title: "Success", description: "Lesson created!" });
+      toast({ title: t("common.success"), description: t("common.lessonCreated") });
       setShowAddLesson(false);
       setSelectedCourse("");
       setIsPreview(false);
       fetchData();
     } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to create lesson", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("common.failedToCreate"), variant: "destructive" });
     }
   };
 
   const handleUpdateCourse = async (id: string, data: any) => {
     try {
       await api.updateCourse(id, data);
-      toast({ title: "Success", description: "Course updated!" });
+      toast({ title: t("common.success"), description: t("common.courseUpdated") });
       fetchData();
     } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to update course", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("common.failedToUpdate"), variant: "destructive" });
     }
   };
 
   const handleDeleteCourse = async (id: string) => {
     try {
       await api.deleteCourse(id);
-      toast({ title: "Success", description: "Course deleted!" });
+      toast({ title: t("common.success"), description: t("common.courseDeleted") });
       fetchData();
     } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to delete course", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("common.failedToDelete"), variant: "destructive" });
     }
   };
 
   const handleUpdateLesson = async (id: string, data: any) => {
     try {
       await api.updateLesson(id, data);
-      toast({ title: "Success", description: "Lesson updated!" });
+      toast({ title: t("common.success"), description: t("common.lessonUpdated") });
       fetchData();
     } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to update lesson", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("common.failedToUpdate"), variant: "destructive" });
     }
   };
 
   const handleDeleteLesson = async (id: string) => {
     try {
       await api.deleteLesson(id);
-      toast({ title: "Success", description: "Lesson deleted!" });
+      toast({ title: t("common.success"), description: t("common.lessonDeleted") });
       fetchData();
     } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to delete lesson", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("common.failedToDelete"), variant: "destructive" });
     }
   };
 
   const handleUpdateEnrollmentStatus = async (enrollmentId: string, status: string) => {
     try {
       await api.updateCourseEnrollmentStatus(enrollmentId, status);
-      toast({ title: "Success", description: "Enrollment status updated!" });
+      toast({ title: t("common.success"), description: t("common.enrollmentStatusUpdated") });
       fetchData();
     } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to update enrollment status", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("common.failedToUpdate"), variant: "destructive" });
     }
   };
 
@@ -549,7 +551,7 @@ export default function EducatorDashboard() {
                           <Label htmlFor="course-select">Course</Label>
                           <Select value={selectedCourse} onValueChange={setSelectedCourse} required>
                             <SelectTrigger id="course-select">
-                              <SelectValue placeholder="Select a course" />
+                              <SelectValue placeholder={t("common.selectCourse")} />
                             </SelectTrigger>
                             <SelectContent>
                               {courses.map((course) => (

@@ -72,7 +72,7 @@ export const Testimonials = () => {
                 <div className="p-1">
                   <Card className="h-full">
                     <CardContent className="flex flex-col items-center p-6 text-center">
-                      <p className="text-muted-foreground">No testimonials available.</p>
+                      <p className="text-muted-foreground">{t("homepage.testimonials.noTestimonialsAvailable")}</p>
                     </CardContent>
                   </Card>
                 </div>
@@ -130,8 +130,8 @@ export const Testimonials = () => {
         {/* TrustPilot Widget */}
         <div className="mt-12 mb-8">
           <div className="text-center mb-4">
-            <h3 className="text-lg font-semibold text-foreground mb-2">See what others are saying</h3>
-            <p className="text-sm text-muted-foreground">Read reviews from our community on TrustPilot</p>
+            <h3 className="text-lg font-semibold text-foreground mb-2">{t("homepage.testimonials.seeWhatOthersSaying")}</h3>
+            <p className="text-sm text-muted-foreground">{t("homepage.testimonials.readReviewsOnTrustPilot")}</p>
           </div>
           <TrustPilotWidget className="flex justify-center" />
         </div>

@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 import { 
   Trash2, 
   Plus, 
@@ -46,6 +47,7 @@ export default function EventOrganizerDashboard() {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { t } = useTranslation();
   
   // Get current section from URL hash or default to overview
   const currentSection = location.hash.replace('#', '') || 'overview';
@@ -96,7 +98,7 @@ export default function EventOrganizerDashboard() {
 
       if (!userHasRole && primaryRole !== 'event_organizer') {
         toast({
-          title: "Access Denied",
+          title: t("common.accessDenied"),
           description: "This dashboard is only available for event organizers.",
           variant: "destructive",
         });
@@ -108,8 +110,8 @@ export default function EventOrganizerDashboard() {
     } catch (error: any) {
       console.error('Error checking role:', error);
       toast({
-        title: "Error",
-        description: "Failed to verify access.",
+        title: t("common.error"),
+        description: error.message || t("common.error"),
         variant: "destructive",
       });
       navigate("/dashboard");
@@ -142,8 +144,8 @@ export default function EventOrganizerDashboard() {
     } catch (error: any) {
       console.error("Error fetching data:", error);
       toast({
-        title: "Error",
-        description: "Failed to fetch data.",
+        title: t("common.error"),
+        description: error.message || t("common.error"),
         variant: "destructive",
       });
     }
@@ -184,8 +186,8 @@ export default function EventOrganizerDashboard() {
       });
 
       toast({
-        title: "Success",
-        description: "Event created successfully!",
+        title: t("common.success"),
+        description: t("common.eventCreated") || "Event created successfully!",
       });
       
       setShowAddEvent(false);
@@ -196,8 +198,8 @@ export default function EventOrganizerDashboard() {
       fetchData();
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: error.message,
+        title: t("common.error"),
+        description: error.message || t("common.failedToCreate"),
         variant: "destructive",
       });
     }
@@ -210,8 +212,8 @@ export default function EventOrganizerDashboard() {
       await api.deleteOrganizedEvent(id);
 
       toast({
-        title: "Success",
-        description: "Event deleted successfully!",
+        title: t("common.success"),
+        description: t("common.eventDeleted") || "Event deleted successfully!",
       });
       fetchData();
     } catch (error: any) {
@@ -228,8 +230,8 @@ export default function EventOrganizerDashboard() {
       await api.updateOrganizedEvent(id, data);
 
       toast({
-        title: "Success",
-        description: "Event updated successfully!",
+        title: t("common.success"),
+        description: t("common.eventUpdated") || "Event updated successfully!",
       });
       fetchData();
     } catch (error: any) {
@@ -246,14 +248,14 @@ export default function EventOrganizerDashboard() {
       await api.updateEventRegistrationStatus(registrationId, newStatus);
 
       toast({
-        title: "Success",
-        description: "Registration status updated!",
+        title: t("common.success"),
+        description: t("common.registrationStatusUpdated") || "Registration status updated!",
       });
       fetchData();
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: error.message,
+        title: t("common.error"),
+        description: error.message || t("common.failedToDelete"),
         variant: "destructive",
       });
     }
@@ -276,13 +278,13 @@ export default function EventOrganizerDashboard() {
       await api.updateProfile(profileData);
 
       toast({
-        title: "Success",
-        description: "Profile updated successfully!",
+        title: t("common.success"),
+        description: t("common.profileUpdated") || "Profile updated successfully!",
       });
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: error.message,
+        title: t("common.error"),
+        description: error.message || t("common.failedToUpdate"),
         variant: "destructive",
       });
     } finally {
@@ -445,7 +447,7 @@ export default function EventOrganizerDashboard() {
                             <Label htmlFor="category">Category</Label>
                             <Select name="category" required>
                               <SelectTrigger>
-                                <SelectValue placeholder="Select category" />
+                                <SelectValue placeholder={t("common.selectCategory")} />
                               </SelectTrigger>
                               <SelectContent>
                                 {EVENT_CATEGORIES.map((cat) => (
@@ -458,7 +460,7 @@ export default function EventOrganizerDashboard() {
                             <Label htmlFor="event_type">Event Type</Label>
                             <Select name="event_type" required>
                               <SelectTrigger>
-                                <SelectValue placeholder="Select type" />
+                                <SelectValue placeholder={t("common.selectType")} />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="conference">Conference</SelectItem>

@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ArrowLeft, User, Briefcase, Palette, Store, Home, UtensilsCrossed, GraduationCap, Newspaper, Wrench, Calendar, Music } from "lucide-react";
+import { Loader2, ArrowLeft, User, Briefcase, Palette, Store, Home, UtensilsCrossed, GraduationCap, Newspaper, Wrench, Calendar, Music, CheckCircle2, XCircle } from "lucide-react";
+import { validatePassword, validatePasswordMatch } from "@/lib/passwordValidation";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import logo from "@/assets/logo.png";
@@ -22,6 +23,9 @@ export default function SignUp() {
   const [selectedCountry, setSelectedCountry] = useState("");
   const [selectedPhoneCode, setSelectedPhoneCode] = useState("+1");
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordValidation, setPasswordValidation] = useState<ReturnType<typeof validatePassword> | null>(null);
   const { signUp, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -51,13 +55,43 @@ export default function SignUp() {
     }
   }, [selectedCountry]);
 
+  const handlePasswordChange = (value: string) => {
+    setPassword(value);
+    if (value.length > 0) {
+      setPasswordValidation(validatePassword(value));
+    } else {
+      setPasswordValidation(null);
+    }
+  };
+
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
     if (!termsAccepted) {
       toast({
-        title: "Terms Required",
-        description: "You must accept the Terms of Service to create an account.",
+        title: t("common.termsRequired"),
+        description: t("auth.signUp.mustAcceptTerms") || "You must accept the Terms of Service to create an account.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate password
+    const validation = validatePassword(password);
+    if (!validation.isValid) {
+      toast({
+        title: t("common.invalidPassword"),
+        description: validation.errors.join(", "),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate password match
+    if (!validatePasswordMatch(password, confirmPassword)) {
+      toast({
+        title: t("common.passwordMismatch"),
+        description: t("auth.signUp.passwordsDoNotMatch") || "Passwords do not match. Please try again.",
         variant: "destructive",
       });
       return;
@@ -67,7 +101,6 @@ export default function SignUp() {
     
     const formData = new FormData(e.currentTarget);
     const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
     const firstName = formData.get("firstName") as string;
     const middleName = formData.get("middleName") as string;
     const lastName = formData.get("lastName") as string;
@@ -87,15 +120,15 @@ export default function SignUp() {
     
     if (error) {
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: error.message,
         variant: "destructive",
       });
       setIsLoading(false);
     } else {
       toast({
-        title: "Success",
-        description: "Account created successfully! Please check your email to verify your account before accessing the platform.",
+        title: t("common.success"),
+        description: t("auth.signUp.accountCreatedSuccess") || "Account created successfully! Please check your email to verify your account before accessing the platform.",
       });
       // Navigation is handled by AuthContext.signUp
     }
@@ -107,7 +140,7 @@ export default function SignUp() {
       await signInWithGoogle();
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -201,8 +234,75 @@ export default function SignUp() {
                     id="password"
                     name="password"
                     type="password"
+                    value={password}
+                    onChange={(e) => handlePasswordChange(e.target.value)}
                     required
+                    className={passwordValidation && !passwordValidation.isValid ? "border-destructive" : ""}
                   />
+                  {passwordValidation && (
+                    <div className="space-y-1 text-sm">
+                      <div className={`flex items-center gap-2 ${passwordValidation.requirements.minLength ? "text-green-600" : "text-muted-foreground"}`}>
+                        {passwordValidation.requirements.minLength ? (
+                          <CheckCircle2 className="h-4 w-4" />
+                        ) : (
+                          <XCircle className="h-4 w-4" />
+                        )}
+                        <span>At least 8 characters</span>
+                      </div>
+                      <div className={`flex items-center gap-2 ${passwordValidation.requirements.hasCapital ? "text-green-600" : "text-muted-foreground"}`}>
+                        {passwordValidation.requirements.hasCapital ? (
+                          <CheckCircle2 className="h-4 w-4" />
+                        ) : (
+                          <XCircle className="h-4 w-4" />
+                        )}
+                        <span>One capital letter</span>
+                      </div>
+                      <div className={`flex items-center gap-2 ${passwordValidation.requirements.hasNumber ? "text-green-600" : "text-muted-foreground"}`}>
+                        {passwordValidation.requirements.hasNumber ? (
+                          <CheckCircle2 className="h-4 w-4" />
+                        ) : (
+                          <XCircle className="h-4 w-4" />
+                        )}
+                        <span>One number</span>
+                      </div>
+                      <div className={`flex items-center gap-2 ${passwordValidation.requirements.hasSpecial ? "text-green-600" : "text-muted-foreground"}`}>
+                        {passwordValidation.requirements.hasSpecial ? (
+                          <CheckCircle2 className="h-4 w-4" />
+                        ) : (
+                          <XCircle className="h-4 w-4" />
+                        )}
+                        <span>One special character</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm Password</Label>
+                  <Input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    className={confirmPassword && !validatePasswordMatch(password, confirmPassword) ? "border-destructive" : ""}
+                  />
+                  {confirmPassword && (
+                    <div className="text-sm">
+                      {validatePasswordMatch(password, confirmPassword) ? (
+                        <div className="flex items-center gap-2 text-green-600">
+                          <CheckCircle2 className="h-4 w-4" />
+                          <span>Passwords match</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 text-destructive">
+                          <XCircle className="h-4 w-4" />
+                          <span>Passwords do not match</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -250,7 +350,7 @@ export default function SignUp() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="role">{t("auth.signUp.iWantToJoinAs")}</Label>
+                  <Label htmlFor="role">{t("auth.iWantToJoinAs")}</Label>
                   <Select value={selectedRole} onValueChange={(value: 'user' | 'creator' | 'freelancer' | 'seller' | 'lodging' | 'restaurant' | 'educator' | 'journalist' | 'artisan' | 'employer' | 'event_organizer' | 'musician') => setSelectedRole(value)}>
                     <SelectTrigger id="role">
                       <SelectValue placeholder={t("auth.signUp.role")} />
@@ -331,7 +431,7 @@ export default function SignUp() {
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">
-                    {t("auth.signUp.chooseHowToUse")}
+                    {t("auth.chooseHowToUse")}
                   </p>
                 </div>
                 
@@ -359,7 +459,11 @@ export default function SignUp() {
                   </label>
                 </div>
                 
-                <Button type="submit" className="w-full" disabled={isLoading || !termsAccepted}>
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={isLoading || !termsAccepted || !passwordValidation?.isValid || (confirmPassword.length > 0 && !validatePasswordMatch(password, confirmPassword))}
+                >
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {t("auth.signUp.title")}
                 </Button>
@@ -404,7 +508,7 @@ export default function SignUp() {
               </form>
               
               <div className="mt-6 text-center text-sm">
-                <span className="text-muted-foreground">{t("auth.alreadyHaveAccount") || "Already have an account? "}</span>
+                <span className="text-muted-foreground">{t("auth.signUp.hasAccount")}</span>
                 <Button variant="link" className="p-0 h-auto" onClick={() => navigate("/signin")}>
                   {t("auth.signIn.title")}
                 </Button>

@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { Bell, BellOff, Settings, CheckCircle, Trash2, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -19,6 +20,7 @@ export default function Notifications() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -45,7 +47,7 @@ export default function Notifications() {
     } catch (error: any) {
       console.error("Error fetching notifications:", error);
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: "Failed to load notifications",
         variant: "destructive",
       });
@@ -77,7 +79,7 @@ export default function Notifications() {
       await api.markAllNotificationsRead();
       await fetchNotifications();
       toast({
-        title: "All marked as read",
+        title: t("common.allMarkedAsRead"),
         description: "All notifications have been marked as read",
       });
     } catch (error) {
@@ -90,7 +92,7 @@ export default function Notifications() {
       await api.deleteNotification(notificationId);
       await fetchNotifications();
       toast({
-        title: "Notification deleted",
+        title: t("common.notificationDeleted"),
       });
     } catch (error) {
       console.error("Error deleting notification:", error);
@@ -122,13 +124,13 @@ export default function Notifications() {
       await api.updateNotificationPreferences(updated);
       setPreferences(updated);
       toast({
-        title: "Preferences updated",
+        title: t("common.preferencesUpdated"),
         description: "Your notification preferences have been saved",
       });
     } catch (error) {
       console.error("Error updating preferences:", error);
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: "Failed to update preferences",
         variant: "destructive",
       });

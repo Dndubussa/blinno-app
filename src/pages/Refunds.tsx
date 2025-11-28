@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, DollarSign, Clock, CheckCircle, XCircle, AlertCircle, Plus } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +22,7 @@ export default function Refunds() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [refunds, setRefunds] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showRequestDialog, setShowRequestDialog] = useState(false);
@@ -48,7 +50,7 @@ export default function Refunds() {
     } catch (error: any) {
       console.error("Error fetching refunds:", error);
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: "Failed to load refunds",
         variant: "destructive",
       });
@@ -69,7 +71,7 @@ export default function Refunds() {
   const handleRequestRefund = async () => {
     if (!refundForm.orderId || !refundForm.reason) {
       toast({
-        title: "Missing information",
+        title: t("common.missingInformation"),
         description: "Please select an order and provide a reason",
         variant: "destructive",
       });
@@ -84,7 +86,7 @@ export default function Refunds() {
       });
 
       toast({
-        title: "Refund requested",
+        title: t("common.refundRequested"),
         description: "Your refund request has been submitted",
       });
 
@@ -93,7 +95,7 @@ export default function Refunds() {
       await fetchRefunds();
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: error.message || "Failed to request refund",
         variant: "destructive",
       });
@@ -203,7 +205,7 @@ export default function Refunds() {
                       }}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select an order" />
+                        <SelectValue placeholder={t("common.selectOrder")} />
                       </SelectTrigger>
                       <SelectContent>
                         {orders.map((order) => (

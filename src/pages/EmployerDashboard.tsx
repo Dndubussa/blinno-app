@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 import { 
   Trash2, 
   Plus, 
@@ -46,6 +47,7 @@ export default function EmployerDashboard() {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { t } = useTranslation();
   
   // Get current section from URL hash or default to overview
   const currentSection = location.hash.replace('#', '') || 'overview';
@@ -95,7 +97,7 @@ export default function EmployerDashboard() {
 
       if (!userHasRole && primaryRole !== 'employer') {
         toast({
-          title: "Access Denied",
+          title: t("common.accessDenied"),
           description: "This dashboard is only available for employers.",
           variant: "destructive",
         });
@@ -107,7 +109,7 @@ export default function EmployerDashboard() {
     } catch (error: any) {
       console.error('Error checking role:', error);
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: "Failed to verify access.",
         variant: "destructive",
       });
@@ -141,7 +143,7 @@ export default function EmployerDashboard() {
     } catch (error: any) {
       console.error("Error fetching data:", error);
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: "Failed to load dashboard data",
         variant: "destructive",
       });
@@ -174,7 +176,7 @@ export default function EmployerDashboard() {
       });
 
       toast({
-        title: "Success",
+        title: t("common.success"),
         description: "Job posting created successfully!",
       });
       
@@ -185,7 +187,7 @@ export default function EmployerDashboard() {
       fetchData();
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -199,13 +201,13 @@ export default function EmployerDashboard() {
       await api.deleteJobPosting(id);
 
       toast({
-        title: "Success",
+        title: t("common.success"),
         description: "Job posting deleted successfully!",
       });
       fetchData();
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -217,13 +219,13 @@ export default function EmployerDashboard() {
       await api.updateJobPosting(id, data);
 
       toast({
-        title: "Success",
+        title: t("common.success"),
         description: "Job posting updated successfully!",
       });
       fetchData();
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -235,13 +237,13 @@ export default function EmployerDashboard() {
       await api.updateJobApplicationStatus(applicationId, newStatus);
 
       toast({
-        title: "Success",
+        title: t("common.success"),
         description: "Application status updated!",
       });
       fetchData();
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -265,12 +267,12 @@ export default function EmployerDashboard() {
       await api.updateProfile(profileData);
 
       toast({
-        title: "Success",
+        title: t("common.success"),
         description: "Profile updated successfully!",
       });
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -432,7 +434,7 @@ export default function EmployerDashboard() {
                             <Label htmlFor="category">Category</Label>
                             <Select name="category" required>
                               <SelectTrigger>
-                                <SelectValue placeholder="Select category" />
+                                <SelectValue placeholder={t("common.selectCategory")} />
                               </SelectTrigger>
                               <SelectContent>
                                 {JOB_CATEGORIES.map((cat) => (

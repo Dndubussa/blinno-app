@@ -11,12 +11,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
 
 export default function Booking() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const creatorId = searchParams.get("creator");
   
@@ -43,7 +45,7 @@ export default function Booking() {
     } catch (error: any) {
       console.error("Error fetching creator:", error);
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: "Failed to load creator information",
         variant: "destructive",
       });
@@ -67,12 +69,12 @@ export default function Booking() {
         notes: formData.get("notes") as string,
       });
 
-      toast({ title: "Success", description: "Booking request sent!" });
+      toast({ title: t("common.success"), description: t("common.bookingRequestSent") });
       navigate("/dashboard");
     } catch (error: any) {
       console.error("Error creating booking:", error);
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: error.message || "Failed to send booking request",
         variant: "destructive",
       });

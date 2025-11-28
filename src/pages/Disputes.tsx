@@ -65,7 +65,7 @@ export default function Disputes() {
   const handleCreateDispute = async () => {
     if (!disputeForm.disputeType || !disputeForm.respondentId || !disputeForm.title || !disputeForm.description) {
       toast({
-        title: "Missing information",
+        title: t("common.missingInformation"),
         description: "Please fill in all required fields",
         variant: "destructive",
       });
@@ -84,7 +84,7 @@ export default function Disputes() {
       });
 
       toast({
-        title: "Dispute created",
+        title: t("common.disputeCreated"),
         description: "Your dispute has been submitted",
       });
 
@@ -194,7 +194,7 @@ export default function Disputes() {
                       }
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select dispute type" />
+                        <SelectValue placeholder={t("common.selectDisputeType")} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="order">Order Issue</SelectItem>
@@ -444,7 +444,7 @@ function DisputeDetailsDialog({ dispute, open, onClose, onRefresh }: any) {
       setNewMessage("");
       await fetchDisputeDetails();
       toast({
-        title: "Message sent",
+        title: t("common.messageSent"),
         description: "Your message has been added to the dispute",
       });
     } catch (error: any) {

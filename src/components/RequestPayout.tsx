@@ -194,7 +194,7 @@ export function RequestPayout() {
                     type="number"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    placeholder="Enter amount"
+                    placeholder={t("common.enterAmount")}
                     min="25"
                     max={earnings?.pendingEarnings}
                     required

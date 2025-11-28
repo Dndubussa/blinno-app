@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 export default function CreatorProfile() {
   const { id } = useParams();
@@ -37,6 +38,7 @@ export default function CreatorProfile() {
   const [followStats, setFollowStats] = useState({ followers: 0, following: 0 });
   const [inWishlist, setInWishlist] = useState(false);
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const fetchCreatorData = async () => {
     if (!id) return;
@@ -70,7 +72,7 @@ export default function CreatorProfile() {
     } catch (error: any) {
       console.error("Error fetching creator data:", error);
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: "Failed to load creator profile",
         variant: "destructive",
       });
@@ -90,14 +92,14 @@ export default function CreatorProfile() {
         await api.unfollowUser(id);
         setIsFollowing(false);
         toast({
-          title: "Unfollowed",
+          title: t("common.unfollowed"),
           description: "You unfollowed this creator",
         });
       } else {
         await api.followUser(id);
         setIsFollowing(true);
         toast({
-          title: "Following",
+          title: t("common.following"),
           description: "You are now following this creator",
         });
       }
@@ -105,7 +107,7 @@ export default function CreatorProfile() {
       setFollowStats(stats);
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: error.message || "Failed to update follow status",
         variant: "destructive",
       });
@@ -134,7 +136,7 @@ export default function CreatorProfile() {
           });
           setInWishlist(false);
           toast({
-            title: "Removed from wishlist",
+            title: t("common.removedFromWishlist"),
           });
         } else {
           await api.addWishlistItem(wishlists[0].id, {
@@ -143,13 +145,13 @@ export default function CreatorProfile() {
           });
           setInWishlist(true);
           toast({
-            title: "Added to wishlist",
+            title: t("common.addedToWishlist"),
           });
         }
       }
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: error.message || "Failed to update wishlist",
         variant: "destructive",
       });
@@ -164,7 +166,7 @@ export default function CreatorProfile() {
 
     if (!reviewComment.trim()) {
       toast({
-        title: "Comment required",
+        title: t("common.commentRequired"),
         description: "Please provide a review comment",
         variant: "destructive",
       });
@@ -180,7 +182,7 @@ export default function CreatorProfile() {
       });
 
       toast({
-        title: "Review submitted",
+        title: t("common.reviewSubmitted"),
         description: "Thank you for your review!",
       });
 
@@ -191,7 +193,7 @@ export default function CreatorProfile() {
     } catch (error: any) {
       console.error("Error submitting review:", error);
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: error.message || "Failed to submit review",
         variant: "destructive",
       });

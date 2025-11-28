@@ -36,8 +36,8 @@ export default function SignIn() {
       navigate(from, { replace: true });
     } catch (error: any) {
       toast({
-        title: t("auth.signIn.error") || "Sign in failed",
-        description: error.message || t("auth.signIn.errorDescription") || "Please check your credentials and try again.",
+        title: t("auth.signIn.error"),
+        description: error.message || t("auth.signIn.errorDescription"),
         variant: "destructive",
       });
     } finally {
@@ -51,8 +51,8 @@ export default function SignIn() {
       await signInWithGoogle();
     } catch (error: any) {
       toast({
-        title: t("auth.signIn.error") || "Sign in failed",
-        description: error.message || "Failed to sign in with Google.",
+        title: t("auth.signIn.error"),
+        description: error.message || t("auth.signIn.errorDescription"),
         variant: "destructive",
       });
     } finally {
@@ -164,7 +164,7 @@ export default function SignIn() {
               </form>
               
               <div className="mt-6 text-center text-sm">
-                <span className="text-muted-foreground">{t("auth.dontHaveAccount") || "Don't have an account? "}</span>
+                <span className="text-muted-foreground">{t("auth.signIn.noAccount")}</span>
                 <Button variant="link" className="p-0 h-auto" onClick={() => navigate("/signup")}>
                   {t("auth.signUp.title")}
                 </Button>

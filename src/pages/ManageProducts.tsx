@@ -34,6 +34,7 @@ import { Plus, Edit, Trash2, Loader2, Image as ImageIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { ImageUpload } from "@/components/ImageUpload";
 import type { Tables } from "@/integrations/supabase/types";
@@ -44,6 +45,7 @@ type Product = Tables<"products">;
 const ManageProducts = () => {
   const { user, profile } = useAuth();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -343,7 +345,7 @@ const ManageProducts = () => {
                         required
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select category" />
+                          <SelectValue placeholder={t("common.selectCategory")} />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="Books">Books</SelectItem>

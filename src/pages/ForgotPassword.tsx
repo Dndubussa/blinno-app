@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 import { Loader2, ArrowLeft } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { SEO } from "@/components/SEO";
@@ -15,6 +16,7 @@ export default function ForgotPassword() {
   const [emailSent, setEmailSent] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -27,12 +29,12 @@ export default function ForgotPassword() {
       await api.forgotPassword(email);
       setEmailSent(true);
       toast({
-        title: "Email Sent",
+        title: t("common.emailSent"),
         description: "If an account exists with this email, you'll receive a password reset link shortly.",
       });
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: error.response?.data?.error || "Failed to send reset email. Please try again.",
         variant: "destructive",
       });

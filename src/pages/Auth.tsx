@@ -67,8 +67,8 @@ export default function Auth() {
     
     if (!termsAccepted) {
       toast({
-        title: "Terms Required",
-        description: "You must accept the Terms of Service to create an account.",
+        title: t("common.termsRequired"),
+        description: t("auth.signUp.mustAcceptTerms"),
         variant: "destructive",
       });
       return;
@@ -98,15 +98,15 @@ export default function Auth() {
     
     if (error) {
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: error.message,
         variant: "destructive",
       });
       setIsLoading(false);
     } else {
       toast({
-        title: "Success",
-        description: "Account created successfully! Please check your email to verify your account before accessing the platform.",
+        title: t("common.success"),
+        description: t("auth.signUp.accountCreatedSuccess"),
       });
       // Navigation is handled by AuthContext.signUp
     }
@@ -124,7 +124,7 @@ export default function Auth() {
     
     if (error) {
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -141,7 +141,7 @@ export default function Auth() {
     
     if (error) {
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -383,7 +383,7 @@ export default function Auth() {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="signup-role">{t("auth.signUp.iWantToJoinAs")}</Label>
+                      <Label htmlFor="signup-role">{t("auth.iWantToJoinAs")}</Label>
                       <Select value={selectedRole} onValueChange={(value: 'user' | 'creator' | 'freelancer' | 'seller' | 'lodging' | 'restaurant' | 'educator' | 'journalist' | 'artisan' | 'employer' | 'event_organizer' | 'musician') => setSelectedRole(value)}>
                         <SelectTrigger id="signup-role">
                           <SelectValue placeholder={t("auth.signUp.role")} />
@@ -464,7 +464,7 @@ export default function Auth() {
                         </SelectContent>
                       </Select>
                       <p className="text-xs text-muted-foreground">
-                        {t("auth.signUp.chooseHowToUse")}
+                        {t("auth.chooseHowToUse")}
                       </p>
                     </div>
                     

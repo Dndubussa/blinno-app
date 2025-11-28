@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 import { 
   Plus, 
   Loader2, 
@@ -34,6 +35,7 @@ export default function RestaurantDashboard() {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { t } = useTranslation();
   
   // Get current section from URL hash or default to overview
   const currentSection = location.hash.replace('#', '') || 'overview';
@@ -84,7 +86,7 @@ export default function RestaurantDashboard() {
 
       if (!userHasRole && primaryRole !== 'restaurant') {
         toast({
-          title: "Access Denied",
+          title: t("common.accessDenied"),
           description: "This dashboard is only available for restaurant owners.",
           variant: "destructive",
         });
@@ -96,7 +98,7 @@ export default function RestaurantDashboard() {
     } catch (error: any) {
       console.error('Error checking role:', error);
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: "Failed to verify access.",
         variant: "destructive",
       });
@@ -133,7 +135,7 @@ export default function RestaurantDashboard() {
     } catch (error: any) {
       console.error("Error fetching data:", error);
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: "Failed to load dashboard data",
         variant: "destructive",
       });
@@ -162,31 +164,31 @@ export default function RestaurantDashboard() {
 
     try {
       await api.createRestaurant(restaurantData);
-      toast({ title: "Success", description: "Restaurant created!" });
+      toast({ title: t("common.success"), description: t("common.restaurantCreated") });
       setShowAddRestaurant(false);
       fetchData();
     } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to create restaurant", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("common.failedToCreate"), variant: "destructive" });
     }
   };
 
   const handleUpdateRestaurant = async (id: string, data: any) => {
     try {
       await api.updateRestaurant(id, data);
-      toast({ title: "Success", description: "Restaurant updated!" });
+      toast({ title: t("common.success"), description: t("common.restaurantUpdated") });
       fetchData();
     } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to update restaurant", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("common.failedToUpdate"), variant: "destructive" });
     }
   };
 
   const handleDeleteRestaurant = async (id: string) => {
     try {
       await api.deleteRestaurant(id);
-      toast({ title: "Success", description: "Restaurant deleted!" });
+      toast({ title: t("common.success"), description: t("common.restaurantDeleted") });
       fetchData();
     } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to delete restaurant", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("common.failedToDelete"), variant: "destructive" });
     }
   };
 
@@ -205,42 +207,42 @@ export default function RestaurantDashboard() {
 
     try {
       await api.createMenuItem(menuItemData);
-      toast({ title: "Success", description: "Menu item created!" });
+      toast({ title: t("common.success"), description: t("common.menuItemCreated") });
       setShowAddMenuItem(false);
       fetchData();
     } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to create menu item", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("common.failedToCreate"), variant: "destructive" });
     }
   };
 
   const handleUpdateMenuItem = async (id: string, data: any) => {
     try {
       await api.updateMenuItem(id, data);
-      toast({ title: "Success", description: "Menu item updated!" });
+      toast({ title: t("common.success"), description: t("common.menuItemUpdated") });
       fetchData();
     } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to update menu item", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("common.failedToUpdate"), variant: "destructive" });
     }
   };
 
   const handleDeleteMenuItem = async (id: string) => {
     try {
       await api.deleteMenuItem(id);
-      toast({ title: "Success", description: "Menu item deleted!" });
+      toast({ title: t("common.success"), description: t("common.menuItemDeleted") });
       fetchData();
     } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to delete menu item", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("common.failedToDelete"), variant: "destructive" });
     }
   };
 
   const handleUpdateReservationStatus = async (reservationId: string, newStatus: string) => {
     try {
       await api.updateRestaurantReservationStatus(reservationId, newStatus);
-      toast({ title: "Success", description: "Reservation status updated!" });
+      toast({ title: t("common.success"), description: t("common.reservationStatusUpdated") });
       fetchData();
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: error.message || "Failed to update reservation status",
         variant: "destructive",
       });
@@ -420,7 +422,7 @@ export default function RestaurantDashboard() {
                             <Label htmlFor="price_range">Price Range</Label>
                             <Select name="price_range">
                               <SelectTrigger>
-                                <SelectValue placeholder="Select price range" />
+                                <SelectValue placeholder={t("common.selectPriceRange")} />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="$">$ - Budget</SelectItem>
@@ -548,7 +550,7 @@ export default function RestaurantDashboard() {
                           <Label htmlFor="restaurant-select">Restaurant</Label>
                           <Select value={selectedRestaurant} onValueChange={setSelectedRestaurant} required>
                             <SelectTrigger id="restaurant-select">
-                              <SelectValue placeholder="Select a restaurant" />
+                              <SelectValue placeholder={t("common.selectRestaurant")} />
                             </SelectTrigger>
                             <SelectContent>
                               {restaurants.map((restaurant) => (

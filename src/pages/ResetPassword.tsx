@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 import { Loader2, ArrowLeft } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { SEO } from "@/components/SEO";
@@ -16,6 +17,7 @@ export default function ResetPassword() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
   
   const token = searchParams.get("token");
 
@@ -30,7 +32,7 @@ export default function ResetPassword() {
     // Validate passwords match
     if (password !== confirmPassword) {
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: "Passwords do not match.",
         variant: "destructive",
       });
@@ -41,7 +43,7 @@ export default function ResetPassword() {
     // Validate password strength
     if (password.length < 8) {
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: "Password must be at least 8 characters long.",
         variant: "destructive",
       });
@@ -53,12 +55,12 @@ export default function ResetPassword() {
       await api.resetPassword(token!, password);
       setPasswordReset(true);
       toast({
-        title: "Success",
+        title: t("common.success"),
         description: "Your password has been reset successfully.",
       });
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: error.response?.data?.error || "Failed to reset password. Please try again.",
         variant: "destructive",
       });

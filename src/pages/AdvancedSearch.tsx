@@ -9,6 +9,7 @@ import { api } from "@/lib/api";
 import { useSearchParams } from "react-router-dom";
 import { Search, Filter, X, Heart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 import {
   Select,
   SelectContent,
@@ -21,6 +22,7 @@ import { Slider } from "@/components/ui/slider";
 export default function AdvancedSearch() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [query, setQuery] = useState(searchParams.get("q") || "");
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -74,7 +76,7 @@ export default function AdvancedSearch() {
     } catch (error: any) {
       console.error("Error searching:", error);
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: "Failed to perform search",
         variant: "destructive",
       });
@@ -163,7 +165,7 @@ export default function AdvancedSearch() {
                       }
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="All categories" />
+                        <SelectValue placeholder={t("common.allCategories")} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="">All categories</SelectItem>
@@ -200,7 +202,7 @@ export default function AdvancedSearch() {
                       onChange={(e) =>
                         setFilters({ ...filters, maxPrice: e.target.value })
                       }
-                      placeholder="No limit"
+                      placeholder={t("common.noLimit")}
                     />
                   </div>
 
@@ -215,7 +217,7 @@ export default function AdvancedSearch() {
                       }
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Any rating" />
+                        <SelectValue placeholder={t("common.anyRating")} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="">Any rating</SelectItem>

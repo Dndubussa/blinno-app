@@ -11,12 +11,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Shield, CheckCircle, XCircle, Copy, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 
 export default function TwoFactorAuth() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [twoFactor, setTwoFactor] = useState<any>(null);
   const [qrCode, setQrCode] = useState<string | null>(null);
@@ -55,7 +57,7 @@ export default function TwoFactorAuth() {
     } catch (error: any) {
       console.error("Error fetching 2FA status:", error);
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: "Failed to load 2FA settings",
         variant: "destructive",
       });
@@ -72,7 +74,7 @@ export default function TwoFactorAuth() {
       setShowSetup(true);
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: error.message || "Failed to setup 2FA",
         variant: "destructive",
       });
@@ -82,7 +84,7 @@ export default function TwoFactorAuth() {
   const handleVerifyAndEnable = async () => {
     if (!verificationCode || verificationCode.length !== 6) {
       toast({
-        title: "Invalid code",
+        title: t("common.invalidCode"),
         description: "Please enter a 6-digit code",
         variant: "destructive",
       });
@@ -102,13 +104,13 @@ export default function TwoFactorAuth() {
         }
 
         toast({
-          title: "2FA Enabled",
+          title: t("common.twoFAEnabled"),
           description: "Two-factor authentication has been enabled",
         });
       }
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: error.message || "Failed to enable 2FA",
         variant: "destructive",
       });
@@ -125,12 +127,12 @@ export default function TwoFactorAuth() {
       setTwoFactor({ isEnabled: false, secret: null });
       setBackupCodes([]);
       toast({
-        title: "2FA Disabled",
+        title: t("common.twoFADisabled"),
         description: "Two-factor authentication has been disabled",
       });
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: error.message || "Failed to disable 2FA",
         variant: "destructive",
       });
@@ -141,7 +143,7 @@ export default function TwoFactorAuth() {
     if (secret) {
       navigator.clipboard.writeText(secret);
       toast({
-        title: "Copied",
+        title: t("common.copied"),
         description: "Secret key copied to clipboard",
       });
     }

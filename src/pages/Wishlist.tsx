@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Heart, Plus, ShoppingCart, Trash2, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +19,7 @@ export default function Wishlist() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [wishlists, setWishlists] = useState<any[]>([]);
   const [selectedWishlist, setSelectedWishlist] = useState<any>(null);
   const [items, setItems] = useState<any[]>([]);
@@ -49,7 +51,7 @@ export default function Wishlist() {
     } catch (error: any) {
       console.error("Error fetching wishlists:", error);
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: "Failed to load wishlists",
         variant: "destructive",
       });
@@ -67,7 +69,7 @@ export default function Wishlist() {
     } catch (error: any) {
       console.error("Error fetching items:", error);
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: "Failed to load wishlist items",
         variant: "destructive",
       });
@@ -77,7 +79,7 @@ export default function Wishlist() {
   const handleCreateWishlist = async () => {
     if (!newWishlistName.trim()) {
       toast({
-        title: "Name required",
+        title: t("common.nameRequired"),
         description: "Please enter a wishlist name",
         variant: "destructive",
       });
@@ -91,7 +93,7 @@ export default function Wishlist() {
       });
 
       toast({
-        title: "Wishlist created",
+        title: t("common.wishlistCreated"),
         description: "Your wishlist has been created",
       });
 
@@ -101,7 +103,7 @@ export default function Wishlist() {
       setSelectedWishlist(wishlist);
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: error.message || "Failed to create wishlist",
         variant: "destructive",
       });
@@ -115,14 +117,14 @@ export default function Wishlist() {
       });
 
       toast({
-        title: "Item removed",
+        title: t("common.itemRemoved"),
         description: "Item has been removed from wishlist",
       });
 
       await fetchItems();
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: error.message || "Failed to remove item",
         variant: "destructive",
       });
@@ -134,13 +136,13 @@ export default function Wishlist() {
       try {
         await api.addToCart(item.item_id, 1);
         toast({
-          title: "Added to cart",
+          title: t("common.addedToCart"),
           description: "Item has been added to your cart",
         });
         navigate("/cart");
       } catch (error: any) {
         toast({
-          title: "Error",
+          title: t("common.error"),
           description: error.message || "Failed to add to cart",
           variant: "destructive",
         });

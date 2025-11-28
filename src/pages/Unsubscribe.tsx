@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { SEO } from "@/components/SEO";
@@ -19,6 +20,7 @@ export default function Unsubscribe() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const handleUnsubscribe = async () => {
@@ -50,13 +52,13 @@ export default function Unsubscribe() {
 
       setSuccess(true);
       toast({
-        title: "Unsubscribed",
+        title: t("common.unsubscribed"),
         description: "You have been unsubscribed from marketing emails.",
       });
     } catch (err: any) {
       setError(err.message || "Failed to unsubscribe. Please try again.");
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: err.message || "Failed to unsubscribe",
         variant: "destructive",
       });
