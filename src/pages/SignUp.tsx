@@ -109,7 +109,7 @@ export default function SignUp() {
     const phoneNumber = `${selectedPhoneCode}${formData.get("phoneNumber") as string}`;
     const country = selectedCountry;
 
-    const { error } = await signUp(email, password, displayName, role, {
+    const { error, warning } = await signUp(email, password, displayName, role, {
       firstName,
       middleName,
       lastName,
@@ -127,7 +127,6 @@ export default function SignUp() {
       setIsLoading(false);
     } else {
       // Check if there's a warning (e.g., email couldn't be sent)
-      const warning = (result as any)?.warning;
       if (warning) {
         toast({
           title: t("common.success"),

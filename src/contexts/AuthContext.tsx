@@ -154,32 +154,39 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Check if there's a warning (e.g., email couldn't be sent)
         const warning = (result as any).warning;
         
-        // Fetch profile
-        try {
-          const profileData = await api.getCurrentUser();
-          setProfile(profileData);
-        
-          // Extract primary role from roles array
-          let primaryRole: string | string[] = role;
-          if (profileData?.roles && Array.isArray(profileData.roles)) {
-            primaryRole = profileData.roles;
+        // If we have a token, fetch profile and handle navigation
+        if (result.token) {
+          // Fetch profile
+          try {
+            const profileData = await api.getCurrentUser();
+            setProfile(profileData);
+          
+            // Extract primary role from roles array
+            let primaryRole: string | string[] = role;
+            if (profileData?.roles && Array.isArray(profileData.roles)) {
+              primaryRole = profileData.roles;
+            }
+            
+            // Only redirect if email is verified
+            if (result.user.email_confirmed_at !== null) {
+              // Redirect to appropriate dashboard
+              const dashboardRoute = getDashboardRoute(primaryRole);
+              navigate(dashboardRoute, { replace: true });
+            } else {
+              // Stay on auth page and show email verification message
+              navigate('/signin', { replace: true });
+            }
+          } catch (profileError) {
+            console.error('Error fetching profile:', profileError);
+            // Still navigate to signin if email not verified
+            if (!result.user.email_confirmed_at) {
+              navigate('/signin', { replace: true });
+            }
           }
-        
-          // Only redirect if email is verified
-          if (result.user.email_confirmed_at !== null) {
-            // Redirect to appropriate dashboard
-            const dashboardRoute = getDashboardRoute(primaryRole);
-            navigate(dashboardRoute, { replace: true });
-          } else {
-            // Stay on auth page and show email verification message
-            navigate('/signin', { replace: true });
-          }
-        } catch (profileError) {
-          console.error('Error fetching profile:', profileError);
-          // Still navigate to signin if email not verified
-          if (!result.user.email_confirmed_at) {
-            navigate('/signin', { replace: true });
-          }
+        } else {
+          // No token - user needs to sign in (happens when created via Admin API)
+          // Navigate to signin page
+          navigate('/signin', { replace: true });
         }
         
         return { error: null, warning: warning || undefined };

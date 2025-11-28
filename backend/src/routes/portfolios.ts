@@ -33,13 +33,17 @@ router.get('/', async (req, res) => {
     const { data, error } = await query;
 
     if (error) {
+      console.error('Supabase query error:', error);
       throw error;
     }
 
     res.json(data || []);
   } catch (error: any) {
     console.error('Get portfolios error:', error);
-    res.status(500).json({ error: 'Failed to get portfolios' });
+    res.status(500).json({ 
+      error: 'Failed to get portfolios',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
