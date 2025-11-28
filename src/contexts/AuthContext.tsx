@@ -170,7 +170,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           navigate(dashboardRoute, { replace: true });
         } else {
           // Stay on auth page and show email verification message
-          navigate('/auth', { replace: true });
+          navigate('/signin', { replace: true });
         }
         return { error: null };
       } else {
@@ -217,7 +217,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           navigate(dashboardRoute, { replace: true });
         } else {
           // Stay on auth page and show email verification message
-          navigate('/auth', { replace: true });
+          navigate('/signin', { replace: true });
         }
         return { error: null };
       } else {

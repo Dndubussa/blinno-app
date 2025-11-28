@@ -45,6 +45,9 @@ import analyticsRoutes from './routes/analytics.js';
 import emailTemplateRoutes from './routes/emailTemplates.js';
 import serviceRoutes from './routes/services.js';
 import musicRoutes from './routes/music.js';
+import creatorRoutes from './routes/creators.js';
+import testimonialRoutes from './routes/testimonials.js';
+import searchRoutes from './routes/search.js';
 import { initializeStorageBuckets } from './middleware/upload.js';
 
 dotenv.config();
@@ -163,6 +166,11 @@ app.use('/api/revenue', revenueRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/news', newsRoutes);
 app.use('/api/music', musicRoutes);
+app.use('/api/creators', creatorRoutes);
+app.use('/api/testimonials', testimonialRoutes);
+app.use('/api/jobs', jobRoutes);
+app.use('/api/courses', courseRoutes);
+app.use('/api/search', searchRoutes);
 
 // Health check endpoint (accessible at /api/health or /health)
 app.get('/api/health', (req, res) => {

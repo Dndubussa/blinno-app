@@ -36,7 +36,7 @@ export default function Orders() {
     if (user) {
       fetchOrders();
     } else {
-      navigate("/auth");
+      navigate("/signin");
     }
   }, [user]);
 

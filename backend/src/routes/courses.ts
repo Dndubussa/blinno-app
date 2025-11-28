@@ -4,6 +4,43 @@ import { authenticate, AuthRequest, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
+// Get public courses (for Education page)
+router.get('/public', async (req, res) => {
+  try {
+    const { limit = 50, offset = 0 } = req.query;
+    
+    const { data, error } = await supabase
+      .from('courses')
+      .select(`
+        *,
+        educator:profiles!courses_educator_id_fkey(
+          display_name,
+          avatar_url,
+          bio
+        ),
+        enrollments:course_enrollments(count)
+      `)
+      .eq('is_published', true)
+      .order('created_at', { ascending: false })
+      .range(Number(offset), Number(offset) + Number(limit) - 1);
+
+    if (error) {
+      throw error;
+    }
+
+    // Transform to include student count
+    const transformed = (data || []).map((course: any) => ({
+      ...course,
+      students: course.enrollments?.[0]?.count || 0,
+    }));
+
+    res.json(transformed);
+  } catch (error: any) {
+    console.error('Get public courses error:', error);
+    res.status(500).json({ error: 'Failed to get courses' });
+  }
+});
+
 // Get courses for current educator
 router.get('/', authenticate, async (req: AuthRequest, res) => {
   try {

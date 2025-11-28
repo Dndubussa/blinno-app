@@ -67,7 +67,7 @@ export default function FreelancerDashboard() {
 
   useEffect(() => {
     if (!user) {
-      navigate("/auth");
+      navigate("/signin");
       return;
     }
     checkFreelancerRole();

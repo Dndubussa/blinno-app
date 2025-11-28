@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/components/ui/use-toast";
 import { api } from '@/lib/api';
 import { Loader2 } from 'lucide-react';
+import { useTranslation } from "react-i18next";
 
 interface PayoutMethod {
   id: string;
@@ -30,6 +31,7 @@ interface EarningsSummary {
 }
 
 export function RequestPayout() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [methods, setMethods] = useState<PayoutMethod[]>([]);
   const [earnings, setEarnings] = useState<EarningsSummary | null>(null);
@@ -250,7 +252,7 @@ export function RequestPayout() {
                 {processing ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
+                    {t("common.processing")}
                   </>
                 ) : (
                   'Request Payout'

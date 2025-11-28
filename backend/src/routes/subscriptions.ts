@@ -469,7 +469,6 @@ router.post('/subscribe', authenticate, async (req: AuthRequest, res) => {
         message: 'Subscription created, payment required',
         tier: subscriptionTierKey,
         pricing_model: 'subscription',
-        monthlyPrice: tierInfo.monthlyPrice,
         totalAmount: feeCalculation.total,
         feeBreakdown: feeCalculation,
         subscriptionId: subscription.id,
@@ -625,18 +624,18 @@ router.post('/cancel', authenticate, async (req: AuthRequest, res) => {
 router.get('/tiers', async (req, res) => {
   try {
     // Return both pricing models
-    const percentageTiers = Object.entries(PERCENTAGE_TIERS).reduce((acc, [key, tier]) => {
-      acc[key] = {
+    const percentageTiers: Record<string, any> = {};
+    for (const [key, tier] of Object.entries(PERCENTAGE_TIERS)) {
+      percentageTiers[key] = {
         ...tier,
         volumeRequirement: tier.volumeRequirement || null,
       };
-      return acc;
-    }, {} as any);
+    }
 
-    const subscriptionTiers = Object.entries(SUBSCRIPTION_TIERS).reduce((acc, [key, tier]) => {
-      acc[key] = tier;
-      return acc;
-    }, {} as any);
+    const subscriptionTiers: Record<string, any> = {};
+    for (const [key, tier] of Object.entries(SUBSCRIPTION_TIERS)) {
+      subscriptionTiers[key] = { ...tier };
+    }
     
     res.json({
       percentage: percentageTiers,
@@ -644,7 +643,11 @@ router.get('/tiers', async (req, res) => {
     });
   } catch (error: any) {
     console.error('Get tiers error:', error);
-    res.status(500).json({ error: 'Failed to get tiers' });
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ 
+      error: 'Failed to get tiers',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 

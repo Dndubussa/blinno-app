@@ -17,7 +17,8 @@
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
     "supabase:migrate": "node run-supabase-migrations.js",
-    "test:onboarding-email": "node backend/src/scripts/testOnboardingEmail.js"
+    "test:onboarding-email": "node backend/src/scripts/testOnboardingEmail.js",
+    "test:payout-requests": "node test-payout-requests.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

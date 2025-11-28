@@ -105,7 +105,7 @@ const Index = () => {
               {/* Get Started Today Button */}
               <div className="mt-12 text-center">
                 <button 
-                  onClick={() => navigate("/auth?tab=signup")}
+                  onClick={() => navigate("/signup")}
                   className="inline-block bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-8 rounded-lg transition-colors duration-300"
                 >
                   {t("homepage.getStartedToday")}

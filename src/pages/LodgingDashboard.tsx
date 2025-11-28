@@ -56,7 +56,7 @@ export default function LodgingDashboard() {
 
   useEffect(() => {
     if (!user) {
-      navigate("/auth");
+      navigate("/signin");
       return;
     }
     checkLodgingRole();

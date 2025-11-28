@@ -98,6 +98,40 @@ class ApiClient {
     this.setToken(null);
   }
 
+  // Featured Creators
+  async getFeaturedCreators(limit = 10) {
+    return this.request<any[]>(`/creators/featured?limit=${limit}`);
+  }
+
+  // Creators Gallery
+  async getCreatorsGallery(limit = 20, offset = 0, category?: string) {
+    const params = new URLSearchParams();
+    params.append('limit', limit.toString());
+    params.append('offset', offset.toString());
+    if (category) params.append('category', category);
+    return this.request<any[]>(`/creators/gallery?${params.toString()}`);
+  }
+
+  // Testimonials
+  async getTestimonials(limit = 5) {
+    return this.request<any[]>(`/testimonials?limit=${limit}`);
+  }
+
+  // Public Jobs
+  async getPublicJobs(limit = 50, offset = 0) {
+    return this.request<any[]>(`/jobs/public?limit=${limit}&offset=${offset}`);
+  }
+
+  // Public Courses
+  async getPublicCourses(limit = 50, offset = 0) {
+    return this.request<any[]>(`/courses/public?limit=${limit}&offset=${offset}`);
+  }
+
+  // Search
+  async search(query: string, limit = 8) {
+    return this.request<any[]>(`/search?q=${encodeURIComponent(query)}&limit=${limit}`);
+  }
+
   // Profiles
   async getProfile(userId: string) {
     return this.request<any>(`/profiles/${userId}`);
@@ -437,9 +471,12 @@ class ApiClient {
     currency: string;
     description?: string;
   }) {
-    return this.request<any>('/revenue/payout-requests', {
+    return this.request<any>('/revenue/request-payout', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        amount: data.amount,
+        paymentMethodId: data.methodId,
+      }),
     });
   }
 
@@ -451,7 +488,7 @@ class ApiClient {
 
   // Payout History
   async getPayoutHistory() {
-    return this.request<any[]>('/revenue/payout-history');
+    return this.request<any[]>('/revenue/my-payouts');
   }
 
   // Earnings

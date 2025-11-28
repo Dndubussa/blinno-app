@@ -27,7 +27,7 @@ export default function Messages() {
 
   useEffect(() => {
     if (!user) {
-      navigate("/auth");
+      navigate("/signin");
       return;
     }
     fetchConversations();

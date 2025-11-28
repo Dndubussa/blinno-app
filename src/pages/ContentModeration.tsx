@@ -35,7 +35,7 @@ export default function ContentModeration() {
       // For now, allow access - backend will enforce
       fetchReports();
     } else {
-      navigate("/auth");
+      navigate("/signin");
     }
   }, [user]);
 

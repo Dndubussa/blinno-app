@@ -58,7 +58,7 @@ export default function RestaurantDashboard() {
 
   useEffect(() => {
     if (!user) {
-      navigate("/auth");
+      navigate("/signin");
       return;
     }
     checkRestaurantRole();

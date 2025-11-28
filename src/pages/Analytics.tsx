@@ -34,7 +34,7 @@ export default function Analytics() {
     if (user) {
       fetchAnalytics();
     } else {
-      navigate("/auth");
+      navigate("/signin");
     }
   }, [user, dateRange]);
 

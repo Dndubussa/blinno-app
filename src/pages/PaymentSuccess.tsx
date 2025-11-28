@@ -6,8 +6,10 @@ import { getDashboardRoute } from "@/lib/dashboardRoutes";
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useTranslation } from "react-i18next";
 
 export default function PaymentSuccess() {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user, profile, refreshUser } = useAuth();
@@ -132,7 +134,7 @@ export default function PaymentSuccess() {
           <CardContent className="text-center">
             {subscription && (
               <div className="mb-4 p-4 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground mb-1">Current Plan</p>
+                <p className="text-sm text-muted-foreground mb-1">{t("pricing.subscription.currentPlan")}</p>
                 <p className="font-semibold">
                   {subscription.pricing_model === "subscription" 
                     ? subscription.name || subscription.tier 

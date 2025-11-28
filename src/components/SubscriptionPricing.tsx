@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AnimatedSection } from "./AnimatedSection";
 import { Progress } from "@/components/ui/progress";
 import { MultiCurrencyPrice } from "@/components/MultiCurrencyPrice";
+import { useTranslation } from "react-i18next";
 
 interface VolumeRequirement {
   salesAmount: number;
@@ -74,6 +75,7 @@ const tierColors = {
 };
 
 export function SubscriptionPricing() {
+  const { t } = useTranslation();
   // Safely access auth context
   const authContext = useContext(AuthContext);
   const user = authContext?.user || null;
@@ -266,7 +268,7 @@ export function SubscriptionPricing() {
 
   const handleSubscribe = async (tier: string) => {
     if (!user) {
-      navigate("/auth");
+      navigate("/signin");
       return;
     }
 
@@ -606,14 +608,14 @@ export function SubscriptionPricing() {
                       </p>
                       {isCurrent && (
                         <Badge variant="secondary" className="mt-2">
-                          Current Plan
+                          {t("pricing.subscription.currentPlan")}
                         </Badge>
                       )}
                       {tier.volumeRequirement && volumeStats && (
                         <div className="mt-3 p-3 bg-muted/50 rounded-lg">
                           <div className="flex items-center gap-2 mb-2">
                             <TrendingUp className="h-4 w-4 text-primary" />
-                            <span className="text-xs font-semibold">Volume Requirement</span>
+                            <span className="text-xs font-semibold">{t("pricing.percentage.volumeRequirement")}</span>
                           </div>
                           <p className="text-xs text-muted-foreground mb-2">
                             ${tier.volumeRequirement.salesAmount}/month OR {tier.volumeRequirement.transactionCount} transactions/month
@@ -701,14 +703,14 @@ export function SubscriptionPricing() {
                             {subscribing === tier.key ? (
                               <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Processing...
+                                {t("common.processing")}
                               </>
                             ) : isCurrent ? (
-                              "Current Plan"
+                              t("pricing.subscription.currentPlan")
                             ) : !isEligible ? (
-                              "Volume Requirement Not Met"
+                              t("pricing.percentage.notMet")
                             ) : (
-                              "Select Plan"
+                              t("pricing.subscription.selectPlan")
                             )}
                           </Button>
                         );
@@ -774,7 +776,7 @@ export function SubscriptionPricing() {
                       </p>
                       {isCurrent && (
                         <Badge variant="secondary" className="mt-2">
-                          Current Plan
+                          {t("pricing.subscription.currentPlan")}
                         </Badge>
                       )}
                     </CardHeader>
@@ -815,14 +817,14 @@ export function SubscriptionPricing() {
                         {subscribing === tier.key ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Processing...
+                            {t("common.processing")}
                           </>
                         ) : isCurrent ? (
-                          "Current Plan"
+                          t("pricing.subscription.currentPlan")
                         ) : (
                           tier.monthlyPrice === 0
-                            ? "Get Started"
-                            : "Subscribe Now"
+                            ? t("common.getStarted")
+                            : t("common.subscribeNow")
                         )}
                       </Button>
                     </CardContent>
@@ -851,12 +853,12 @@ export function SubscriptionPricing() {
           {/* Get Started Today Button */}
           <div className="mt-12 text-center">
             <button 
-              onClick={() => navigate("/auth?tab=signup")}
+              onClick={() => navigate("/signup")}
               className="inline-block bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-8 rounded-lg transition-colors duration-300"
             >
-              Get Started Today
+              {t("homepage.getStartedToday")}
             </button>
-            <p className="mt-4 text-muted-foreground">Join thousands of creators already monetizing their content</p>
+            <p className="mt-4 text-muted-foreground">{t("homepage.joinCommunity")}</p>
           </div>
         </div>
       </section>
@@ -923,7 +925,7 @@ export function SubscriptionPricing() {
                 {paymentProcessing ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
+                    {t("common.processing")}
                   </>
                 ) : (
                   <>

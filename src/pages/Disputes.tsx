@@ -17,8 +17,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useTranslation } from "react-i18next";
 
 export default function Disputes() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -40,7 +42,7 @@ export default function Disputes() {
     if (user) {
       fetchDisputes();
     } else {
-      navigate("/auth");
+      navigate("/signin");
     }
   }, [user]);
 
@@ -393,7 +395,7 @@ function DisputeList({ disputes, getStatusIcon, getStatusColor, onView }: any) {
                 </div>
               </div>
               <Button variant="outline" size="sm">
-                View Details
+                {t("common.viewDetails")}
               </Button>
             </div>
           </CardContent>

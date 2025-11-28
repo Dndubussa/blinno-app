@@ -4,6 +4,36 @@ import { authenticate, AuthRequest, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
+// Get public job postings (for Jobs page)
+router.get('/public', async (req, res) => {
+  try {
+    const { limit = 50, offset = 0 } = req.query;
+    
+    const { data, error } = await supabase
+      .from('job_postings')
+      .select(`
+        *,
+        employer:profiles!job_postings_employer_id_fkey(
+          display_name,
+          avatar_url,
+          location
+        )
+      `)
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .range(Number(offset), Number(offset) + Number(limit) - 1);
+
+    if (error) {
+      throw error;
+    }
+
+    res.json(data || []);
+  } catch (error: any) {
+    console.error('Get public job postings error:', error);
+    res.status(500).json({ error: 'Failed to get job postings' });
+  }
+});
+
 // Get job postings for current employer
 router.get('/postings', authenticate, async (req: AuthRequest, res) => {
   try {

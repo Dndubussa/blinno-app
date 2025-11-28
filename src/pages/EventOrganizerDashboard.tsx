@@ -70,7 +70,7 @@ export default function EventOrganizerDashboard() {
 
   useEffect(() => {
     if (!user) {
-      navigate("/auth");
+      navigate("/signin");
       return;
     }
     checkOrganizerRole();

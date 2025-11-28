@@ -26,7 +26,7 @@ export default function Booking() {
 
   useEffect(() => {
     if (!user) {
-      navigate("/auth");
+      navigate("/signin");
       return;
     }
     if (creatorId) {

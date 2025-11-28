@@ -37,6 +37,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { ImageUpload } from "@/components/ImageUpload";
 import type { Tables } from "@/integrations/supabase/types";
+import { PLACEHOLDER_IMAGE } from "@/lib/constants";
 
 type Product = Tables<"products">;
 
@@ -62,7 +63,7 @@ const ManageProducts = () => {
   useEffect(() => {
     const checkAccess = async () => {
       if (!user) {
-        navigate("/auth");
+        navigate("/signin");
         return;
       }
 
@@ -456,11 +457,11 @@ const ManageProducts = () => {
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <img
-                              src={product.image_url || "https://via.placeholder.com/50?text=No+Image"}
+                              src={product.image_url || PLACEHOLDER_IMAGE.PRODUCT_SMALL}
                               alt={product.title}
                               className="w-12 h-12 object-cover rounded"
                               onError={(e) => {
-                                (e.target as HTMLImageElement).src = "https://via.placeholder.com/50?text=No+Image";
+                                (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE.PRODUCT_SMALL;
                               }}
                             />
                             <div>

@@ -31,7 +31,7 @@ export default function SocialFeed() {
     if (user) {
       fetchFeed();
     } else {
-      navigate("/auth");
+      navigate("/signin");
     }
   }, [user]);
 

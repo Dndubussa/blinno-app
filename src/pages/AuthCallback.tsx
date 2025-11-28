@@ -18,7 +18,7 @@ export default function AuthCallback() {
       } catch (error) {
         console.error("OAuth callback error:", error);
         // Redirect to auth page if there's an error
-        navigate("/auth", { replace: true });
+        navigate("/signin", { replace: true });
       }
     };
 

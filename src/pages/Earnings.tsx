@@ -13,7 +13,7 @@ const Earnings = () => {
   useEffect(() => {
     // Redirect unauthenticated users to login
     if (!user) {
-      navigate("/auth");
+      navigate("/signin");
       return;
     }
     

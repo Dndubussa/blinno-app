@@ -81,7 +81,7 @@ export default function CreatorProfile() {
 
   const handleFollow = async () => {
     if (!user || !id) {
-      navigate("/auth");
+      navigate("/signin");
       return;
     }
 
@@ -114,7 +114,7 @@ export default function CreatorProfile() {
 
   const handleWishlist = async () => {
     if (!user || !id) {
-      navigate("/auth");
+      navigate("/signin");
       return;
     }
 
@@ -158,7 +158,7 @@ export default function CreatorProfile() {
 
   const handleSubmitReview = async () => {
     if (!user || !id) {
-      navigate("/auth");
+      navigate("/signin");
       return;
     }
 
@@ -202,7 +202,7 @@ export default function CreatorProfile() {
 
   const handleMessage = () => {
     if (!user) {
-      navigate("/auth");
+      navigate("/signin");
       return;
     }
     navigate(`/messages?recipient=${id}`);
@@ -210,7 +210,7 @@ export default function CreatorProfile() {
 
   const handleBooking = () => {
     if (!user) {
-      navigate("/auth");
+      navigate("/signin");
       return;
     }
     navigate(`/booking?creator=${id}`);

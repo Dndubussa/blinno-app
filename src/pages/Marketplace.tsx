@@ -18,6 +18,7 @@ import { AnimatedSection } from "@/components/AnimatedSection";
 import { SEO } from "@/components/SEO";
 import { generateProductSchema } from '@/lib/schemaMarkup';
 import { useTranslation } from "react-i18next";
+import { PLACEHOLDER_IMAGE } from "@/lib/constants";
 
 type Product = {
   id: string;
@@ -140,7 +141,7 @@ const Marketplace = () => {
         description: t("marketplace.signInToAddToCart"),
         variant: "destructive",
       });
-      navigate("/auth");
+      navigate("/signin");
       return;
     }
 
@@ -216,8 +217,8 @@ const Marketplace = () => {
       average_rating: 'rating' in product ? (product as Product).rating : undefined,
       review_count: 'reviews_count' in product ? (product as Product).reviews_count : undefined,
       url: 'type' in product && product.type === 'course' 
-        ? `https://www.blinno.app/course/${product.id}` 
-        : `https://www.blinno.app/product/${product.id}`
+        ? `/course/${product.id}` 
+        : `/product/${product.id}`
     })
   );
 
@@ -393,11 +394,11 @@ const Marketplace = () => {
                 >
                   <div className="relative aspect-[4/3] overflow-hidden bg-muted">
                     <img 
-                      src={'image_url' in item ? item.image_url || "https://via.placeholder.com/400x300?text=No+Image" : "https://via.placeholder.com/400x300?text=No+Image"} 
+                      src={'image_url' in item ? item.image_url || PLACEHOLDER_IMAGE.PRODUCT : PLACEHOLDER_IMAGE.PRODUCT} 
                       alt={item.title}
                       className="w-full h-full object-cover"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = "https://via.placeholder.com/400x300?text=No+Image";
+                        (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE.PRODUCT;
                       }}
                     />
                     {"stock_quantity" in item && item.stock_quantity === 0 && (

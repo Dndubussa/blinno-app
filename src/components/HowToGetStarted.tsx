@@ -61,7 +61,7 @@ export function HowToGetStarted() {
         t("homepage.howToGetStarted.step1.detail4")
       ],
       action: t("homepage.howToGetStarted.step1.action"),
-      actionLink: "/auth?tab=signup"
+      actionLink: "/signup"
     },
     {
       number: 2,
@@ -239,7 +239,7 @@ export function HowToGetStarted() {
                       onClick={() => {
                         const selectedRoleObj = roles.find(r => r.name === selectedRole);
                         const roleParam = selectedRoleObj?.key || 'user';
-                        navigate(`/auth?tab=signup&role=${roleParam}`);
+                        navigate(`/signup?role=${roleParam}`);
                       }}
                       className="w-full sm:w-auto"
                     >
@@ -271,7 +271,7 @@ export function HowToGetStarted() {
                 <>
                   <Button
                     size="lg"
-                    onClick={() => navigate("/auth?tab=signup")}
+                    onClick={() => navigate("/signup")}
                     className="text-lg px-8 py-6"
                   >
                     <UserPlus className="mr-2 h-5 w-5" />
@@ -280,7 +280,7 @@ export function HowToGetStarted() {
                   <Button
                     size="lg"
                     variant="outline"
-                    onClick={() => navigate("/auth")}
+                    onClick={() => navigate("/signin")}
                     className="text-lg px-8 py-6"
                   >
                     {t("homepage.howToGetStarted.cta.signIn")}

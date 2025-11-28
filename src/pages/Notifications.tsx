@@ -33,7 +33,7 @@ export default function Notifications() {
       const interval = setInterval(fetchNotifications, 30000);
       return () => clearInterval(interval);
     } else {
-      navigate("/auth");
+      navigate("/signin");
     }
   }, [user]);
 

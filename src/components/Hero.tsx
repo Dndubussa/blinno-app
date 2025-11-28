@@ -67,7 +67,7 @@ export const Hero = () => {
               size="lg" 
               variant="default" 
               className="bg-accent hover:bg-accent/90 text-accent-foreground"
-              onClick={() => navigate('/auth?tab=signup')}
+              onClick={() => navigate('/signup')}
             >
               {t("homepage.hero.getStartedToday")}
             </Button>

@@ -29,7 +29,7 @@ export default function Wishlist() {
     if (user) {
       fetchWishlists();
     } else {
-      navigate("/auth");
+      navigate("/signin");
     }
   }, [user]);
 

@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loader2, Shield, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 import {
   Select,
   SelectContent,
@@ -28,6 +29,7 @@ interface UserRole {
 }
 
 export function UserManagement() {
+  const { t } = useTranslation();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [userRoles, setUserRoles] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -165,7 +167,7 @@ export function UserManagement() {
                 </TableCell>
                 <TableCell>
                   <Button variant="ghost" size="sm">
-                    View Details
+                    {t("common.viewDetails")}
                   </Button>
                 </TableCell>
               </TableRow>

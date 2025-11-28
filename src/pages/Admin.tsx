@@ -27,7 +27,7 @@ export default function Admin() {
 
   useEffect(() => {
     if (!loading && !user) {
-      navigate("/auth");
+      navigate("/signin");
       return;
     }
 

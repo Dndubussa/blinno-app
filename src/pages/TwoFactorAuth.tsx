@@ -30,7 +30,7 @@ export default function TwoFactorAuth() {
       fetch2FAStatus();
       fetchBackupCodes();
     } else {
-      navigate("/auth");
+      navigate("/signin");
     }
   }, [user]);
 

@@ -65,7 +65,7 @@ export default function EducatorDashboard() {
 
   useEffect(() => {
     if (!user) {
-      navigate("/auth");
+      navigate("/signin");
       return;
     }
     checkEducatorRole();

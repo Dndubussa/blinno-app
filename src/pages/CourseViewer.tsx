@@ -86,7 +86,7 @@ export default function CourseViewer() {
 
   const handleEnroll = async () => {
     if (!user) {
-      navigate("/auth");
+      navigate("/signin");
       return;
     }
 

@@ -68,7 +68,7 @@ export default function JournalistDashboard() {
 
   useEffect(() => {
     if (!user) {
-      navigate("/auth");
+      navigate("/signin");
       return;
     }
     checkJournalistRole();

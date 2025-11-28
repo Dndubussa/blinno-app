@@ -1,9 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { api } from "@/lib/api";
+import { PLACEHOLDER_IMAGE } from "@/lib/constants";
 import creator1 from "@/assets/gallery/creator-1.jpg";
 import creator2 from "@/assets/gallery/creator-2.jpg";
 import creator3 from "@/assets/gallery/creator-3.jpg";
@@ -59,9 +62,30 @@ const galleryItems = [
 const categories = ["All", "Photography", "Fashion", "Art", "Music", "Food", "Technology"];
 
 export const CreatorGallery = () => {
-  const [selectedImage, setSelectedImage] = useState<typeof galleryItems[0] | null>(null);
+  const { t } = useTranslation();
+  const [selectedImage, setSelectedImage] = useState<any | null>(null);
   const [filter, setFilter] = useState("All");
+  const [galleryItems, setGalleryItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchGallery();
+  }, [filter]);
+
+  const fetchGallery = async () => {
+    try {
+      setLoading(true);
+      const category = filter === "All" ? undefined : filter;
+      const data = await api.getCreatorsGallery(20, 0, category);
+      setGalleryItems(data || []);
+    } catch (error: any) {
+      console.error('Failed to fetch gallery:', error);
+      setGalleryItems([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredItems = filter === "All" 
     ? galleryItems 
@@ -91,20 +115,32 @@ export const CreatorGallery = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredItems.map((item) => (
-          <div
-            key={item.id}
-            className="group relative overflow-hidden rounded-lg cursor-pointer aspect-square"
-            onClick={() => setSelectedImage(item)}
-          >
-            <img
-              src={item.image}
-              alt={item.title}
-              loading="lazy"
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110 will-change-transform"
-              style={{
-                backfaceVisibility: 'hidden',
+      {loading ? (
+        <div className="flex justify-center items-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : filteredItems.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">No gallery items found.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredItems.map((item) => (
+            <div
+              key={item.id}
+              className="group relative overflow-hidden rounded-lg cursor-pointer aspect-square"
+              onClick={() => setSelectedImage(item)}
+            >
+              <img
+                src={item.image || PLACEHOLDER_IMAGE.PRODUCT}
+                alt={item.title}
+                loading="lazy"
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110 will-change-transform"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE.PRODUCT;
+                }}
+                style={{
+                  backfaceVisibility: 'hidden',
                 WebkitBackfaceVisibility: 'hidden'
               }}
             />
@@ -117,7 +153,8 @@ export const CreatorGallery = () => {
             </div>
           </div>
         ))}
-      </div>
+        </div>
+      )}
 
       <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
         <DialogContent className="max-w-4xl p-0 overflow-hidden">
@@ -149,12 +186,12 @@ export const CreatorGallery = () => {
       {/* Get Started Today Button */}
       <div className="mt-12 text-center">
         <button 
-          onClick={() => navigate("/auth?tab=signup")}
+          onClick={() => navigate("/signup")}
           className="inline-block bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-8 rounded-lg transition-colors duration-300"
         >
-          Get Started Today
+          {t("homepage.getStartedToday")}
         </button>
-        <p className="mt-4 text-muted-foreground">Showcase your creativity to a global audience</p>
+        <p className="mt-4 text-muted-foreground">{t("homepage.joinCommunity")}</p>
       </div>
     </section>
   );

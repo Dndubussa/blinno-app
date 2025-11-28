@@ -54,7 +54,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!user) {
-      navigate("/auth");
+      navigate("/signin");
       return;
     }
     fetchData();

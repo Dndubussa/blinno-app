@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { api } from '@/lib/api';
+import { useTranslation } from "react-i18next";
 
 interface ArtisanBookingFormProps {
   serviceId: string;
@@ -17,6 +18,7 @@ export function ArtisanBookingForm({
   serviceName,
   onBookingCreated 
 }: ArtisanBookingFormProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
@@ -164,7 +166,7 @@ export function ArtisanBookingForm({
             Back
           </Button>
           <Button type="submit" disabled={isLoading} className="flex-1">
-            {isLoading ? "Processing..." : "Pay Now"}
+            {isLoading ? t("common.processing") : "Pay Now"}
           </Button>
         </div>
       </form>

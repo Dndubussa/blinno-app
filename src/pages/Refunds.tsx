@@ -37,7 +37,7 @@ export default function Refunds() {
       fetchRefunds();
       fetchOrders();
     } else {
-      navigate("/auth");
+      navigate("/signin");
     }
   }, [user]);
 

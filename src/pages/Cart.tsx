@@ -15,6 +15,7 @@ import { Loader2, CreditCard, ShoppingCart, Plus, Minus, X, MapPin, User, Phone,
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { useTranslation } from "react-i18next";
+import { PLACEHOLDER_IMAGE } from "@/lib/constants";
 
 type CartItem = {
   id: string;
@@ -48,7 +49,7 @@ const Cart = () => {
 
   useEffect(() => {
     if (!user) {
-      navigate("/auth");
+      navigate("/signin");
       return;
     }
     fetchCartItems();
@@ -130,7 +131,7 @@ const Cart = () => {
 
   const handleCheckout = async () => {
     if (!user) {
-      navigate("/auth");
+      navigate("/signin");
       return;
     }
 
@@ -260,12 +261,12 @@ const Cart = () => {
                       <div className="flex gap-4">
                         <div className="relative w-24 h-24 flex-shrink-0 overflow-hidden rounded-md bg-muted">
                           <img
-                            src={item.image_url || "https://via.placeholder.com/150?text=No+Image"}
+                            src={item.image_url || PLACEHOLDER_IMAGE.PRODUCT_THUMB}
                             alt={item.title}
                             className="w-full h-full object-cover"
                             loading="lazy"
                             onError={(e) => {
-                              (e.target as HTMLImageElement).src = "https://via.placeholder.com/150?text=No+Image";
+                              (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE.PRODUCT_THUMB;
                             }}
                           />
                         </div>

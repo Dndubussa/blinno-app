@@ -45,7 +45,10 @@
     "date": "Date",
     "time": "Time",
     "status": "Status",
-    "actions": "Actions"
+    "actions": "Actions",
+    "getStarted": "Get Started",
+    "subscribeNow": "Subscribe Now",
+    "viewDetails": "View Details"
   },
   "header": {
     "title": "BLINNO",
@@ -271,7 +274,7 @@
     "contactUs": "Contact Us",
     "worldwide": "Worldwide",
     "globalPlatform": "Global Platform",
-    "copyright": "© 2024 BLINNO. All rights reserved. Global Platform.",
+    "copyright": "© 2025 BLINNO. All rights reserved. Global Platform.",
     "privacyPolicy": "Privacy Policy",
     "termsOfService": "Terms of Service",
     "cookiePolicy": "Cookie Policy"
@@ -588,5 +591,12 @@
     "emptyFeed": "Your feed is empty. Follow creators to see their posts!",
     "discoverCreators": "Discover Creators",
     "post": "Post"
+  },
+  "featuredCreators": {
+    "title": "Featured Creators",
+    "description": "Discover talented creators, artists, and entrepreneurs from around the world.",
+    "viewProfile": "View Profile",
+    "becomeFeatured": "Become a Featured Creator",
+    "becomeFeaturedDescription": "Want to be featured? Build your profile, create quality content, and engage with the community. Featured creators are selected based on activity, quality, and community engagement."
   }
 }

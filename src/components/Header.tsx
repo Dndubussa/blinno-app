@@ -204,7 +204,7 @@ export const Header = () => {
                       variant="outline" 
                       className="justify-start"
                       onClick={() => {
-                        navigate("/auth");
+                        navigate("/signin");
                         setMobileMenuOpen(false);
                       }}
                     >
@@ -215,7 +215,7 @@ export const Header = () => {
                       variant="default" 
                       className="justify-start"
                       onClick={() => {
-                        navigate("/auth", { state: { tab: "signup" } });
+                        navigate("/signup");
                         setMobileMenuOpen(false);
                       }}
                     >
@@ -351,7 +351,7 @@ export const Header = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => navigate("/auth")}
+                  onClick={() => navigate("/signin")}
                 >
                   <User className="h-4 w-4 mr-2" />
                   <span className="hidden sm:inline">Sign In</span>
@@ -359,7 +359,7 @@ export const Header = () => {
                 <Button
                   variant="default"
                   size="sm"
-                  onClick={() => navigate("/auth", { state: { tab: "signup" } })}
+                  onClick={() => navigate("/signup")}
                 >
                   <User className="h-4 w-4 mr-2" />
                   <span className="hidden sm:inline">Sign Up</span>

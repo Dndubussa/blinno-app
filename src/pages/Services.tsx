@@ -78,7 +78,7 @@ const Services = () => {
         description: "Please sign in to book services",
         variant: "destructive",
       });
-      navigate("/auth");
+      navigate("/signin");
       return;
     }
     

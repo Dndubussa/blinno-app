@@ -69,7 +69,7 @@ export default function EmployerDashboard() {
 
   useEffect(() => {
     if (!user) {
-      navigate("/auth");
+      navigate("/signin");
       return;
     }
     checkEmployerRole();
