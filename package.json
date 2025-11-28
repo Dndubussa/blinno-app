@@ -16,7 +16,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
-    "supabase:migrate": "node run-supabase-migrations.js"
+    "supabase:migrate": "node run-supabase-migrations.js",
+    "test:onboarding-email": "node backend/src/scripts/testOnboardingEmail.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
