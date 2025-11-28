@@ -209,6 +209,16 @@ export const Footer = () => {
         {/* TrustPilot Widget */}
         <div className="border-t border-border mt-8 pt-8">
           <div className="mb-6">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <img 
+                src="/TrustPilot.png" 
+                alt="TrustPilot" 
+                className="h-8 w-auto"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
+              />
+            </div>
             <h3 className="font-semibold text-foreground mb-4 text-center">Trusted by our community</h3>
             <TrustPilotWidget className="flex justify-center" />
           </div>

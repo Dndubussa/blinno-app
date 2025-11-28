@@ -38,8 +38,19 @@ export const TrustPilotWidget = ({ className = "" }: TrustPilotWidgetProps) => {
           href="https://www.trustpilot.com/review/blinno.app"
           target="_blank"
           rel="noopener noreferrer"
+          className="flex items-center justify-center gap-2"
         >
-          Trustpilot
+          <img 
+            src="/TrustPilot.png" 
+            alt="TrustPilot" 
+            className="h-8 w-auto"
+            onError={(e) => {
+              // Fallback to text if image fails to load
+              (e.target as HTMLImageElement).style.display = 'none';
+              const textNode = document.createTextNode('Trustpilot');
+              (e.target as HTMLImageElement).parentElement?.appendChild(textNode);
+            }}
+          />
         </a>
       </div>
       {/* End TrustBox widget */}
