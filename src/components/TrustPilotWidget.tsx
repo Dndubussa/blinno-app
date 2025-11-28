@@ -48,7 +48,7 @@ export const TrustPilotWidget = ({ className = "" }: TrustPilotWidgetProps) => {
       <img 
         src="/TrustPilot.png" 
         alt="TrustPilot" 
-        className="h-6 w-auto mt-2"
+        className="h-12 w-auto mt-2"
         onError={(e) => {
           (e.target as HTMLImageElement).style.display = 'none';
         }}
