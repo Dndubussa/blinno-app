@@ -46,11 +46,16 @@ class ApiClient {
         const error = await response.json().catch(() => ({ error: 'Unauthorized' }));
         const errorObj = new Error(error.error || 'Unauthorized');
         (errorObj as any).status = 401;
+        // Preserve additional error properties
+        Object.assign(errorObj, error);
         throw errorObj;
       }
       
       const error = await response.json().catch(() => ({ error: 'Request failed' }));
-      throw new Error(error.error || `HTTP error! status: ${response.status}`);
+      const errorObj = new Error(error.error || `HTTP error! status: ${response.status}`);
+      // Preserve additional error properties (like userExists, email, etc.)
+      Object.assign(errorObj, error);
+      throw errorObj;
     }
 
     return response.json();
@@ -68,9 +73,11 @@ class ApiClient {
       }
       return result;
     } catch (error: any) {
-      // Re-throw with better error message
+      // Preserve all error properties including userExists flag
       const errorMessage = error?.message || 'Registration failed';
       const apiError = new Error(errorMessage);
+      // Copy all properties from the original error
+      Object.assign(apiError, error);
       (apiError as any).response = error?.response || { data: { error: errorMessage } };
       throw apiError;
     }

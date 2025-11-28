@@ -41,6 +41,21 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: passwordValidation.error });
     }
 
+    // Proactively check if user already exists
+    try {
+      const { data: existingUser } = await supabaseAdmin.auth.admin.getUserByEmail(email.toLowerCase());
+      if (existingUser?.user) {
+        return res.status(400).json({ 
+          error: 'An account with this email already exists. Please sign in instead.',
+          userExists: true,
+          email: email.toLowerCase()
+        });
+      }
+    } catch (checkError) {
+      // If check fails, continue with registration attempt (Supabase will catch duplicate)
+      console.warn('Could not check for existing user, proceeding with registration:', checkError);
+    }
+
     // Create user with Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: email.toLowerCase(),
@@ -60,7 +75,11 @@ router.post('/register', async (req, res) => {
 
       // Provide user-friendly error messages
       if (authError.message.includes('already registered') || authError.message.includes('already exists')) {
-        return res.status(400).json({ error: 'User already exists' });
+        return res.status(400).json({ 
+          error: 'An account with this email already exists. Please sign in instead.',
+          userExists: true,
+          email: email.toLowerCase()
+        });
       }
 
       if (authError.message.includes('Error sending confirmation email') || 
@@ -81,24 +100,27 @@ router.post('/register', async (req, res) => {
 
     const userId = authData.user.id;
 
-    // Create profile with additional fields
+    // Create or update profile with additional fields (upsert handles existing profiles)
+    const profileData = {
+      user_id: userId,
+      display_name: displayName,
+      first_name: firstName,
+      middle_name: middleName,
+      last_name: lastName,
+      phone: phoneNumber,
+      location: country,
+      is_creator: ['creator', 'freelancer', 'seller', 'lodging', 'restaurant', 'educator', 'journalist', 'artisan', 'employer', 'event_organizer'].includes(role),
+      terms_accepted: true,
+      terms_accepted_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
     const { error: profileError } = await supabase
       .from('profiles')
-      .insert({
-        user_id: userId,
-        display_name: displayName,
-        first_name: firstName,
-        middle_name: middleName,
-        last_name: lastName,
-        phone: phoneNumber,
-        location: country,
-        is_creator: ['creator', 'freelancer', 'seller', 'lodging', 'restaurant', 'educator', 'journalist', 'artisan', 'employer', 'event_organizer'].includes(role),
-        terms_accepted: true,
-        terms_accepted_at: new Date().toISOString(),
-      });
+      .upsert(profileData, { onConflict: 'user_id' });
 
     if (profileError) {
-      console.error('Profile creation error:', profileError);
+      console.error('Profile creation/update error:', profileError);
       // User was created but profile failed - this is okay, profile can be created later
     }
 

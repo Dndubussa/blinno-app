@@ -119,11 +119,30 @@ export default function SignUp() {
     });
     
     if (error) {
-      toast({
-        title: t("common.error"),
-        description: error.message,
-        variant: "destructive",
-      });
+      // Check if user already exists - provide better UX
+      const userExists = (error as any)?.userExists;
+      if (userExists) {
+        toast({
+          title: t("common.error"),
+          description: error.message,
+          variant: "destructive",
+          action: (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/signin')}
+            >
+              {t("auth.signIn.title") || "Sign In"}
+            </Button>
+          ),
+        });
+      } else {
+        toast({
+          title: t("common.error"),
+          description: error.message,
+          variant: "destructive",
+        });
+      }
       setIsLoading(false);
     } else {
       // Check if there's a warning (e.g., email couldn't be sent)
