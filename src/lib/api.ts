@@ -919,7 +919,13 @@ class ApiClient {
   }
 
   async downloadDigitalProduct(id: string) {
-    return this.request<{ downloadUrl: string; title: string; fileName: string }>(`/digital-products/${id}/download`);
+    return this.request<{ 
+      downloadUrl: string; 
+      title: string; 
+      fileName: string;
+      watermarkToken?: string;
+      watermarkInfo?: string;
+    }>(`/digital-products/${id}/download`);
   }
 
   async purchaseDigitalProduct(productId: string, customerPhone: string, customerEmail?: string, customerName?: string) {

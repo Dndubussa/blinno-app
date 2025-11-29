@@ -5,6 +5,7 @@ import { uploadBook, uploadToSupabaseStorage, deleteFromSupabaseStorage } from '
 import ClickPesaService, { PaymentRequest } from '../services/clickpesa.js';
 import { platformFees } from '../services/platformFees.js';
 import { checkProductLimit } from '../utils/subscriptionLimits.js';
+import { generateWatermarkedDownloadToken, verifyWatermarkToken, addWatermarkMetadata } from '../utils/watermark.js';
 import dotenv from 'dotenv';
 import crypto from 'crypto';
 import { userPreferences } from '../services/userPreferences.js';
@@ -587,17 +588,61 @@ router.get('/:id/download', authenticate, async (req: AuthRequest, res) => {
       }
     }
 
+    // Get buyer information for watermarking
+    let buyerEmail = '';
+    let purchaseDate = '';
+    
+    if (!isCreator) {
+      const { data: purchase } = await supabase
+        .from('digital_product_purchases')
+        .select('*, buyer:users!digital_product_purchases_buyer_id_fkey(email)')
+        .eq('product_id', id)
+        .eq('buyer_id', req.userId)
+        .eq('payment_status', 'paid')
+        .single();
+
+      if (purchase) {
+        buyerEmail = (purchase.buyer as any)?.email || req.userId;
+        purchaseDate = purchase.created_at || new Date().toISOString();
+      }
+    }
+
+    // Generate watermarked download token
+    const downloadToken = generateWatermarkedDownloadToken(
+      id,
+      req.userId!,
+      buyerEmail || req.userId!
+    );
+
     // Increment download count
     await supabase
       .from('digital_products')
       .update({ download_count: (product.download_count || 0) + 1 })
       .eq('id', id);
 
-    // Return download URL
+    // Add watermark metadata to response headers
+    const watermarkHeaders = addWatermarkMetadata(
+      product.title,
+      buyerEmail || req.userId!,
+      purchaseDate || new Date().toISOString()
+    );
+
+    // Set watermark headers
+    Object.entries(watermarkHeaders).forEach(([key, value]) => {
+      res.setHeader(key, value);
+    });
+
+    // Return download URL with watermark token
+    const downloadUrl = new URL(product.file_url);
+    downloadUrl.searchParams.set('token', downloadToken);
+    downloadUrl.searchParams.set('watermark', 'true');
+
     res.json({
-      downloadUrl: product.file_url,
+      downloadUrl: downloadUrl.toString(),
       title: product.title,
       fileName: `${product.title.replace(/[^a-z0-9]/gi, '_')}.${product.file_url.split('.').pop()}`,
+      watermarkToken: downloadToken,
+      watermarkInfo: buyerEmail ? `Purchased by ${buyerEmail}` : undefined,
     });
   } catch (error: any) {
     console.error('Download digital product error:', error);
