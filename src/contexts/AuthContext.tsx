@@ -258,20 +258,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
         // Only redirect if email is verified
         if (result.user.email_confirmed_at !== null) {
-          // Check if user has selected a subscription
-          try {
-            const subscription = await api.getMySubscription();
-            // Backend returns default object without 'id' when no subscription exists
-            // If subscription doesn't have an 'id' or 'created_at', it's a default and user needs to choose
-            if (!subscription?.id || !subscription?.created_at) {
+          // Check if user has a creator role that needs subscription
+          const creatorRoles = ['creator', 'freelancer', 'seller', 'lodging', 'restaurant', 'educator', 'journalist', 'artisan', 'employer', 'event_organizer', 'musician'];
+          const userRoles = Array.isArray(profileData?.roles) ? profileData.roles : (profileData?.roles ? [profileData.roles] : []);
+          const isCreatorRole = userRoles.some((role: string) => creatorRoles.includes(role));
+          
+          if (isCreatorRole) {
+            // Check if user has selected a subscription
+            try {
+              const subscription = await api.getMySubscription();
+              // Backend returns default object without 'id' when no subscription exists
+              // If subscription doesn't have an 'id' or 'created_at', it's a default and user needs to choose
+              if (!subscription?.id || !subscription?.created_at) {
+                navigate("/choose-subscription", { replace: true });
+                return { error: null };
+              }
+            } catch (subError) {
+              // If error getting subscription, assume they need to choose
+              console.error("Error checking subscription:", subError);
               navigate("/choose-subscription", { replace: true });
               return { error: null };
             }
-          } catch (subError) {
-            // If error getting subscription, assume they need to choose
-            console.error("Error checking subscription:", subError);
-            navigate("/choose-subscription", { replace: true });
-            return { error: null };
           }
           
           // Redirect to appropriate dashboard

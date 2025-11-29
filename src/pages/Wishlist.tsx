@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
+import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Heart, Plus, ShoppingCart, Trash2, Eye } from "lucide-react";
+import { Heart, Plus, ShoppingCart, Trash2, Eye, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -152,31 +151,62 @@ export default function Wishlist() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="pt-24 pb-16 flex items-center justify-center">
+      <DashboardLayout title={t("wishlist.title") || "My Wishlists"}>
+        <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
             <p className="text-muted-foreground">Loading wishlists...</p>
           </div>
         </div>
-        <Footer />
-      </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <div className="pt-24 pb-16">
-        <div className="container mx-auto px-4 max-w-6xl">
-          <div className="mb-8 flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-bold mb-2">My Wishlists</h1>
-              <p className="text-muted-foreground">
-                Save items you love for later
-              </p>
+    <DashboardLayout 
+      title={t("wishlist.title") || "My Wishlists"}
+      headerActions={
+        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              {t("wishlist.newWishlist") || "New Wishlist"}
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{t("wishlist.createWishlist") || "Create Wishlist"}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="name">{t("wishlist.wishlistName") || "Wishlist Name"}</Label>
+                <Input
+                  id="name"
+                  value={newWishlistName}
+                  onChange={(e) => setNewWishlistName(e.target.value)}
+                  placeholder={t("wishlist.wishlistNamePlaceholder") || "My Wishlist"}
+                  className="mt-2"
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowCreateDialog(false)}
+                >
+                  {t("common.cancel")}
+                </Button>
+                <Button onClick={handleCreateWishlist}>{t("common.create") || "Create"}</Button>
+              </div>
             </div>
+          </DialogContent>
+        </Dialog>
+      }
+    >
+      <div className="mb-8">
+        <p className="text-muted-foreground">
+          {t("wishlist.subtitle") || "Save items you love for later"}
+        </p>
+      </div>
             <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
               <DialogTrigger asChild>
                 <Button>
@@ -311,10 +341,7 @@ export default function Wishlist() {
               )}
             </div>
           </div>
-        </div>
-      </div>
-      <Footer />
-    </div>
+    </DashboardLayout>
   );
 }
 

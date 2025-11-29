@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Search, ShoppingCart, Filter, Star, MapPin, Heart, Plus, Loader2, X, BookOpen } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { DashboardLayout } from "@/components/DashboardLayout";
 import { CategoriesGrid } from "@/components/CategoriesGrid";
 import { AnimatedSection } from "@/components/AnimatedSection";
 import { SEO } from "@/components/SEO";
@@ -193,13 +194,22 @@ const Marketplace = () => {
     return matchesSearch && matchesCategory && matchesLocation;
   });
 
+  const loadingContent = (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  );
+
   if (loading) {
-    return (
+    return user ? (
+      <DashboardLayout title={t("marketplace.title")}>
+        {loadingContent}
+      </DashboardLayout>
+    ) : (
       <div className="min-h-screen bg-background">
         <Header />
-        <div className="pt-24 pb-16 flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
+        <div className="pt-24 pb-16">{loadingContent}</div>
+        <Footer />
       </div>
     );
   }
@@ -222,22 +232,17 @@ const Marketplace = () => {
     })
   );
 
-  return (
-    <div className="min-h-screen bg-background">
+  const content = (
+    <>
       <SEO
         title="Marketplace - Authentic Local Products & Courses"
         description="Shop authentic local products and online courses from sellers worldwide. Discover handmade crafts, traditional goods, and educational content from creators around the globe."
         keywords={["marketplace", "local products", "handmade crafts", "courses", "online shopping", "authentic products", "sellers", "creators"]}
         schemaMarkup={productSchemas.length > 0 ? productSchemas : undefined}
       />
-      <Header />
-      
-      <div className="pt-24 pb-16">
-        <div className="container mx-auto px-4">
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-foreground mb-2">{t("marketplace.title")}</h1>
-            <p className="text-muted-foreground">{t("marketplace.subtitle")}</p>
-          </div>
+      <div className="mb-8">
+        <p className="text-muted-foreground">{t("marketplace.subtitle")}</p>
+      </div>
 
           {/* Search and Filters */}
           <Card className="mb-8">
@@ -502,9 +507,24 @@ const Marketplace = () => {
               ))}
             </div>
           )}
+    </>
+  );
+
+  return user ? (
+    <DashboardLayout title={t("marketplace.title")}>
+      {content}
+    </DashboardLayout>
+  ) : (
+    <div className="min-h-screen bg-background">
+      <Header />
+      <div className="pt-24 pb-16">
+        <div className="container mx-auto px-4">
+          <div className="mb-8">
+            <h1 className="text-4xl font-bold text-foreground mb-2">{t("marketplace.title")}</h1>
+          </div>
+          {content}
         </div>
       </div>
-
       <Footer />
     </div>
   );

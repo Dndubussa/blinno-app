@@ -8,6 +8,8 @@ import { useToast } from "@/components/ui/use-toast";
 import { SEO } from "@/components/SEO";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { DashboardLayout } from "@/components/DashboardLayout";
+import { useAuth } from "@/contexts/AuthContext";
 import { MultiCurrencyPrice } from "@/components/MultiCurrencyPrice";
 import { Calendar, MapPin, Users, Clock, Loader2, Ticket, ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -32,6 +34,7 @@ interface Event {
 
 export default function Events() {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
@@ -111,35 +114,18 @@ export default function Events() {
     return Math.round((event.current_attendees / event.max_attendees) * 100);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="pt-24 pb-16 flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-        <Footer />
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-background">
+  const content = (
+    <>
       <SEO
         title="Events - Upcoming Local Cultural & Business Events"
         description="Discover upcoming events. Register to attend cultural festivals, business conferences, workshops, and community gatherings."
         keywords={["events", "cultural festivals", "business conferences", "workshops", "community gatherings"]}
       />
-      <Header />
-      
-      <div className="pt-24 pb-16">
-        <div className="container mx-auto px-4">
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-foreground mb-2">{t("events.title")}</h1>
-            <p className="text-muted-foreground text-lg">
-              {t("events.subtitle")}
-            </p>
-          </div>
+      <div className="mb-8">
+        <p className="text-muted-foreground text-lg">
+          {t("events.subtitle")}
+        </p>
+      </div>
 
           {showRegistrationForm && selectedEvent ? (
             <div className="max-w-2xl mx-auto">
@@ -320,9 +306,44 @@ export default function Events() {
               )}
             </>
           )}
+    </>
+  );
+
+  if (loading) {
+    const loadingContent = (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+    
+    return user ? (
+      <DashboardLayout title={t("events.title")}>
+        {loadingContent}
+      </DashboardLayout>
+    ) : (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="pt-24 pb-16">{loadingContent}</div>
+        <Footer />
+      </div>
+    );
+  }
+
+  return user ? (
+    <DashboardLayout title={t("events.title")}>
+      {content}
+    </DashboardLayout>
+  ) : (
+    <div className="min-h-screen bg-background">
+      <Header />
+      <div className="pt-24 pb-16">
+        <div className="container mx-auto px-4">
+          <div className="mb-8">
+            <h1 className="text-4xl font-bold text-foreground mb-2">{t("events.title")}</h1>
+          </div>
+          {content}
         </div>
       </div>
-
       <Footer />
     </div>
   );

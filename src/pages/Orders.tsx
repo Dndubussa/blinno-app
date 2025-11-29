@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
+import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MultiCurrencyPrice } from "@/components/MultiCurrencyPrice";
 import { useTranslation } from "react-i18next";
+import { Loader2 } from "lucide-react";
 
 export default function Orders() {
   const { t } = useTranslation();
@@ -130,16 +130,14 @@ export default function Orders() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="pt-24 pb-16 flex items-center justify-center">
+      <DashboardLayout title={t("orders.title")}>
+        <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
             <p className="text-muted-foreground">{t("orders.loading")}</p>
           </div>
         </div>
-        <Footer />
-      </div>
+      </DashboardLayout>
     );
   }
 
@@ -149,16 +147,12 @@ export default function Orders() {
   const cancelledOrders = orders.filter((o) => o.status === "cancelled");
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <div className="pt-24 pb-16">
-        <div className="container mx-auto px-4 max-w-6xl">
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold mb-2">{t("orders.title")}</h1>
-            <p className="text-muted-foreground">
-              {t("orders.trackAndManage")}
-            </p>
-          </div>
+    <DashboardLayout title={t("orders.title")}>
+      <div className="mb-8">
+        <p className="text-muted-foreground">
+          {t("orders.trackAndManage")}
+        </p>
+      </div>
 
           <Tabs defaultValue="all" className="w-full">
             <TabsList>
@@ -185,8 +179,6 @@ export default function Orders() {
               <OrderList orders={cancelledOrders} onView={setSelectedOrder} onCancel={handleCancelOrder} onConfirmDelivery={handleConfirmDelivery} formatPrice={formatPrice} getStatusIcon={getStatusIcon} getStatusColor={getStatusColor} />
             </TabsContent>
           </Tabs>
-        </div>
-      </div>
 
       {/* Order Details Dialog */}
       {selectedOrder && (
@@ -198,9 +190,7 @@ export default function Orders() {
           formatPrice={formatPrice}
         />
       )}
-
-      <Footer />
-    </div>
+    </DashboardLayout>
   );
 }
 
