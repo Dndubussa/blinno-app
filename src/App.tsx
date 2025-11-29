@@ -2,7 +2,7 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from "@/contexts/AuthContext";
-import { ErrorBoundary } from "@/lib/sentry";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import Index from "@/pages/Index";
 import Events from "@/pages/Events";
 import Marketplace from "@/pages/Marketplace";

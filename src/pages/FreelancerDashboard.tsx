@@ -124,16 +124,46 @@ export default function FreelancerDashboard() {
     try {
       // Fetch all freelancer data and stats using API
       const [projectsData, proposalsData, clientsData, invoicesData, servicesData, statsData, financialData, balanceData, transactionsData, payoutsData] = await Promise.all([
-        api.getFreelancerProjects().catch(() => []),
-        api.getFreelancerProposals().catch(() => []),
-        api.getFreelancerClients().catch(() => []),
-        api.getFreelancerInvoices().catch(() => []),
-        api.getFreelancerServices().catch(() => []),
-        api.getDashboardStats('freelancer').catch(() => ({ activeProjects: 0, pendingProposals: 0, totalEarnings: 0, totalClients: 0 })),
-        api.getFinancialSummary().catch(() => null),
-        api.getBalance().catch(() => null),
-        api.getTransactions({ limit: 50 }).catch(() => ({ transactions: [] })),
-        api.getMyPayouts().catch(() => []),
+        api.getFreelancerProjects().catch((err) => {
+          console.error("Error fetching projects:", err);
+          return [];
+        }),
+        api.getFreelancerProposals().catch((err) => {
+          console.error("Error fetching proposals:", err);
+          return [];
+        }),
+        api.getFreelancerClients().catch((err) => {
+          console.error("Error fetching clients:", err);
+          return [];
+        }),
+        api.getFreelancerInvoices().catch((err) => {
+          console.error("Error fetching invoices:", err);
+          return [];
+        }),
+        api.getFreelancerServices().catch((err) => {
+          console.error("Error fetching services:", err);
+          return [];
+        }),
+        api.getDashboardStats('freelancer').catch((err) => {
+          console.error("Error fetching stats:", err);
+          return { activeProjects: 0, pendingProposals: 0, totalEarnings: 0, totalClients: 0 };
+        }),
+        api.getFinancialSummary().catch((err) => {
+          console.error("Error fetching financial summary:", err);
+          return null;
+        }),
+        api.getBalance().catch((err) => {
+          console.error("Error fetching balance:", err);
+          return null;
+        }),
+        api.getTransactions({ limit: 50 }).catch((err) => {
+          console.error("Error fetching transactions:", err);
+          return { transactions: [] };
+        }),
+        api.getMyPayouts().catch((err) => {
+          console.error("Error fetching payouts:", err);
+          return [];
+        }),
       ]);
 
       setProjects(projectsData || []);
@@ -158,7 +188,7 @@ export default function FreelancerDashboard() {
       console.error("Error fetching data:", error);
       toast({
         title: t("common.error"),
-        description: "Failed to load dashboard data",
+        description: error?.message || "Failed to load dashboard data",
         variant: "destructive",
       });
     }

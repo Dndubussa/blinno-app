@@ -1,6 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
+import { retry, withTimeout, isRetryableError, AppError } from './errorHandler';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://www.blinno.app/api';
+const REQUEST_TIMEOUT = 30000; // 30 seconds
 
 class ApiClient {
   private baseUrl: string;
@@ -30,44 +32,93 @@ class ApiClient {
 
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    retryOptions?: { maxRetries?: number; retryable?: boolean }
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    };
+    const shouldRetry = retryOptions?.retryable !== false;
+    const maxRetries = retryOptions?.maxRetries ?? 3;
 
-    // Get token from Supabase session
-    const token = await this.getToken();
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
+    const makeRequest = async (): Promise<T> => {
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      };
 
-    const response = await fetch(url, {
-      ...options,
-      headers,
-    });
+      // Get token from Supabase session
+      const token = await this.getToken();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
 
-    if (!response.ok) {
-      // For 401 errors, try to get error message, but don't log as critical
-      if (response.status === 401) {
-        const error = await response.json().catch(() => ({ error: 'Unauthorized' }));
-        const errorObj = new Error(error.error || 'Unauthorized');
-        (errorObj as any).status = 401;
+      // Create fetch promise with timeout
+      const fetchPromise = fetch(url, {
+        ...options,
+        headers,
+      });
+
+      // Apply timeout
+      const response = await withTimeout(
+        fetchPromise,
+        REQUEST_TIMEOUT,
+        `Request to ${endpoint} timed out after ${REQUEST_TIMEOUT}ms`
+      ) as Response;
+
+      if (!response.ok) {
+        // Try to parse error response
+        let errorData: any;
+        try {
+          errorData = await response.json();
+        } catch {
+          errorData = { error: 'Request failed' };
+        }
+
+        // Create error object
+        const errorMessage = errorData.error || errorData.message || `HTTP error! status: ${response.status}`;
+        const errorObj = new AppError(
+          errorMessage,
+          errorData.code || `HTTP_${response.status}`,
+          response.status,
+          {
+            component: 'ApiClient',
+            action: 'request',
+            additionalData: {
+              endpoint,
+              method: options.method || 'GET',
+              status: response.status,
+            }
+          },
+          shouldRetry && isRetryableError({ status: response.status })
+        );
+
         // Preserve additional error properties
-        Object.assign(errorObj, error);
+        Object.assign(errorObj, errorData);
+        (errorObj as any).status = response.status;
+        (errorObj as any).statusCode = response.status;
+
         throw errorObj;
       }
-      
-      const error = await response.json().catch(() => ({ error: 'Request failed' }));
-      const errorObj = new Error(error.error || `HTTP error! status: ${response.status}`);
-      // Preserve additional error properties (like userExists, email, etc.)
-      Object.assign(errorObj, error);
-      throw errorObj;
+
+      return response.json();
+    };
+
+    // Retry logic for retryable errors
+    if (shouldRetry) {
+      return retry(makeRequest, {
+        maxRetries,
+        delay: 1000,
+        backoff: true,
+        retryableCheck: (error) => {
+          // Don't retry 4xx errors (except 429)
+          if (error.status >= 400 && error.status < 500 && error.status !== 429) {
+            return false;
+          }
+          return isRetryableError(error);
+        }
+      });
     }
 
-    return response.json();
+    return makeRequest();
   }
 
   // Auth
