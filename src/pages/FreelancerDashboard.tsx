@@ -781,45 +781,53 @@ export default function FreelancerDashboard() {
             {showAddClient && (
               <div className="mt-6 p-6 border rounded-lg bg-muted/30">
                 <h3 className="text-lg font-semibold mb-4">Add New Client</h3>
-                  <form onSubmit={handleAddClient} className="space-y-4">
-                    <div className="p-3 bg-muted rounded-md text-sm text-muted-foreground">
-                      <strong>Note:</strong> Platform users are automatically added as clients when they interact with you. Use this form to add external clients who are not on the platform.
+                <form onSubmit={handleAddClient} className="space-y-4">
+                  <div className="p-3 bg-muted rounded-md text-sm text-muted-foreground">
+                    <strong>Note:</strong> Platform users are automatically added as clients when they interact with you. Use this form to add external clients who are not on the platform.
+                  </div>
+                  <div>
+                    <Label htmlFor="client-user">User ID (Optional - leave blank for external client)</Label>
+                    <Input id="client-user" name="user_id" placeholder="User ID (optional)" />
+                    <p className="text-xs text-muted-foreground mt-1">Leave blank to add an external client</p>
+                  </div>
+                  <div>
+                    <Label htmlFor="company_name">Company Name</Label>
+                    <Input id="company_name" name="company_name" />
+                  </div>
+                  <div>
+                    <Label htmlFor="contact_name">Contact Name *</Label>
+                    <Input id="contact_name" name="contact_name" required />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="email">Email</Label>
+                      <Input id="email" name="email" type="email" />
                     </div>
                     <div>
-                      <Label htmlFor="client-user">User ID (Optional - leave blank for external client)</Label>
-                      <Input id="client-user" name="user_id" placeholder="User ID (optional)" />
-                      <p className="text-xs text-muted-foreground mt-1">Leave blank to add an external client</p>
+                      <Label htmlFor="phone">Phone</Label>
+                      <Input id="phone" name="phone" type="tel" />
                     </div>
-                    <div>
-                      <Label htmlFor="company_name">Company Name</Label>
-                      <Input id="company_name" name="company_name" />
-                    </div>
-                    <div>
-                      <Label htmlFor="contact_name">Contact Name *</Label>
-                      <Input id="contact_name" name="contact_name" required />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="email">Email</Label>
-                        <Input id="email" name="email" type="email" />
-                      </div>
-                      <div>
-                        <Label htmlFor="phone">Phone</Label>
-                        <Input id="phone" name="phone" type="tel" />
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="payment_terms">Payment Terms</Label>
-                      <Input id="payment_terms" name="payment_terms" placeholder="e.g., Net 30" />
-                    </div>
-                    <div>
-                      <Label htmlFor="notes">Notes</Label>
-                      <Textarea id="notes" name="notes" />
-                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="payment_terms">Payment Terms</Label>
+                    <Input id="payment_terms" name="payment_terms" placeholder="e.g., Net 30" />
+                  </div>
+                  <div>
+                    <Label htmlFor="notes">Notes</Label>
+                    <Textarea id="notes" name="notes" />
+                  </div>
+                  <div className="flex gap-2">
                     <Button type="submit">Add Client</Button>
-                  </form>
-                </CardContent>
-              </Card>
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      onClick={() => setShowAddClient(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              </div>
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
