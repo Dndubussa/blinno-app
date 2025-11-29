@@ -4,6 +4,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 import { hasRole, getPrimaryRole } from "@/lib/roleCheck";
 import { DashboardLayout } from "@/components/DashboardLayout";
+import { StatCard } from "@/components/StatCard";
+import { SectionCard } from "@/components/SectionCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -531,109 +533,118 @@ export default function FreelancerDashboard() {
     >
       {/* Overview Section */}
       {currentSection === 'overview' && (
-      <div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Active Projects</CardTitle>
-                  <Briefcase className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.activeProjects}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {projects.filter(p => p.status === 'active').length} in progress
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Pending Proposals</CardTitle>
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.pendingProposals}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {proposals.filter(p => p.status === 'sent').length} sent
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{formatCurrency(stats.totalEarnings)}</div>
-                  <p className="text-xs text-muted-foreground">
-                    From {invoices.filter(i => i.status === 'paid').length} paid invoices
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Clients</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.clientCount}</div>
-                  <p className="text-xs text-muted-foreground">Total clients</p>
-                </CardContent>
-              </Card>
+      <div className="space-y-8">
+            {/* Modern Stat Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <StatCard
+                title="Active Projects"
+                value={stats.activeProjects}
+                description={`${projects.filter(p => p.status === 'active').length} in progress`}
+                icon={Briefcase}
+                variant="primary"
+              />
+              <StatCard
+                title="Pending Proposals"
+                value={stats.pendingProposals}
+                description={`${proposals.filter(p => p.status === 'sent').length} sent`}
+                icon={FileText}
+                variant="warning"
+              />
+              <StatCard
+                title="Total Earnings"
+                value={formatCurrency(stats.totalEarnings)}
+                description={`From ${invoices.filter(i => i.status === 'paid').length} paid invoices`}
+                icon={DollarSign}
+                variant="success"
+              />
+              <StatCard
+                title="Clients"
+                value={stats.clientCount}
+                description="Total clients"
+                icon={Users}
+                variant="default"
+              />
             </div>
 
             {/* Recent Projects */}
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle>Recent Projects</CardTitle>
-                <CardDescription>Your latest project activity</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {projects.slice(0, 5).length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">No projects yet</p>
-                ) : (
-                  <div className="space-y-4">
-                    {projects.slice(0, 5).map((project) => (
-                      <div key={project.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div>
-                          <h3 className="font-semibold">{project.title}</h3>
-                          <p className="text-sm text-muted-foreground">{project.description}</p>
-                        </div>
+            <SectionCard
+              title="Recent Projects"
+              description="Your latest project activity"
+              icon={Briefcase}
+              headerActions={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAddProject(true)}
+                  className="gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  New Project
+                </Button>
+              }
+            >
+              {projects.slice(0, 5).length === 0 ? (
+                <div className="text-center py-12">
+                  <Briefcase className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+                  <p className="text-muted-foreground">No projects yet</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAddProject(true)}
+                    className="mt-4"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Your First Project
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {projects.slice(0, 5).map((project) => (
+                    <div
+                      key={project.id}
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors group"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-base group-hover:text-primary transition-colors">
+                          {project.title}
+                        </h3>
+                        <p className="text-sm text-muted-foreground truncate mt-1">
+                          {project.description || "No description"}
+                        </p>
+                      </div>
+                      <div className="ml-4">
                         {getStatusBadge(project.status)}
                       </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </SectionCard>
         </div>
         )}
 
         {/* Projects Section */}
         {currentSection === 'projects' && (
-        <div className="mt-6">
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h2 className="text-2xl font-semibold">Projects</h2>
-                <p className="text-sm text-muted-foreground">
-                  Manage your client projects and track progress
-                </p>
-              </div>
-              <Button onClick={() => setShowAddProject(!showAddProject)}>
-                <Plus className="mr-2 h-4 w-4" />
-                New Project
-              </Button>
-            </div>
+        <div className="space-y-6">
+            <SectionCard
+              title="Projects"
+              description="Manage your client projects and track progress"
+              icon={Briefcase}
+              headerActions={
+                <Button 
+                  onClick={() => setShowAddProject(!showAddProject)}
+                  className="gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  New Project
+                </Button>
+              }
+            >
 
             {showAddProject && (
-              <Card className="mb-6">
-                <CardHeader>
-                  <CardTitle>Create New Project</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleAddProject} className="space-y-4">
+              <div className="mt-6 p-6 border rounded-lg bg-muted/30">
+                <h3 className="text-lg font-semibold mb-4">Create New Project</h3>
+                <form onSubmit={handleAddProject} className="space-y-4">
                     <div>
                       <Label htmlFor="project-title">Title</Label>
                       <Input id="project-title" name="title" required />
@@ -693,16 +704,34 @@ export default function FreelancerDashboard() {
                         <Input id="deadline" name="deadline" type="date" />
                       </div>
                     </div>
-                    <Button type="submit">Create Project</Button>
+                    <div className="flex gap-2">
+                      <Button type="submit">Create Project</Button>
+                      <Button 
+                        type="button" 
+                        variant="outline"
+                        onClick={() => setShowAddProject(false)}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
                   </form>
-                </CardContent>
-              </Card>
+              </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {projects.map((project) => (
-                <Card key={project.id}>
-                  <CardHeader>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+              {projects.length === 0 ? (
+                <div className="col-span-full text-center py-12">
+                  <Briefcase className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+                  <p className="text-muted-foreground mb-4">No projects yet</p>
+                  <Button onClick={() => setShowAddProject(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Your First Project
+                  </Button>
+                </div>
+              ) : (
+                projects.map((project) => (
+                  <Card key={project.id} className="hover:shadow-lg transition-all duration-300 hover:scale-[1.02] border-2">
+                    <CardHeader>
                     <div className="flex justify-between items-start">
                       <CardTitle className="text-lg">{project.title}</CardTitle>
                       {getStatusBadge(project.status)}
@@ -728,17 +757,7 @@ export default function FreelancerDashboard() {
                 </Card>
               ))}
             </div>
-            {projects.length === 0 && (
-              <Card>
-                <CardContent className="p-12 text-center">
-                  <p className="text-muted-foreground mb-4">No projects yet</p>
-                  <Button onClick={() => setShowAddProject(true)}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create Your First Project
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
+            </SectionCard>
         </div>
         )}
 
@@ -759,11 +778,8 @@ export default function FreelancerDashboard() {
             </div>
 
             {showAddClient && (
-              <Card className="mb-6">
-                <CardHeader>
-                  <CardTitle>Add New Client</CardTitle>
-                </CardHeader>
-                <CardContent>
+              <div className="mt-6 p-6 border rounded-lg bg-muted/30">
+                <h3 className="text-lg font-semibold mb-4">Add New Client</h3>
                   <form onSubmit={handleAddClient} className="space-y-4">
                     <div className="p-3 bg-muted rounded-md text-sm text-muted-foreground">
                       <strong>Note:</strong> Platform users are automatically added as clients when they interact with you. Use this form to add external clients who are not on the platform.
