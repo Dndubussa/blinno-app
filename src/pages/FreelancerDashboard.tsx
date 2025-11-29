@@ -755,7 +755,8 @@ export default function FreelancerDashboard() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+                ))
+              )}
             </div>
             </SectionCard>
         </div>
