@@ -354,14 +354,14 @@ router.post('/registrations', async (req, res) => {
           current_attendees: (currentEvent?.current_attendees || 0) + parseInt(numberOfTickets),
         })
         .eq('id', eventId);
-    });
+    }
 
     res.status(201).json({
       ...registration,
-      event_title: event.title,
-      organizer_email: event.organizer?.email,
-      organizer_name: event.organizer_profile?.display_name,
-      total_cost: (event.ticket_price || 0) * parseInt(numberOfTickets)
+      event_title: (event as any).title || 'Event',
+      organizer_email: (event as any).organizer?.email || null,
+      organizer_name: (event as any).organizer_profile?.display_name || null,
+      total_cost: ((event as any).ticket_price || 0) * parseInt(numberOfTickets)
     });
   } catch (error: any) {
     console.error('Create event registration error:', error);
