@@ -141,100 +141,132 @@ export function DashboardLayout({
                 {/* Notifications */}
                 {user && <NotificationBell />}
 
-                {/* Enhanced User Menu with Better Design */}
+                {/* Enhanced User Profile & Sign Out */}
                 {user && profile && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="relative h-auto px-2 py-1.5 rounded-lg hover:bg-primary/10 hover:text-primary transition-all group"
-                      >
-                        <div className="flex items-center gap-2">
-                          <div className="relative">
-                            <Avatar className="h-9 w-9 ring-2 ring-border group-hover:ring-primary/50 transition-all shadow-sm">
-                              <AvatarImage 
-                                src={profile.avatar_url || undefined} 
-                                alt={profile.display_name || user.email || ""}
-                                className="object-cover"
-                              />
-                              <AvatarFallback className="bg-gradient-to-br from-primary via-primary/80 to-primary/60 text-primary-foreground font-semibold shadow-inner">
-                                {(profile.display_name || user.email || "U")[0].toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-green-500 rounded-full border-2 border-background ring-1 ring-green-500/50"></div>
+                  <div className="flex items-center gap-2">
+                    {/* Profile Dropdown Menu */}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="relative h-auto px-2 py-1.5 rounded-lg hover:bg-primary/10 hover:text-primary transition-all group border border-transparent hover:border-primary/20"
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="relative">
+                              <Avatar className="h-10 w-10 ring-2 ring-border group-hover:ring-primary/50 transition-all shadow-md group-hover:shadow-lg group-hover:scale-105">
+                                <AvatarImage 
+                                  src={profile.avatar_url || undefined} 
+                                  alt={profile.display_name || user.email || ""}
+                                  className="object-cover"
+                                />
+                                <AvatarFallback className="bg-gradient-to-br from-primary via-primary/80 to-primary/60 text-primary-foreground font-bold text-base shadow-inner">
+                                  {(profile.display_name || user.email || "U")[0].toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 bg-green-500 rounded-full border-2 border-background ring-2 ring-green-500/30 animate-pulse"></div>
+                            </div>
+                            <div className="hidden lg:flex flex-col items-start">
+                              <span className="text-sm font-semibold leading-tight text-foreground">
+                                {profile.display_name || user.email?.split("@")[0] || "User"}
+                              </span>
+                              <span className="text-xs text-muted-foreground leading-tight truncate max-w-[140px]">
+                                {user.email}
+                              </span>
+                            </div>
+                            <ChevronDown className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors hidden lg:block" />
                           </div>
-                          <div className="hidden md:flex flex-col items-start">
-                            <span className="text-sm font-medium leading-tight">
-                              {profile.display_name || user.email?.split("@")[0] || "User"}
-                            </span>
-                            <span className="text-xs text-muted-foreground leading-tight truncate max-w-[120px]">
-                              {user.email}
-                            </span>
-                          </div>
-                          <ChevronDown className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors hidden md:block" />
-                        </div>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-64 p-2">
-                      <DropdownMenuLabel className="p-0">
-                        <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                          <Avatar className="h-12 w-12 ring-2 ring-primary/20">
-                            <AvatarImage 
-                              src={profile.avatar_url || undefined} 
-                              alt={profile.display_name || user.email || ""}
-                            />
-                            <AvatarFallback className="bg-gradient-to-br from-primary via-primary/80 to-primary/60 text-primary-foreground font-semibold text-lg">
-                              {(profile.display_name || user.email || "U")[0].toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex flex-col space-y-0.5 flex-1 min-w-0">
-                            <p className="text-sm font-semibold leading-none truncate">
-                              {profile.display_name || "User"}
-                            </p>
-                            <p className="text-xs leading-none text-muted-foreground truncate">
-                              {user.email}
-                            </p>
-                            {profile.bio && (
-                              <p className="text-xs text-muted-foreground line-clamp-1 mt-1">
-                                {profile.bio}
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-72 p-2 shadow-xl border-border/50">
+                        <DropdownMenuLabel className="p-0">
+                          <div className="flex items-center gap-3 p-4 rounded-lg bg-gradient-to-br from-muted/80 to-muted/40 border border-border/50">
+                            <div className="relative">
+                              <Avatar className="h-14 w-14 ring-2 ring-primary/30 shadow-lg">
+                                <AvatarImage 
+                                  src={profile.avatar_url || undefined} 
+                                  alt={profile.display_name || user.email || ""}
+                                  className="object-cover"
+                                />
+                                <AvatarFallback className="bg-gradient-to-br from-primary via-primary/80 to-primary/60 text-primary-foreground font-bold text-xl shadow-inner">
+                                  {(profile.display_name || user.email || "U")[0].toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 bg-green-500 rounded-full border-2 border-background ring-2 ring-green-500/50"></div>
+                            </div>
+                            <div className="flex flex-col space-y-1 flex-1 min-w-0">
+                              <p className="text-sm font-bold leading-none truncate text-foreground">
+                                {profile.display_name || "User"}
                               </p>
-                            )}
+                              <p className="text-xs leading-none text-muted-foreground truncate">
+                                {user.email}
+                              </p>
+                              {profile.bio && (
+                                <p className="text-xs text-muted-foreground line-clamp-2 mt-1.5">
+                                  {profile.bio}
+                                </p>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      </DropdownMenuLabel>
-                      <DropdownMenuSeparator className="my-2" />
-                      <DropdownMenuItem 
-                        onClick={() => navigate("/dashboard#profile")}
-                        className="cursor-pointer rounded-md px-3 py-2.5 hover:bg-primary/10 hover:text-primary transition-colors"
-                      >
-                        <User className="h-4 w-4 mr-2" />
-                        <span>Profile Settings</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => navigate("/dashboard#profile")}
-                        className="cursor-pointer rounded-md px-3 py-2.5 hover:bg-primary/10 hover:text-primary transition-colors"
-                      >
-                        <Settings className="h-4 w-4 mr-2" />
-                        <span>Account Settings</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator className="my-2" />
-                      <DropdownMenuItem 
-                        onClick={async () => {
-                          try {
-                            await signOut();
-                            navigate("/");
-                          } catch (error) {
-                            console.error("Error signing out:", error);
-                          }
-                        }} 
-                        className="cursor-pointer rounded-md px-3 py-2.5 text-destructive focus:text-destructive focus:bg-destructive/10 hover:bg-destructive/10 transition-colors"
-                      >
-                        <LogOut className="h-4 w-4 mr-2" />
-                        <span className="font-medium">Sign Out</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator className="my-2" />
+                        <DropdownMenuItem 
+                          onClick={() => {
+                            const basePath = location.pathname;
+                            navigate(`${basePath}#profile`, { replace: true });
+                          }}
+                          className="cursor-pointer rounded-md px-3 py-2.5 hover:bg-primary/10 hover:text-primary transition-colors group/item"
+                        >
+                          <User className="h-4 w-4 mr-2 group-hover/item:scale-110 transition-transform" />
+                          <span className="font-medium">Profile Settings</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => {
+                            const basePath = location.pathname;
+                            navigate(`${basePath}#profile`, { replace: true });
+                          }}
+                          className="cursor-pointer rounded-md px-3 py-2.5 hover:bg-primary/10 hover:text-primary transition-colors group/item"
+                        >
+                          <Settings className="h-4 w-4 mr-2 group-hover/item:scale-110 transition-transform" />
+                          <span className="font-medium">Account Settings</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator className="my-2" />
+                        <DropdownMenuItem 
+                          onClick={async () => {
+                            try {
+                              await signOut();
+                              navigate("/");
+                            } catch (error) {
+                              console.error("Error signing out:", error);
+                            }
+                          }} 
+                          className="cursor-pointer rounded-md px-3 py-2.5 text-destructive focus:text-destructive focus:bg-destructive/10 hover:bg-destructive/10 transition-colors group/item font-semibold"
+                        >
+                          <LogOut className="h-4 w-4 mr-2 group-hover/item:scale-110 transition-transform" />
+                          <span>Sign Out</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    {/* Standalone Sign Out Button (Always Visible) */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        try {
+                          await signOut();
+                          navigate("/");
+                        } catch (error) {
+                          console.error("Error signing out:", error);
+                        }
+                      }}
+                      className="border-destructive/50 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-all hidden sm:flex items-center gap-2"
+                      title="Sign Out"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      <span className="hidden lg:inline">Sign Out</span>
+                    </Button>
+                  </div>
                 )}
 
                 {/* Custom Header Actions */}
