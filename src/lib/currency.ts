@@ -137,16 +137,75 @@ export function getMultiCurrencyPrices(usdPrice: number, currencies: string[] = 
 }
 
 /**
- * Country to currency mapping
+ * Country to currency mapping (by country code)
+ * Maps all countries to supported currencies or USD as fallback
  */
 const COUNTRY_TO_CURRENCY: Record<string, string> = {
+  // East Africa - Supported currencies
   'TZ': 'TZS',  // Tanzania
   'KE': 'KES',  // Kenya
   'UG': 'UGX',  // Uganda
   'RW': 'RWF',  // Rwanda
+  
+  // West Africa
   'NG': 'NGN',  // Nigeria
+  'GH': 'USD',  // Ghana (fallback to USD)
+  'SN': 'USD',  // Senegal (fallback to USD)
+  'CI': 'USD',  // Côte d'Ivoire (fallback to USD)
+  'CM': 'USD',  // Cameroon (fallback to USD)
+  'ML': 'USD',  // Mali (fallback to USD)
+  'BF': 'USD',  // Burkina Faso (fallback to USD)
+  'NE': 'USD',  // Niger (fallback to USD)
+  'TD': 'USD',  // Chad (fallback to USD)
+  'BJ': 'USD',  // Benin (fallback to USD)
+  'TG': 'USD',  // Togo (fallback to USD)
+  'GN': 'USD',  // Guinea (fallback to USD)
+  'GW': 'USD',  // Guinea-Bissau (fallback to USD)
+  'LR': 'USD',  // Liberia (fallback to USD)
+  'SL': 'USD',  // Sierra Leone (fallback to USD)
+  'GM': 'USD',  // Gambia (fallback to USD)
+  'MR': 'USD',  // Mauritania (fallback to USD)
+  
+  // North America
   'US': 'USD',  // United States
-  'GB': 'GBP',  // United Kingdom
+  'CA': 'USD',  // Canada
+  'MX': 'USD',  // Mexico
+  'GT': 'USD',  // Guatemala
+  'BZ': 'USD',  // Belize
+  'SV': 'USD',  // El Salvador
+  'HN': 'USD',  // Honduras
+  'NI': 'USD',  // Nicaragua
+  'CR': 'USD',  // Costa Rica
+  'PA': 'USD',  // Panama
+  'CU': 'USD',  // Cuba
+  'JM': 'USD',  // Jamaica
+  'HT': 'USD',  // Haiti
+  'DO': 'USD',  // Dominican Republic
+  'BS': 'USD',  // Bahamas
+  'BB': 'USD',  // Barbados
+  'AG': 'USD',  // Antigua and Barbuda
+  'GD': 'USD',  // Grenada
+  'DM': 'USD',  // Dominica
+  'LC': 'USD',  // Saint Lucia
+  'VC': 'USD',  // Saint Vincent and the Grenadines
+  'KN': 'USD',  // Saint Kitts and Nevis
+  'TT': 'USD',  // Trinidad and Tobago
+  
+  // South America
+  'BR': 'USD',  // Brazil
+  'AR': 'USD',  // Argentina
+  'CO': 'USD',  // Colombia
+  'PE': 'USD',  // Peru
+  'VE': 'USD',  // Venezuela
+  'CL': 'USD',  // Chile
+  'EC': 'USD',  // Ecuador
+  'BO': 'USD',  // Bolivia
+  'PY': 'USD',  // Paraguay
+  'UY': 'USD',  // Uruguay
+  'GY': 'USD',  // Guyana
+  'SR': 'USD',  // Suriname
+  
+  // Europe - EUR zone
   'DE': 'EUR',  // Germany
   'FR': 'EUR',  // France
   'IT': 'EUR',  // Italy
@@ -158,7 +217,170 @@ const COUNTRY_TO_CURRENCY: Record<string, string> = {
   'IE': 'EUR',  // Ireland
   'FI': 'EUR',  // Finland
   'GR': 'EUR',  // Greece
+  'LU': 'EUR',  // Luxembourg
+  'MT': 'EUR',  // Malta
+  'CY': 'EUR',  // Cyprus
+  'SK': 'EUR',  // Slovakia
+  'SI': 'EUR',  // Slovenia
+  'EE': 'EUR',  // Estonia
+  'LV': 'EUR',  // Latvia
+  'LT': 'EUR',  // Lithuania
+  
+  // Europe - Other
+  'GB': 'GBP',  // United Kingdom
+  'CH': 'EUR',  // Switzerland (fallback to EUR)
+  'NO': 'EUR',  // Norway (fallback to EUR)
+  'SE': 'EUR',  // Sweden (fallback to EUR)
+  'DK': 'EUR',  // Denmark (fallback to EUR)
+  'PL': 'EUR',  // Poland (fallback to EUR)
+  'CZ': 'EUR',  // Czechia (fallback to EUR)
+  'HU': 'EUR',  // Hungary (fallback to EUR)
+  'RO': 'EUR',  // Romania (fallback to EUR)
+  'BG': 'EUR',  // Bulgaria (fallback to EUR)
+  'HR': 'EUR',  // Croatia (fallback to EUR)
+  'RS': 'EUR',  // Serbia (fallback to EUR)
+  'BA': 'EUR',  // Bosnia and Herzegovina (fallback to EUR)
+  'MK': 'EUR',  // North Macedonia (fallback to EUR)
+  'AL': 'EUR',  // Albania (fallback to EUR)
+  'ME': 'EUR',  // Montenegro (fallback to EUR)
+  'IS': 'EUR',  // Iceland (fallback to EUR)
+  'UA': 'EUR',  // Ukraine (fallback to EUR)
+  'BY': 'EUR',  // Belarus (fallback to EUR)
+  'MD': 'EUR',  // Moldova (fallback to EUR)
+  'GE': 'EUR',  // Georgia (fallback to EUR)
+  'AM': 'EUR',  // Armenia (fallback to EUR)
+  'AZ': 'EUR',  // Azerbaijan (fallback to EUR)
+  'KZ': 'EUR',  // Kazakhstan (fallback to EUR)
+  'RU': 'EUR',  // Russia (fallback to EUR)
+  
+  // Middle East
+  'SA': 'USD',  // Saudi Arabia
+  'AE': 'USD',  // United Arab Emirates
+  'QA': 'USD',  // Qatar
+  'KW': 'USD',  // Kuwait
+  'BH': 'USD',  // Bahrain
+  'OM': 'USD',  // Oman
+  'JO': 'USD',  // Jordan
+  'LB': 'USD',  // Lebanon
+  'IL': 'USD',  // Israel
+  'PS': 'USD',  // Palestine State
+  'IQ': 'USD',  // Iraq
+  'IR': 'USD',  // Iran
+  'YE': 'USD',  // Yemen
+  'SY': 'USD',  // Syria
+  'TR': 'EUR',  // Turkey (fallback to EUR)
+  
+  // Asia
+  'CN': 'USD',  // China
+  'IN': 'USD',  // India
+  'JP': 'USD',  // Japan
+  'KR': 'USD',  // South Korea
+  'ID': 'USD',  // Indonesia
+  'PH': 'USD',  // Philippines
+  'TH': 'USD',  // Thailand
+  'VN': 'USD',  // Vietnam
+  'MY': 'USD',  // Malaysia
+  'SG': 'USD',  // Singapore
+  'BD': 'USD',  // Bangladesh
+  'PK': 'USD',  // Pakistan
+  'AF': 'USD',  // Afghanistan
+  'LK': 'USD',  // Sri Lanka
+  'MM': 'USD',  // Myanmar
+  'KH': 'USD',  // Cambodia
+  'LA': 'USD',  // Laos
+  'BN': 'USD',  // Brunei
+  'MN': 'USD',  // Mongolia
+  'NP': 'USD',  // Nepal
+  'BT': 'USD',  // Bhutan
+  'MV': 'USD',  // Maldives
+  'TL': 'USD',  // Timor-Leste
+  
+  // Oceania
+  'AU': 'USD',  // Australia
+  'NZ': 'USD',  // New Zealand
+  'FJ': 'USD',  // Fiji
+  'PG': 'USD',  // Papua New Guinea
+  'SB': 'USD',  // Solomon Islands
+  'VU': 'USD',  // Vanuatu
+  'NC': 'USD',  // New Caledonia
+  'PF': 'USD',  // French Polynesia
+  'WS': 'USD',  // Samoa
+  'TO': 'USD',  // Tonga
+  'KI': 'USD',  // Kiribati
+  'MH': 'USD',  // Marshall Islands
+  'FM': 'USD',  // Micronesia
+  'PW': 'USD',  // Palau
+  'NR': 'USD',  // Nauru
+  'TV': 'USD',  // Tuvalu
+  
+  // Africa - Other
+  'ZA': 'USD',  // South Africa
+  'EG': 'USD',  // Egypt
+  'ET': 'USD',  // Ethiopia
+  'DZ': 'USD',  // Algeria
+  'MA': 'USD',  // Morocco
+  'TN': 'USD',  // Tunisia
+  'LY': 'USD',  // Libya
+  'SD': 'USD',  // Sudan
+  'SS': 'USD',  // South Sudan
+  'SO': 'USD',  // Somalia
+  'DJ': 'USD',  // Djibouti
+  'ER': 'USD',  // Eritrea
+  'MW': 'USD',  // Malawi
+  'ZM': 'USD',  // Zambia
+  'ZW': 'USD',  // Zimbabwe
+  'BW': 'USD',  // Botswana
+  'NA': 'USD',  // Namibia
+  'LS': 'USD',  // Lesotho
+  'SZ': 'USD',  // Eswatini
+  'MZ': 'USD',  // Mozambique
+  'MG': 'USD',  // Madagascar
+  'MU': 'USD',  // Mauritius
+  'SC': 'USD',  // Seychelles
+  'KM': 'USD',  // Comoros
+  'CV': 'USD',  // Cabo Verde
+  'ST': 'USD',  // São Tomé and Príncipe
+  'GQ': 'USD',  // Equatorial Guinea
+  'GA': 'USD',  // Gabon
+  'CG': 'USD',  // Congo
+  'CD': 'USD',  // Democratic Republic of the Congo
+  'CF': 'USD',  // Central African Republic
+  'AO': 'USD',  // Angola
+  'BI': 'USD',  // Burundi
+  
+  // Other
+  'AD': 'EUR',  // Andorra
+  'MC': 'EUR',  // Monaco
+  'SM': 'EUR',  // San Marino
+  'VA': 'EUR',  // Holy See
+  'LI': 'EUR',  // Liechtenstein
 };
+
+/**
+ * Get currency code from country name
+ * @param countryName - Full country name (e.g., "Tanzania", "Kenya")
+ * @returns Currency code (e.g., "TZS", "KES") or "USD" as default
+ */
+export function getCurrencyFromCountry(countryName?: string | null): string {
+  if (!countryName) return 'USD';
+  
+  // Import countries list dynamically to avoid circular dependency
+  try {
+    const { countries } = require('./countries');
+    const country = countries.find((c: { name: string; code: string }) => 
+      c.name.toLowerCase() === countryName.toLowerCase()
+    );
+    
+    if (country && COUNTRY_TO_CURRENCY[country.code]) {
+      return COUNTRY_TO_CURRENCY[country.code];
+    }
+  } catch (error) {
+    console.error('Error getting currency from country:', error);
+  }
+  
+  // Fallback to USD
+  return 'USD';
+}
 
 /**
  * Regional currency groups (for showing related currencies)
@@ -271,5 +493,6 @@ export default {
   getMultiCurrencyPrices,
   detectUserCountry,
   getLocationBasedCurrencies,
+  getCurrencyFromCountry,
   CURRENCY_RATES,
 };

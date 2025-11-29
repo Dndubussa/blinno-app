@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
-import { formatPrice as formatCurrency } from "@/lib/currency";
+import { formatPrice, getCurrencyFromCountry } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -326,7 +326,13 @@ export default function MusicianDashboard() {
     }
   };
 
-  // formatCurrency is already imported from @/lib/currency
+  // Get user's currency based on their country
+  const userCurrency = profile?.location ? getCurrencyFromCountry(profile.location) : 'USD';
+  
+  // Wrapper function to format currency using user's country-based currency
+  const formatCurrency = (amount: number) => {
+    return formatPrice(amount, userCurrency);
+  };
 
   if (checkingRole) {
     return (

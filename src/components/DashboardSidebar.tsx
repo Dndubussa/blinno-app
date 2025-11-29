@@ -73,8 +73,44 @@ export function DashboardSidebar() {
   ];
 
   // Items to exclude for specific roles
+  // Only exclude items that are truly redundant or not applicable
+  // Service providers can still purchase products/services from others
   const roleExclusions: Record<string, string[]> = {
-    freelancer: ['/marketplace', '/events', '/orders', '/wishlist', '/analytics'],
+    // Freelancers provide services but can also buy products/services - only exclude redundant analytics
+    freelancer: ['/analytics'],
+    
+    // Lodging providers can buy supplies/services - only exclude redundant analytics
+    lodging: ['/analytics'],
+    
+    // Restaurant owners can buy supplies/services - only exclude redundant analytics
+    restaurant: ['/analytics'],
+    
+    // Educators can buy courses/supplies - only exclude redundant analytics
+    educator: ['/analytics'],
+    
+    // Journalists can buy services/supplies - only exclude redundant analytics
+    journalist: ['/analytics'],
+    
+    // Artisans can buy materials/services - only exclude redundant analytics
+    artisan: ['/analytics'],
+    
+    // Employers can buy services/supplies - only exclude redundant analytics
+    employer: ['/analytics'],
+    
+    // Event organizers manage events but can attend others - only exclude redundant analytics
+    event_organizer: ['/analytics'],
+    
+    // Musicians can buy equipment/services - only exclude redundant analytics
+    musician: ['/analytics'],
+    
+    // Sellers can buy products/services - only exclude redundant analytics
+    seller: ['/analytics'],
+    
+    // Creators might need all features
+    creator: [],
+    
+    // Regular users need all features
+    user: [],
   };
 
   // Role-specific dashboard items
@@ -107,14 +143,12 @@ export function DashboardSidebar() {
       { title: "Educator Dashboard", icon: LayoutDashboard, href: "/educator-dashboard#overview" },
       { title: "Courses", icon: BookOpen, href: "/educator-dashboard#courses" },
       { title: "Students", icon: Users, href: "/educator-dashboard#students" },
-      { title: "Analytics", icon: BarChart3, href: "/educator-dashboard#analytics" },
       { title: "Financial", icon: CreditCard, href: "/educator-dashboard#financial" },
       { title: "Settings", icon: Settings, href: "/educator-dashboard#profile" },
     ],
     journalist: [
       { title: "Journalist Dashboard", icon: LayoutDashboard, href: "/journalist-dashboard#overview" },
       { title: "Articles", icon: Newspaper, href: "/journalist-dashboard#articles" },
-      { title: "Analytics", icon: BarChart3, href: "/journalist-dashboard#analytics" },
       { title: "Financial", icon: CreditCard, href: "/journalist-dashboard#financial" },
       { title: "Settings", icon: Settings, href: "/journalist-dashboard#profile" },
     ],
@@ -129,7 +163,6 @@ export function DashboardSidebar() {
       { title: "Employer Dashboard", icon: LayoutDashboard, href: "/employer-dashboard#overview" },
       { title: "Jobs", icon: Briefcase, href: "/employer-dashboard#jobs" },
       { title: "Applications", icon: FileText, href: "/employer-dashboard#applications" },
-      { title: "Analytics", icon: BarChart3, href: "/employer-dashboard#analytics" },
       { title: "Financial", icon: CreditCard, href: "/employer-dashboard#financial" },
       { title: "Settings", icon: Settings, href: "/employer-dashboard#profile" },
     ],
@@ -137,7 +170,6 @@ export function DashboardSidebar() {
       { title: "Event Organizer Dashboard", icon: LayoutDashboard, href: "/event-organizer-dashboard#overview" },
       { title: "Events", icon: Calendar, href: "/event-organizer-dashboard#events" },
       { title: "Tickets", icon: FileText, href: "/event-organizer-dashboard#tickets" },
-      { title: "Analytics", icon: BarChart3, href: "/event-organizer-dashboard#analytics" },
       { title: "Financial", icon: CreditCard, href: "/event-organizer-dashboard#financial" },
       { title: "Settings", icon: Settings, href: "/event-organizer-dashboard#profile" },
     ],
@@ -151,7 +183,6 @@ export function DashboardSidebar() {
     musician: [
       { title: "Musician Dashboard", icon: Music, href: "/musician-dashboard#overview" },
       { title: "My Tracks", icon: Music, href: "/musician-dashboard#tracks" },
-      { title: "Analytics", icon: BarChart3, href: "/musician-dashboard#analytics" },
       { title: "Financial", icon: CreditCard, href: "/musician-dashboard#financial" },
       { title: "Settings", icon: Settings, href: "/musician-dashboard#profile" },
     ],

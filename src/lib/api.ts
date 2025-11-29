@@ -1114,14 +1114,14 @@ class ApiClient {
     return this.request<any[]>('/messages/conversations');
   }
 
-  async getMessages(conversationId: string) {
-    return this.request<any[]>(`/messages/conversations/${conversationId}`);
+  async getMessages(userId: string) {
+    return this.request<any[]>(`/messages/${userId}`);
   }
 
-  async sendMessage(conversationId: string, content: string) {
-    return this.request<any>(`/messages/conversations/${conversationId}`, {
+  async sendMessage(recipientId: string, content: string) {
+    return this.request<any>('/messages', {
       method: 'POST',
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({ recipientId, content }),
     });
   }
 

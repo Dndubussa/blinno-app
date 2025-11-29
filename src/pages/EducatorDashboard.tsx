@@ -28,6 +28,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { ImageUpload } from "@/components/ImageUpload";
+import { formatPrice, getCurrencyFromCountry } from "@/lib/currency";
 
 export default function EducatorDashboard() {
   const { user, profile } = useAuth();
@@ -259,12 +260,11 @@ export default function EducatorDashboard() {
     }
   };
 
+  // Get user's currency based on their country
+  const userCurrency = profile?.location ? getCurrencyFromCountry(profile.location) : 'USD';
+  
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 2,
-    }).format(amount);
+    return formatPrice(amount, userCurrency);
   };
 
   if (checkingRole) {

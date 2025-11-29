@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ImageUpload } from "@/components/ImageUpload";
+import { formatPrice, getCurrencyFromCountry } from "@/lib/currency";
 
 export default function FreelancerDashboard() {
   const { user, profile } = useAuth();
@@ -414,12 +415,11 @@ export default function FreelancerDashboard() {
     );
   };
 
+  // Get user's currency based on their country
+  const userCurrency = profile?.location ? getCurrencyFromCountry(profile.location) : 'USD';
+  
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-    }).format(amount);
+    return formatPrice(amount, userCurrency);
   };
 
   const handleRequestPayout = async (e: React.FormEvent<HTMLFormElement>) => {
