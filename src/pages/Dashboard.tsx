@@ -483,9 +483,14 @@ export default function Dashboard() {
                     bookFormData.append('price', formData.get("price") as string);
                     bookFormData.append('currency', formData.get("currency") as string || 'USD');
                     
-                    const tags = (formData.get("tags") as string)?.split(",").map(t => t.trim()).filter(t => t) || [];
-                    if (tags.length > 0) {
-                      bookFormData.append('tags', JSON.stringify(tags));
+                    // Get genre from select
+                    const genre = (document.getElementById('book-genre') as HTMLSelectElement)?.value || "";
+                    const additionalTags = (formData.get("tags") as string)?.split(",").map(t => t.trim()).filter(t => t) || [];
+                    
+                    // Combine genre and additional tags
+                    const allTags = genre ? [genre, ...additionalTags] : additionalTags;
+                    if (allTags.length > 0) {
+                      bookFormData.append('tags', JSON.stringify(allTags));
                     }
 
                     if (bookFile) {
@@ -519,7 +524,7 @@ export default function Dashboard() {
                       variant: "destructive",
                     });
                   }
-                }} className="space-y-4">
+                }} id="book-form" className="space-y-4">
                   <div>
                     <Label htmlFor="book-file">Book File *</Label>
                     <FileUpload
@@ -528,6 +533,21 @@ export default function Dashboard() {
                       accept=".pdf,.epub,.mobi,.azw3,.fb2"
                       maxSizeMB={50}
                       description="PDF, EPUB, MOBI, AZW3, or FB2 (max 50MB)"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="book-preview">Preview File (Optional)</Label>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Upload a sample/preview of your book (first few pages or chapters)
+                    </p>
+                    <FileUpload
+                      onFileSelect={(file) => setBookPreview(file)}
+                      currentFile={editingBook ? books.find(b => b.id === editingBook)?.preview_url : null}
+                      accept=".pdf,.epub,.mobi,.azw3,.fb2"
+                      maxSizeMB={10}
+                      description="Preview file (max 10MB)"
+                      label="Upload Preview"
                     />
                   </div>
 

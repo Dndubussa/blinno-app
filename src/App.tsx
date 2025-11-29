@@ -52,6 +52,7 @@ import MusicianDashboard from "@/pages/MusicianDashboard";
 import MusicTest from "@/pages/MusicTest";
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import ChooseSubscription from "@/pages/ChooseSubscription";
+import BookDetail from "@/pages/BookDetail";
 
 function App() {
   return (
@@ -95,6 +96,7 @@ function App() {
                 <Route path="/portfolio/:id" element={<CreatorProfile />} />
                 <Route path="/products" element={<Marketplace />} />
                 <Route path="/product/:id" element={<Marketplace />} />
+                <Route path="/book/:id" element={<BookDetail />} />
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/checkout" element={<Cart />} />
                 <Route path="/booking" element={<Booking />} />

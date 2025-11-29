@@ -54,6 +54,28 @@ type Course = {
   type: "course";
 };
 
+type Book = {
+  id: string;
+  creator_id: string;
+  title: string;
+  description: string;
+  price: number;
+  category: string;
+  file_url: string;
+  preview_url: string | null;
+  thumbnail_url: string | null;
+  currency: string;
+  tags: string[];
+  download_count: number;
+  sales_count: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  display_name?: string;
+  avatar_url?: string;
+  type: "book";
+};
+
 const Marketplace = () => {
   const { t } = useTranslation();
   const { user } = useContext(AuthContext);
@@ -61,12 +83,13 @@ const Marketplace = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
-  const [products, setProducts] = useState<(Product | Course)[]>([]);
+  const [products, setProducts] = useState<(Product | Course | Book)[]>([]);
   const [loading, setLoading] = useState(true);
   const [addingToCart, setAddingToCart] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState(searchParams.get("category") || "all");
   const [locationFilter, setLocationFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState<"all" | "product" | "course" | "book">("all");
 
   // Update category filter when URL query parameter changes
   useEffect(() => {
@@ -78,24 +101,39 @@ const Marketplace = () => {
 
   useEffect(() => {
     fetchProducts();
-  }, [categoryFilter, locationFilter, searchQuery]);
+  }, [categoryFilter, locationFilter, searchQuery, typeFilter]);
 
   const fetchProducts = async () => {
     try {
+      setLoading(true);
+      
       // Fetch products
-      const productsData = await api.getProducts({
-        category: categoryFilter !== 'all' ? categoryFilter : undefined,
-        location: locationFilter !== 'all' ? locationFilter : undefined,
-        search: searchQuery || undefined,
-      });
+      const productsData = typeFilter === "all" || typeFilter === "product" 
+        ? await api.getProducts({
+            category: categoryFilter !== 'all' ? categoryFilter : undefined,
+            location: locationFilter !== 'all' ? locationFilter : undefined,
+            search: searchQuery || undefined,
+          })
+        : [];
 
       // Fetch courses
-      const coursesData = await api.getCourses();
+      const coursesData = typeFilter === "all" || typeFilter === "course"
+        ? await api.getCourses()
+        : [];
+
+      // Fetch books (digital products with category 'ebook')
+      const booksData = typeFilter === "all" || typeFilter === "book"
+        ? await api.getDigitalProducts({
+            category: 'ebook',
+            search: searchQuery || undefined,
+          })
+        : [];
       
-      // Combine products and courses
+      // Combine products, courses, and books
       const allItems = [
         ...productsData.map((p: any) => ({ ...p, type: "product" as const })),
-        ...coursesData.map((c: any) => ({ ...c, type: "course" as const }))
+        ...coursesData.map((c: any) => ({ ...c, type: "course" as const })),
+        ...booksData.map((b: any) => ({ ...b, type: "book" as const }))
       ];
 
       setProducts(allItems || []);
@@ -248,9 +286,21 @@ const Marketplace = () => {
           <Card className="mb-8">
             <CardContent className="p-6">
               {/* Active Filters Display */}
-              {(categoryFilter !== "all" || locationFilter !== "all" || searchQuery) && (
+              {(categoryFilter !== "all" || locationFilter !== "all" || searchQuery || typeFilter !== "all") && (
                 <div className="mb-4 flex flex-wrap items-center gap-2">
                   <span className="text-sm text-muted-foreground">{t("marketplace.activeFilters")}:</span>
+                  {typeFilter !== "all" && (
+                    <Badge variant="secondary" className="gap-1">
+                      Type: {typeFilter}
+                      <button
+                        onClick={() => setTypeFilter("all")}
+                        className="ml-1 hover:text-destructive"
+                        aria-label="Remove type filter"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  )}
                   {categoryFilter !== "all" && (
                     <Badge variant="secondary" className="gap-1">
                       {t("marketplace.category")}: {categoryFilter}
@@ -294,6 +344,7 @@ const Marketplace = () => {
                       setCategoryFilter("all");
                       setLocationFilter("all");
                       setSearchQuery("");
+                      setTypeFilter("all");
                     }}
                     className="h-6 text-xs"
                   >
@@ -302,8 +353,8 @@ const Marketplace = () => {
                 </div>
               )}
               <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                {/* Search Bar - Takes 6 columns on desktop */}
-                <div className="md:col-span-6">
+                {/* Search Bar - Takes 4 columns on desktop */}
+                <div className="md:col-span-4">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                     <Input
@@ -313,6 +364,23 @@ const Marketplace = () => {
                       className="pl-10 h-10"
                     />
                   </div>
+                </div>
+                
+                {/* Type Filter - Takes 2 columns on desktop */}
+                <div className="md:col-span-2">
+                  <Select value={typeFilter} onValueChange={(value: any) => setTypeFilter(value)}>
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder="Type">
+                        {typeFilter === "all" ? "All Types" : typeFilter.charAt(0).toUpperCase() + typeFilter.slice(1)}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
+                      <SelectItem value="product">Products</SelectItem>
+                      <SelectItem value="course">Courses</SelectItem>
+                      <SelectItem value="book">Books</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 
                 {/* Category Filter - Takes 3 columns on desktop */}
@@ -374,7 +442,7 @@ const Marketplace = () => {
             <Card>
               <CardContent className="p-12 text-center">
                 <p className="text-muted-foreground mb-2">{t("marketplace.noProducts")}</p>
-                {(categoryFilter !== "all" || locationFilter !== "all" || searchQuery) && (
+                {(categoryFilter !== "all" || locationFilter !== "all" || searchQuery || typeFilter !== "all") && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -382,6 +450,7 @@ const Marketplace = () => {
                       setCategoryFilter("all");
                       setLocationFilter("all");
                       setSearchQuery("");
+                      setTypeFilter("all");
                     }}
                     className="mt-4"
                   >
@@ -399,7 +468,13 @@ const Marketplace = () => {
                 >
                   <div className="relative aspect-[4/3] overflow-hidden bg-muted">
                     <img 
-                      src={'image_url' in item ? item.image_url || PLACEHOLDER_IMAGE.PRODUCT : PLACEHOLDER_IMAGE.PRODUCT} 
+                      src={
+                        'thumbnail_url' in item && item.thumbnail_url 
+                          ? item.thumbnail_url 
+                          : 'image_url' in item 
+                            ? item.image_url || PLACEHOLDER_IMAGE.PRODUCT 
+                            : PLACEHOLDER_IMAGE.PRODUCT
+                      } 
                       alt={item.title}
                       className="w-full h-full object-cover"
                       onError={(e) => {
@@ -416,6 +491,14 @@ const Marketplace = () => {
                         <Badge variant="default" className="flex items-center gap-1">
                           <BookOpen className="h-3 w-3" />
                           {t("marketplace.course")}
+                        </Badge>
+                      </div>
+                    )}
+                    {"type" in item && item.type === "book" && (
+                      <div className="absolute top-4 right-4">
+                        <Badge variant="default" className="flex items-center gap-1">
+                          <BookOpen className="h-3 w-3" />
+                          Book
                         </Badge>
                       </div>
                     )}
