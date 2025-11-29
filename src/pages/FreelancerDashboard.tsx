@@ -1006,138 +1006,115 @@ export default function FreelancerDashboard() {
 
       {/* Financial Section */}
       {currentSection === 'financial' && (
-      <div>
-            <div className="space-y-6">
-              {/* Financial Summary Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Available Balance</CardTitle>
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
-                      {balance ? formatCurrency(balance.available_balance || 0) : formatCurrency(0)}
-                    </div>
-                    <p className="text-xs text-muted-foreground">Ready for payout</p>
-                  </CardContent>
-                </Card>
+      <div className="space-y-8">
+            {/* Financial Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <StatCard
+                title="Available Balance"
+                value={balance ? formatCurrency(balance.available_balance || 0) : formatCurrency(0)}
+                description="Ready for payout"
+                icon={DollarSign}
+                variant="success"
+              />
+              <StatCard
+                title="Pending Balance"
+                value={balance ? formatCurrency(balance.pending_balance || 0) : formatCurrency(0)}
+                description="Awaiting payment"
+                icon={Clock}
+                variant="warning"
+              />
+              <StatCard
+                title="Total Earned"
+                value={balance ? formatCurrency(balance.total_earned || 0) : formatCurrency(stats.totalEarnings)}
+                description="Lifetime earnings"
+                icon={TrendingUp}
+                variant="primary"
+              />
+              <StatCard
+                title="Total Paid Out"
+                value={balance ? formatCurrency(balance.total_paid_out || 0) : formatCurrency(0)}
+                description="Withdrawn funds"
+                icon={DollarSign}
+                variant="default"
+              />
+            </div>
 
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Pending Balance</CardTitle>
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
-                      {balance ? formatCurrency(balance.pending_balance || 0) : formatCurrency(0)}
-                    </div>
-                    <p className="text-xs text-muted-foreground">Awaiting payment</p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Earned</CardTitle>
-                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
-                      {balance ? formatCurrency(balance.total_earned || 0) : formatCurrency(stats.totalEarnings)}
-                    </div>
-                    <p className="text-xs text-muted-foreground">Lifetime earnings</p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Paid Out</CardTitle>
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
-                      {balance ? formatCurrency(balance.total_paid_out || 0) : formatCurrency(0)}
-                    </div>
-                    <p className="text-xs text-muted-foreground">Withdrawn funds</p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Invoices Section */}
-              <Card>
-                <CardHeader>
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <CardTitle>Invoices</CardTitle>
-                      <CardDescription>Manage and track your invoices</CardDescription>
-                    </div>
-                    <Button onClick={() => setShowAddProject(!showAddProject)}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      New Invoice
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {invoices.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-8">No invoices yet</p>
-                  ) : (
-                    <div className="space-y-4">
-                      {invoices.map((invoice) => (
-                        <div key={invoice.id} className="flex items-center justify-between p-4 border rounded-lg">
-                          <div>
-                            <h3 className="font-semibold">Invoice #{invoice.id?.slice(0, 8) || 'N/A'}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              {invoice.description || 'No description'}
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Due: {invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : 'Not set'}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-lg font-semibold">{formatCurrency(invoice.amount)}</div>
-                            {getStatusBadge(invoice.status)}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Payout Request Section */}
-              <Card>
-                <CardHeader>
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <CardTitle>Payouts</CardTitle>
-                      <CardDescription>Request payouts of your earnings</CardDescription>
-                    </div>
-                    <Button 
-                      onClick={() => setShowRequestPayout(!showRequestPayout)}
-                      disabled={!balance || (balance.available_balance || 0) < 10000}
+            {/* Invoices Section */}
+            <SectionCard
+              title="Invoices"
+              description="Manage and track your invoices"
+              icon={FileText}
+              headerActions={
+                <Button onClick={() => setShowAddProject(!showAddProject)} className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  New Invoice
+                </Button>
+              }
+            >
+              {invoices.length === 0 ? (
+                <div className="text-center py-12">
+                  <FileText className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+                  <p className="text-muted-foreground">No invoices yet</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {invoices.map((invoice) => (
+                    <div 
+                      key={invoice.id} 
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors group"
                     >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Request Payout
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {!balance || (balance.available_balance || 0) < 25 ? (
-                    <p className="text-center text-muted-foreground py-4">
-                      Minimum payout amount is USD 25. Available balance: {formatCurrency(balance?.available_balance || 0)}
-                    </p>
-                  ) : null}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-base group-hover:text-primary transition-colors">
+                          Invoice #{invoice.id?.slice(0, 8) || 'N/A'}
+                        </h3>
+                        <p className="text-sm text-muted-foreground truncate mt-1">
+                          {invoice.description || 'No description'}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Due: {invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : 'Not set'}
+                        </p>
+                      </div>
+                      <div className="text-right ml-4">
+                        <div className="text-lg font-semibold mb-2">{formatCurrency(invoice.amount)}</div>
+                        {getStatusBadge(invoice.status)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </SectionCard>
 
-                  {showRequestPayout && (
-                    <Card className="mb-6">
-                      <CardHeader>
-                        <CardTitle>Request Payout</CardTitle>
-                        <CardDescription>
-                          Available: {formatCurrency(balance?.available_balance || 0)}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <form onSubmit={handleRequestPayout} className="space-y-4">
+            {/* Payout Request Section */}
+            <SectionCard
+              title="Payouts"
+              description="Request payouts of your earnings"
+              icon={DollarSign}
+              headerActions={
+                <Button 
+                  onClick={() => setShowRequestPayout(!showRequestPayout)}
+                  disabled={!balance || (balance.available_balance || 0) < 25}
+                  className="gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Request Payout
+                </Button>
+              }
+            >
+              {!balance || (balance.available_balance || 0) < 25 ? (
+                <div className="text-center py-8 p-4 bg-muted/30 rounded-lg border border-warning/20">
+                  <p className="text-muted-foreground">
+                    Minimum payout amount is USD 25. Available balance: {formatCurrency(balance?.available_balance || 0)}
+                  </p>
+                </div>
+              ) : null}
+
+              {showRequestPayout && (
+                <div className="mt-6 p-6 border rounded-lg bg-muted/30">
+                  <h3 className="text-lg font-semibold mb-2">Request Payout</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Available: {formatCurrency(balance?.available_balance || 0)}
+                  </p>
+                  <form onSubmit={handleRequestPayout} className="space-y-4">
                           <div>
                             <Label htmlFor="payout-amount">Amount (USD)</Label>
                             <Input
@@ -1187,56 +1164,78 @@ export default function FreelancerDashboard() {
                               placeholder="Account holder name"
                             />
                           </div>
-                          <Button type="submit" className="w-full">
-                            Submit Payout Request
-                          </Button>
-                        </form>
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  {payouts.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-8">No payout requests yet</p>
-                  ) : (
-                    <div className="space-y-4">
-                      {payouts.map((payout) => (
-                        <div key={payout.id} className="flex items-center justify-between p-4 border rounded-lg">
-                          <div>
-                            <h3 className="font-semibold">Payout #{payout.id?.slice(0, 8) || 'N/A'}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              {payout.payment_method?.replace('_', ' ').toUpperCase() || 'N/A'}
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {payout.created_at ? new Date(payout.created_at).toLocaleDateString() : 'N/A'}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-lg font-semibold">{formatCurrency(payout.amount)}</div>
-                            {getStatusBadge(payout.status)}
-                          </div>
-                        </div>
-                      ))}
+                    <div className="flex gap-2">
+                      <Button type="submit" className="flex-1">
+                        Submit Payout Request
+                      </Button>
+                      <Button 
+                        type="button" 
+                        variant="outline"
+                        onClick={() => setShowRequestPayout(false)}
+                      >
+                        Cancel
+                      </Button>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
+                  </form>
+                </div>
+              )}
 
-              {/* Transaction History */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Recent Transactions</CardTitle>
-                  <CardDescription>Your financial transaction history</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {transactions.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-8">No transactions yet</p>
-                  ) : (
-                    <div className="space-y-4">
-                      {transactions.slice(0, 10).map((transaction) => (
-                        <div key={transaction.id} className="flex items-center justify-between p-4 border rounded-lg">
-                          <div>
-                            <h3 className="font-semibold capitalize">{transaction.transaction_type?.replace(/_/g, ' ') || 'Transaction'}</h3>
-                            <p className="text-sm text-muted-foreground">
+              {payouts.length === 0 ? (
+                <div className="text-center py-12">
+                  <DollarSign className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+                  <p className="text-muted-foreground">No payout requests yet</p>
+                </div>
+              ) : (
+                <div className="space-y-3 mt-6">
+                  {payouts.map((payout) => (
+                    <div 
+                      key={payout.id} 
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors group"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-base group-hover:text-primary transition-colors">
+                          Payout #{payout.id?.slice(0, 8) || 'N/A'}
+                        </h3>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {payout.payment_method?.replace('_', ' ').toUpperCase() || 'N/A'}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {payout.created_at ? new Date(payout.created_at).toLocaleDateString() : 'N/A'}
+                        </p>
+                      </div>
+                      <div className="text-right ml-4">
+                        <div className="text-lg font-semibold mb-2">{formatCurrency(payout.amount)}</div>
+                        {getStatusBadge(payout.status)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </SectionCard>
+
+            {/* Transaction History */}
+            <SectionCard
+              title="Recent Transactions"
+              description="Your financial transaction history"
+              icon={TrendingUp}
+            >
+              {transactions.length === 0 ? (
+                <div className="text-center py-12">
+                  <TrendingUp className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+                  <p className="text-muted-foreground">No transactions yet</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {transactions.slice(0, 10).map((transaction) => (
+                    <div 
+                      key={transaction.id} 
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors group"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-base capitalize group-hover:text-primary transition-colors">
+                          {transaction.transaction_type?.replace(/_/g, ' ') || 'Transaction'}
+                        </h3>
+                        <p className="text-sm text-muted-foreground mt-1">
                               {transaction.description || 'No description'}
                             </p>
                             <p className="text-xs text-muted-foreground mt-1">
@@ -1257,20 +1256,18 @@ export default function FreelancerDashboard() {
                       ))}
                     </div>
                   )}
-                </CardContent>
-              </Card>
-            </div>
+            </SectionCard>
         </div>
         )}
 
       {/* Profile Section */}
       {currentSection === 'profile' && (
-      <div>
-            <Card>
-              <CardHeader>
-                <CardTitle>Profile Settings</CardTitle>
-              </CardHeader>
-              <CardContent>
+      <div className="space-y-6">
+            <SectionCard
+              title="Profile Settings"
+              description="Update your freelancer profile information"
+              icon={Users}
+            >
                 <form onSubmit={handleUpdateProfile} className="space-y-6">
                   <div>
                     <Label htmlFor="avatar">Profile Avatar</Label>
@@ -1360,8 +1357,7 @@ export default function FreelancerDashboard() {
                     Save Changes
                   </Button>
                 </form>
-              </CardContent>
-            </Card>
+            </SectionCard>
         </div>
       )}
     </DashboardLayout>
