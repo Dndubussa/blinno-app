@@ -7,7 +7,7 @@ import { Upload, X, Loader2, Image as ImageIcon } from "lucide-react";
 import { optimizeImage } from "@/lib/imageOptimizer";
 
 interface ImageUploadProps {
-  bucket: "avatars" | "portfolios";
+  bucket: "avatars" | "portfolios" | "books" | "products" | "images";
   userId: string;
   onUploadComplete: (url: string) => void;
   currentImage?: string;

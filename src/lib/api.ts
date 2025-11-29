@@ -878,10 +878,11 @@ class ApiClient {
   }
 
   // Digital Products
-  async getDigitalProducts(filters?: { category?: string; creatorId?: string }) {
+  async getDigitalProducts(filters?: { category?: string; creatorId?: string; search?: string }) {
     const params = new URLSearchParams();
     if (filters?.category) params.append('category', filters.category);
     if (filters?.creatorId) params.append('creatorId', filters.creatorId);
+    if (filters?.search) params.append('search', filters.search);
     
     const query = params.toString();
     return this.request<any[]>(`/digital-products${query ? `?${query}` : ''}`);
@@ -889,6 +890,10 @@ class ApiClient {
 
   async getDigitalProduct(id: string) {
     return this.request<any>(`/digital-products/${id}`);
+  }
+
+  async getMyDigitalProducts() {
+    return this.request<any[]>('/digital-products/my');
   }
 
   async createDigitalProduct(data: FormData) {
@@ -913,15 +918,19 @@ class ApiClient {
     });
   }
 
-  async purchaseDigitalProduct(productId: string) {
-    return this.request<any>('/digital-products/purchase', {
+  async downloadDigitalProduct(id: string) {
+    return this.request<{ downloadUrl: string; title: string; fileName: string }>(`/digital-products/${id}/download`);
+  }
+
+  async purchaseDigitalProduct(productId: string, customerPhone: string, customerEmail?: string, customerName?: string) {
+    return this.request<any>(`/digital-products/${productId}/purchase`, {
       method: 'POST',
-      body: JSON.stringify({ productId }),
+      body: JSON.stringify({ customerPhone, customerEmail, customerName }),
     });
   }
 
   async getMyPurchasedProducts() {
-    return this.request<any[]>('/digital-products/my-purchases');
+    return this.request<any[]>('/digital-products/my/purchases');
   }
 
   // News Articles

@@ -12,11 +12,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, Plus, Loader2, Filter } from "lucide-react";
+import { Trash2, Plus, Loader2, Filter, BookOpen, Edit, Download } from "lucide-react";
 import { ImageUpload } from "@/components/ImageUpload";
+import { FileUpload } from "@/components/FileUpload";
 import { optimizeAvatar } from "@/lib/imageOptimizer";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTranslation } from "react-i18next";
+import { getPrimaryRole } from "@/lib/roleCheck";
 
 // Available categories matching the platform
 const CATEGORIES = [
@@ -46,11 +48,17 @@ export default function Dashboard() {
   
   const [portfolios, setPortfolios] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
+  const [books, setBooks] = useState<any[]>([]);
   const [showAddPortfolio, setShowAddPortfolio] = useState(false);
+  const [showAddBook, setShowAddBook] = useState(false);
+  const [editingBook, setEditingBook] = useState<string | null>(null);
   const [portfolioImageUrl, setPortfolioImageUrl] = useState("");
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [newPortfolioCategory, setNewPortfolioCategory] = useState<string>("");
+  const [bookFile, setBookFile] = useState<File | null>(null);
+  const [bookThumbnail, setBookThumbnail] = useState<File | string | null>(null);
+  const [bookPreview, setBookPreview] = useState<File | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -72,8 +80,20 @@ export default function Dashboard() {
       const portfolioData = await api.getPortfolios({ creatorId: user.id });
       const bookingData = await api.getBookings('creator');
       
+      // Fetch books if user is a seller
+      const primaryRole = profile ? getPrimaryRole(profile) : null;
+      let booksData: any[] = [];
+      if (primaryRole === 'seller' || (Array.isArray(profile?.roles) && profile.roles.includes('seller'))) {
+        try {
+          booksData = await api.getMyDigitalProducts();
+        } catch (err) {
+          console.error('Error fetching books:', err);
+        }
+      }
+      
       setPortfolios(portfolioData || []);
       setBookings(bookingData || []);
+      setBooks(booksData || []);
     } catch (error: any) {
       console.error('Error fetching data:', error);
       toast({ 
@@ -190,8 +210,12 @@ export default function Dashboard() {
 
   if (!user) return null;
 
+  const primaryRole = profile ? getPrimaryRole(profile) : null;
+  const isSeller = primaryRole === 'seller' || (Array.isArray(profile?.roles) && profile.roles.includes('seller'));
+
   const navigationTabs = [
     { id: "portfolio", label: t("dashboard.myPortfolio"), icon: Filter },
+    ...(isSeller ? [{ id: "books", label: "My Books", icon: BookOpen }] : []),
     { id: "bookings", label: t("dashboard.bookings"), icon: Filter },
     { id: "profile", label: t("dashboard.profileSettings"), icon: Filter },
   ];
@@ -407,6 +431,324 @@ export default function Dashboard() {
                 )}
             </div>
             )}
+
+      {/* Books Section (for sellers) */}
+      {currentSection === 'books' && isSeller && (
+        <div>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <div>
+              <h2 className="text-2xl font-semibold mb-2">My Books</h2>
+              <p className="text-sm text-muted-foreground">
+                Manage your digital books and ebooks ({books.length} total)
+              </p>
+            </div>
+            <Button onClick={() => {
+              setShowAddBook(true);
+              setEditingBook(null);
+              setBookFile(null);
+              setBookThumbnail(null);
+              setBookPreview(null);
+            }}>
+              <Plus className="mr-2 h-4 w-4" />
+              Upload Book
+            </Button>
+          </div>
+
+          {(showAddBook || editingBook) && (
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>{editingBook ? "Edit Book" : "Upload New Book"}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  if (!user) return;
+
+                  const formData = new FormData(e.currentTarget);
+                  
+                  if (!bookFile && !editingBook) {
+                    toast({
+                      title: "Error",
+                      description: "Please upload a book file (PDF, EPUB, MOBI, AZW3, or FB2)",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+
+                  try {
+                    const bookFormData = new FormData();
+                    bookFormData.append('title', formData.get("title") as string);
+                    bookFormData.append('description', formData.get("description") as string);
+                    bookFormData.append('category', 'ebook');
+                    bookFormData.append('price', formData.get("price") as string);
+                    bookFormData.append('currency', formData.get("currency") as string || 'USD');
+                    
+                    const tags = (formData.get("tags") as string)?.split(",").map(t => t.trim()).filter(t => t) || [];
+                    if (tags.length > 0) {
+                      bookFormData.append('tags', JSON.stringify(tags));
+                    }
+
+                    if (bookFile) {
+                      bookFormData.append('file', bookFile);
+                    }
+                    if (bookThumbnail && bookThumbnail instanceof File) {
+                      bookFormData.append('thumbnail', bookThumbnail);
+                    }
+                    if (bookPreview) {
+                      bookFormData.append('preview', bookPreview);
+                    }
+
+                    if (editingBook) {
+                      await api.updateDigitalProduct(editingBook, bookFormData);
+                      toast({ title: "Success", description: "Book updated successfully" });
+                    } else {
+                      await api.createDigitalProduct(bookFormData);
+                      toast({ title: "Success", description: "Book uploaded successfully" });
+                    }
+
+                    setShowAddBook(false);
+                    setEditingBook(null);
+                    setBookFile(null);
+                    setBookThumbnail(null);
+                    setBookPreview(null);
+                    fetchData();
+                  } catch (error: any) {
+                    toast({
+                      title: "Error",
+                      description: error.message || "Failed to save book",
+                      variant: "destructive",
+                    });
+                  }
+                }} className="space-y-4">
+                  <div>
+                    <Label htmlFor="book-file">Book File *</Label>
+                    <FileUpload
+                      onFileSelect={(file) => setBookFile(file)}
+                      currentFile={editingBook ? books.find(b => b.id === editingBook)?.file_url : null}
+                      accept=".pdf,.epub,.mobi,.azw3,.fb2"
+                      maxSizeMB={50}
+                      description="PDF, EPUB, MOBI, AZW3, or FB2 (max 50MB)"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="book-thumbnail">Book Cover Image</Label>
+                    <Input
+                      id="book-thumbnail"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setBookThumbnail(file);
+                        }
+                      }}
+                      className="mt-2"
+                    />
+                    {editingBook && books.find(b => b.id === editingBook)?.thumbnail_url && (
+                      <div className="mt-2">
+                        <p className="text-sm text-muted-foreground mb-2">Current cover:</p>
+                        <img
+                          src={books.find(b => b.id === editingBook)?.thumbnail_url}
+                          alt="Current cover"
+                          className="w-32 h-48 object-cover rounded border"
+                        />
+                      </div>
+                    )}
+                    {bookThumbnail && bookThumbnail instanceof File && (
+                      <div className="mt-2">
+                        <p className="text-sm text-muted-foreground mb-2">New cover preview:</p>
+                        <img
+                          src={URL.createObjectURL(bookThumbnail)}
+                          alt="Preview"
+                          className="w-32 h-48 object-cover rounded border"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="book-title">Title *</Label>
+                    <Input
+                      id="book-title"
+                      name="title"
+                      defaultValue={editingBook ? books.find(b => b.id === editingBook)?.title : ""}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="book-description">Description *</Label>
+                    <Textarea
+                      id="book-description"
+                      name="description"
+                      defaultValue={editingBook ? books.find(b => b.id === editingBook)?.description : ""}
+                      rows={4}
+                      required
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="book-price">Price *</Label>
+                      <Input
+                        id="book-price"
+                        name="price"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        defaultValue={editingBook ? books.find(b => b.id === editingBook)?.price : ""}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="book-currency">Currency</Label>
+                      <Select
+                        name="currency"
+                        defaultValue={editingBook ? books.find(b => b.id === editingBook)?.currency || 'USD' : profile?.currency || 'USD'}
+                      >
+                        <SelectTrigger id="book-currency">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="USD">USD</SelectItem>
+                          <SelectItem value="TSh">TSh</SelectItem>
+                          <SelectItem value="KES">KES</SelectItem>
+                          <SelectItem value="UGX">UGX</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="book-tags">Tags (comma-separated)</Label>
+                    <Input
+                      id="book-tags"
+                      name="tags"
+                      placeholder="fiction, novel, romance"
+                      defaultValue={editingBook ? books.find(b => b.id === editingBook)?.tags?.join(", ") : ""}
+                    />
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button type="submit">
+                      {editingBook ? "Update Book" : "Upload Book"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setShowAddBook(false);
+                        setEditingBook(null);
+                        setBookFile(null);
+                        setBookThumbnail("");
+                        setBookPreview(null);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          )}
+
+          {books.length === 0 ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-muted-foreground mb-4">No books uploaded yet</p>
+                <Button onClick={() => setShowAddBook(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Upload Your First Book
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {books.map((book) => (
+                <Card key={book.id} className="overflow-hidden">
+                  {book.thumbnail_url ? (
+                    <img
+                      src={book.thumbnail_url}
+                      alt={book.title}
+                      className="w-full h-48 object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-48 bg-muted flex items-center justify-center">
+                      <BookOpen className="h-12 w-12 text-muted-foreground" />
+                    </div>
+                  )}
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-semibold text-lg">{book.title}</h3>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setEditingBook(book.id);
+                            setShowAddBook(true);
+                            setBookFile(null);
+                            setBookThumbnail(null);
+                            setBookPreview(null);
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={async () => {
+                            if (confirm("Are you sure you want to delete this book?")) {
+                              try {
+                                await api.deleteDigitalProduct(book.id);
+                                toast({ title: "Success", description: "Book deleted successfully" });
+                                fetchData();
+                              } catch (error: any) {
+                                toast({
+                                  title: "Error",
+                                  description: error.message || "Failed to delete book",
+                                  variant: "destructive",
+                                });
+                              }
+                            }
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{book.description}</p>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-lg font-semibold">
+                          {book.currency || 'USD'} {parseFloat(book.price).toFixed(2)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {book.sales_count || 0} sales • {book.download_count || 0} downloads
+                        </p>
+                      </div>
+                      <Badge variant={book.is_active ? "default" : "secondary"}>
+                        {book.is_active ? "Active" : "Inactive"}
+                      </Badge>
+                    </div>
+                    {book.tags && book.tags.length > 0 && (
+                      <div className="flex gap-1 flex-wrap mt-3">
+                        {book.tags.map((tag: string) => (
+                          <Badge key={tag} variant="outline" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Bookings Section */}
       {currentSection === 'bookings' && (

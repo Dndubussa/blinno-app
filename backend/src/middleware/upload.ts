@@ -15,12 +15,34 @@ const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilt
   }
 };
 
+// Book/document file filter
+const bookFileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+  const allowedBookTypes = (process.env.ALLOWED_BOOK_TYPES || 
+    'application/pdf,application/epub+zip,application/x-mobipocket-ebook,application/vnd.amazon.ebook,application/x-fictionbook+xml'
+  ).split(',');
+  
+  if (allowedBookTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Invalid file type. Only PDF, EPUB, MOBI, AZW3, and FB2 are allowed.'));
+  }
+};
+
 export const upload = multer({
   storage,
   limits: {
     fileSize: parseInt(process.env.MAX_FILE_SIZE || '10485760'), // 10MB default
   },
   fileFilter,
+});
+
+// Book upload middleware with larger size limit
+export const uploadBook = multer({
+  storage,
+  limits: {
+    fileSize: parseInt(process.env.MAX_BOOK_FILE_SIZE || '52428800'), // 50MB default
+  },
+  fileFilter: bookFileFilter,
 });
 
 /**
@@ -116,9 +138,44 @@ export const getFileUrl = (filePath: string): string => {
  * Call this on server startup to ensure buckets exist
  */
 export const initializeStorageBuckets = async (): Promise<void> => {
-  const buckets = ['avatars', 'portfolios', 'products', 'images'];
+  const buckets = [
+    { 
+      name: 'avatars', 
+      fileSizeLimit: 10485760, // 10MB
+      allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+    },
+    { 
+      name: 'portfolios', 
+      fileSizeLimit: 10485760, // 10MB
+      allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+    },
+    { 
+      name: 'products', 
+      fileSizeLimit: 10485760, // 10MB
+      allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+    },
+    { 
+      name: 'images', 
+      fileSizeLimit: 10485760, // 10MB
+      allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+    },
+    { 
+      name: 'books', 
+      fileSizeLimit: 52428800, // 50MB for books
+      allowedMimeTypes: [
+        'application/pdf',
+        'application/epub+zip',
+        'application/x-mobipocket-ebook',
+        'application/vnd.amazon.ebook',
+        'application/x-fictionbook+xml',
+        'image/jpeg', // For book covers
+        'image/png',
+        'image/webp'
+      ]
+    }
+  ];
   
-  for (const bucket of buckets) {
+  for (const bucketConfig of buckets) {
     try {
       // Check if bucket exists
       const { data: buckets, error: listError } = await supabaseAdmin.storage.listBuckets();
@@ -128,24 +185,24 @@ export const initializeStorageBuckets = async (): Promise<void> => {
         continue;
       }
 
-      const bucketExists = buckets?.some(b => b.name === bucket);
+      const bucketExists = buckets?.some(b => b.name === bucketConfig.name);
       
       if (!bucketExists) {
         // Create bucket if it doesn't exist
-        const { error: createError } = await supabaseAdmin.storage.createBucket(bucket, {
+        const { error: createError } = await supabaseAdmin.storage.createBucket(bucketConfig.name, {
           public: true, // Make bucket public for easy access
-          fileSizeLimit: 10485760, // 10MB
-          allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
+          fileSizeLimit: bucketConfig.fileSizeLimit,
+          allowedMimeTypes: bucketConfig.allowedMimeTypes,
         });
 
         if (createError) {
-          console.error(`Error creating bucket ${bucket}: ${createError.message}`);
+          console.error(`Error creating bucket ${bucketConfig.name}: ${createError.message}`);
         } else {
-          console.log(`Created Supabase Storage bucket: ${bucket}`);
+          console.log(`Created Supabase Storage bucket: ${bucketConfig.name}`);
         }
       }
     } catch (error: any) {
-      console.error(`Error initializing bucket ${bucket}:`, error);
+      console.error(`Error initializing bucket ${bucketConfig.name}:`, error);
     }
   }
 };
