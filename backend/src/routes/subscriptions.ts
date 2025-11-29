@@ -625,18 +625,40 @@ router.post('/cancel', authenticate, async (req: AuthRequest, res) => {
  */
 router.get('/tiers', async (req, res) => {
   try {
+    // Validate that tier constants are defined
+    if (!PERCENTAGE_TIERS || typeof PERCENTAGE_TIERS !== 'object') {
+      throw new Error('PERCENTAGE_TIERS is not defined');
+    }
+    if (!SUBSCRIPTION_TIERS || typeof SUBSCRIPTION_TIERS !== 'object') {
+      throw new Error('SUBSCRIPTION_TIERS is not defined');
+    }
+
     // Return both pricing models
     const percentageTiers: Record<string, any> = {};
-    for (const [key, tier] of Object.entries(PERCENTAGE_TIERS)) {
-      percentageTiers[key] = {
-        ...tier,
-        volumeRequirement: tier.volumeRequirement || null,
-      };
+    try {
+      for (const [key, tier] of Object.entries(PERCENTAGE_TIERS)) {
+        if (tier && typeof tier === 'object') {
+          percentageTiers[key] = {
+            ...tier,
+            volumeRequirement: tier.volumeRequirement || null,
+          };
+        }
+      }
+    } catch (err: any) {
+      console.error('Error processing percentage tiers:', err);
+      throw new Error(`Failed to process percentage tiers: ${err.message}`);
     }
 
     const subscriptionTiers: Record<string, any> = {};
-    for (const [key, tier] of Object.entries(SUBSCRIPTION_TIERS)) {
-      subscriptionTiers[key] = { ...tier };
+    try {
+      for (const [key, tier] of Object.entries(SUBSCRIPTION_TIERS)) {
+        if (tier && typeof tier === 'object') {
+          subscriptionTiers[key] = { ...tier };
+        }
+      }
+    } catch (err: any) {
+      console.error('Error processing subscription tiers:', err);
+      throw new Error(`Failed to process subscription tiers: ${err.message}`);
     }
     
     res.json({

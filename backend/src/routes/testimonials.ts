@@ -8,17 +8,53 @@ router.get('/', async (req, res) => {
   try {
     const { limit = 5 } = req.query;
     
+    // Validate limit
+    const limitNum = Number(limit);
+    if (isNaN(limitNum) || limitNum < 1 || limitNum > 100) {
+      return res.status(400).json({ 
+        error: 'Invalid limit. Must be a number between 1 and 100.' 
+      });
+    }
+
     // Get reviews with rating >= 4
     // Note: reviewer_id references auth.users(id), creator_id references profiles(user_id)
-    const { data: reviews, error } = await supabase
-      .from('reviews')
-      .select('*')
-      .gte('rating', 4)
-      .order('created_at', { ascending: false })
-      .limit(Number(limit));
+    let reviews: any[] = [];
 
-    if (error) {
-      throw error;
+    try {
+      const result = await supabase
+        .from('reviews')
+        .select('*')
+        .gte('rating', 4)
+        .order('created_at', { ascending: false })
+        .limit(limitNum);
+
+      if (result.error) {
+        // Handle Supabase errors
+        const errorCode = result.error.code || '';
+        const errorMessage = result.error.message || '';
+        
+        // If table doesn't exist or is not accessible, use defaults
+        if (
+          errorCode === 'PGRST116' || 
+          errorCode === '42P01' || // PostgreSQL: relation does not exist
+          errorMessage.includes('relation') || 
+          errorMessage.includes('does not exist') ||
+          errorMessage.includes('schema cache')
+        ) {
+          console.log('Reviews table not available, using default testimonials');
+          reviews = [];
+        } else {
+          // For other errors, log but continue with defaults
+          console.error('Error fetching reviews:', result.error);
+          reviews = [];
+        }
+      } else {
+        reviews = result.data || [];
+      }
+    } catch (dbError: any) {
+      // Catch any unexpected errors and use defaults
+      console.error('Unexpected error fetching reviews:', dbError);
+      reviews = [];
     }
 
     if (!reviews || reviews.length === 0) {
@@ -43,25 +79,41 @@ router.get('/', async (req, res) => {
     }
 
     // Get reviewer profiles (reviewer_id is auth.users.id, need to match with profiles.user_id)
-    const reviewerIds = [...new Set(reviews.map((r: any) => r.reviewer_id))];
-    const { data: reviewerProfiles, error: reviewerError } = await supabase
-      .from('profiles')
-      .select('user_id, display_name, avatar_url')
-      .in('user_id', reviewerIds);
+    let reviewerProfiles: any[] = [];
+    let creatorProfiles: any[] = [];
 
-    if (reviewerError) {
-      console.error('Error fetching reviewer profiles:', reviewerError);
-    }
+    if (reviews && reviews.length > 0) {
+      try {
+        const reviewerIds = [...new Set(reviews.map((r: any) => r.reviewer_id).filter(Boolean))];
+        if (reviewerIds.length > 0) {
+          const reviewerResult = await supabase
+            .from('profiles')
+            .select('user_id, display_name, avatar_url')
+            .in('user_id', reviewerIds);
+          
+          reviewerProfiles = reviewerResult.data || [];
+          if (reviewerResult.error) {
+            console.error('Error fetching reviewer profiles:', reviewerResult.error);
+          }
+        }
 
-    // Get creator profiles (creator_id references profiles.user_id)
-    const creatorIds = [...new Set(reviews.map((r: any) => r.creator_id))];
-    const { data: creatorProfiles, error: creatorError } = await supabase
-      .from('profiles')
-      .select('user_id, display_name')
-      .in('user_id', creatorIds);
-
-    if (creatorError) {
-      console.error('Error fetching creator profiles:', creatorError);
+        // Get creator profiles (creator_id references profiles.user_id)
+        const creatorIds = [...new Set(reviews.map((r: any) => r.creator_id).filter(Boolean))];
+        if (creatorIds.length > 0) {
+          const creatorResult = await supabase
+            .from('profiles')
+            .select('user_id, display_name')
+            .in('user_id', creatorIds);
+          
+          creatorProfiles = creatorResult.data || [];
+          if (creatorResult.error) {
+            console.error('Error fetching creator profiles:', creatorResult.error);
+          }
+        }
+      } catch (profileError: any) {
+        console.error('Error fetching profiles:', profileError);
+        // Continue with empty profiles - we'll use defaults
+      }
     }
 
     // Create maps for quick lookup
