@@ -4,6 +4,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 import { hasRole, getPrimaryRole } from "@/lib/roleCheck";
 import { DashboardLayout } from "@/components/DashboardLayout";
+import { StatCard } from "@/components/StatCard";
+import { SectionCard } from "@/components/SectionCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -444,81 +446,72 @@ export default function LodgingDashboard() {
 
       {/* Overview Section */}
       {currentSection === 'overview' && (
-            <div className="mt-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Properties</CardTitle>
-                      <Home className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{stats.totalProperties}</div>
-                      <p className="text-xs text-muted-foreground">Total properties</p>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Rooms</CardTitle>
-                      <Bed className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{stats.totalRooms}</div>
-                      <p className="text-xs text-muted-foreground">Total rooms</p>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Active Bookings</CardTitle>
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{stats.activeBookings}</div>
-                      <p className="text-xs text-muted-foreground">Confirmed & checked in</p>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-                      <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{formatCurrency(stats.totalRevenue)}</div>
-                      <p className="text-xs text-muted-foreground">From completed bookings</p>
-                    </CardContent>
-                  </Card>
+            <div className="space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <StatCard
+                    title="Properties"
+                    value={stats.totalProperties}
+                    description="Total properties"
+                    icon={Home}
+                    variant="primary"
+                  />
+                  <StatCard
+                    title="Rooms"
+                    value={stats.totalRooms}
+                    description="Total rooms"
+                    icon={Bed}
+                    variant="default"
+                  />
+                  <StatCard
+                    title="Active Bookings"
+                    value={stats.activeBookings}
+                    description="Confirmed & checked in"
+                    icon={Calendar}
+                    variant="success"
+                  />
+                  <StatCard
+                    title="Total Revenue"
+                    value={formatCurrency(stats.totalRevenue)}
+                    description="From completed bookings"
+                    icon={DollarSign}
+                    variant="success"
+                  />
                 </div>
 
                 {/* Recent Bookings */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Recent Bookings</CardTitle>
-                    <CardDescription>Your latest booking activity</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {(bookings || []).slice(0, 5).length === 0 ? (
-                      <p className="text-center text-muted-foreground py-8">No bookings yet</p>
-                    ) : (
-                      <div className="space-y-4">
-                        {(bookings || []).slice(0, 5).map((booking) => (
-                          <div key={booking.id} className="flex items-center justify-between p-4 border rounded-lg">
-                            <div>
-                              <h3 className="font-semibold">
-                                {booking.lodging_properties?.name || "Property"}
-                              </h3>
-                              <p className="text-sm text-muted-foreground">
-                                {booking.profiles?.display_name || "Guest"} • {new Date(booking.check_in_date).toLocaleDateString()} - {new Date(booking.check_out_date).toLocaleDateString()}
-                              </p>
-                            </div>
+                <SectionCard
+                  title="Recent Bookings"
+                  description="Your latest booking activity"
+                  icon={Calendar}
+                >
+                  {(bookings || []).slice(0, 5).length === 0 ? (
+                    <div className="text-center py-12">
+                      <Calendar className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+                      <p className="text-muted-foreground">No bookings yet</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {(bookings || []).slice(0, 5).map((booking) => (
+                        <div 
+                          key={booking.id} 
+                          className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors group"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-base group-hover:text-primary transition-colors">
+                              {booking.lodging_properties?.name || "Property"}
+                            </h3>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {booking.profiles?.display_name || "Guest"} • {new Date(booking.check_in_date).toLocaleDateString()} - {new Date(booking.check_out_date).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <div className="ml-4">
                             {getStatusBadge(booking.status)}
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </SectionCard>
             </div>
             )}
 

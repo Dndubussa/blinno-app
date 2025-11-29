@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { DashboardLayout } from "@/components/DashboardLayout";
+import { StatCard } from "@/components/StatCard";
+import { SectionCard } from "@/components/SectionCard";
 import { ImageUpload } from "@/components/ImageUpload";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -360,98 +362,94 @@ export default function MusicianDashboard() {
     >
       {/* Overview Section */}
       {currentSection === 'overview' && (
-      <div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Total Tracks</CardTitle>
-                      <Music className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{stats.totalTracks}</div>
-                      <p className="text-xs text-muted-foreground">
-                        Published tracks
-                      </p>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Total Plays</CardTitle>
-                      <Play className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{stats.totalPlays.toLocaleString()}</div>
-                      <p className="text-xs text-muted-foreground">All time plays</p>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Followers</CardTitle>
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{stats.followerCount.toLocaleString()}</div>
-                      <p className="text-xs text-muted-foreground">Total followers</p>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Earnings</CardTitle>
-                      <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{formatCurrency(stats.totalEarnings)}</div>
-                      <p className="text-xs text-muted-foreground">From track sales</p>
-                    </CardContent>
-                  </Card>
+      <div className="space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <StatCard
+                    title="Total Tracks"
+                    value={stats.totalTracks}
+                    description="Published tracks"
+                    icon={Music}
+                    variant="primary"
+                  />
+                  <StatCard
+                    title="Total Plays"
+                    value={stats.totalPlays.toLocaleString()}
+                    description="All time plays"
+                    icon={Play}
+                    variant="default"
+                  />
+                  <StatCard
+                    title="Followers"
+                    value={stats.followerCount.toLocaleString()}
+                    description="Total followers"
+                    icon={Users}
+                    variant="success"
+                  />
+                  <StatCard
+                    title="Earnings"
+                    value={formatCurrency(stats.totalEarnings)}
+                    description="From track sales"
+                    icon={DollarSign}
+                    variant="success"
+                  />
                 </div>
 
                 {/* Recent Tracks */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Recent Tracks</CardTitle>
-                    <CardDescription>Your latest uploaded tracks</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {tracks.length === 0 ? (
-                      <p className="text-center text-muted-foreground py-8">No tracks yet</p>
-                    ) : (
-                      <div className="space-y-4">
-                        {tracks.slice(0, 3).map((track) => (
-                          <div key={track.id} className="flex items-center justify-between p-4 border rounded-lg">
-                            <div className="flex items-center gap-4">
-                              <img 
-                                src={track.image_url} 
-                                alt={track.title}
-                                className="w-16 h-16 rounded-md object-cover"
-                              />
-                              <div>
-                                <h3 className="font-semibold">{track.title}</h3>
-                                <p className="text-sm text-muted-foreground">{track.genre} • {track.plays} plays</p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Badge variant={track.is_published ? "default" : "outline"}>
-                                {track.is_published ? "Published" : "Draft"}
-                              </Badge>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => navigate(`/music/${track.id}`)}
-                              >
-                                <Eye className="h-4 w-4 mr-2" />
-                                View
-                              </Button>
+                <SectionCard
+                  title="Recent Tracks"
+                  description="Your latest uploaded tracks"
+                  icon={Music}
+                >
+                  {tracks.length === 0 ? (
+                    <div className="text-center py-12">
+                      <Music className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+                      <p className="text-muted-foreground mb-4">No tracks yet</p>
+                      <Button onClick={() => navigate('/musician-dashboard#tracks')}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Upload Your First Track
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {tracks.slice(0, 3).map((track) => (
+                        <div 
+                          key={track.id} 
+                          className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors group"
+                        >
+                          <div className="flex items-center gap-4 flex-1 min-w-0">
+                            <img 
+                              src={track.image_url || '/placeholder.svg'} 
+                              alt={track.title}
+                              className="w-16 h-16 rounded-md object-cover"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold text-base group-hover:text-primary transition-colors">
+                                {track.title}
+                              </h3>
+                              <p className="text-sm text-muted-foreground truncate">
+                                {track.genre} • {track.plays || 0} plays
+                              </p>
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                          <div className="flex items-center gap-2 ml-4">
+                            <Badge variant={track.is_published ? "default" : "outline"}>
+                              {track.is_published ? "Published" : "Draft"}
+                            </Badge>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => navigate(`/music/${track.id}`)}
+                              className="gap-2"
+                            >
+                              <Eye className="h-4 w-4" />
+                              View
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </SectionCard>
             </div>
             )}
 

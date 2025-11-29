@@ -4,6 +4,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 import { hasRole, getPrimaryRole } from "@/lib/roleCheck";
 import { DashboardLayout } from "@/components/DashboardLayout";
+import { StatCard } from "@/components/StatCard";
+import { SectionCard } from "@/components/SectionCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -308,81 +310,72 @@ export default function RestaurantDashboard() {
 
       {/* Overview Section */}
       {currentSection === 'overview' && (
-      <div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Restaurants</CardTitle>
-                      <UtensilsCrossed className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{stats.totalRestaurants}</div>
-                      <p className="text-xs text-muted-foreground">Total restaurants</p>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Menu Items</CardTitle>
-                      <Menu className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{stats.totalMenuItems}</div>
-                      <p className="text-xs text-muted-foreground">Total menu items</p>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Pending Reservations</CardTitle>
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{stats.pendingReservations}</div>
-                      <p className="text-xs text-muted-foreground">Awaiting confirmation</p>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Today's Reservations</CardTitle>
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{stats.todayReservations}</div>
-                      <p className="text-xs text-muted-foreground">Reservations today</p>
-                    </CardContent>
-                  </Card>
+      <div className="space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <StatCard
+                    title="Restaurants"
+                    value={stats.totalRestaurants}
+                    description="Total restaurants"
+                    icon={UtensilsCrossed}
+                    variant="primary"
+                  />
+                  <StatCard
+                    title="Menu Items"
+                    value={stats.totalMenuItems}
+                    description="Total menu items"
+                    icon={Menu}
+                    variant="default"
+                  />
+                  <StatCard
+                    title="Pending Reservations"
+                    value={stats.pendingReservations}
+                    description="Awaiting confirmation"
+                    icon={Calendar}
+                    variant="warning"
+                  />
+                  <StatCard
+                    title="Today's Reservations"
+                    value={stats.todayReservations}
+                    description="Reservations today"
+                    icon={Clock}
+                    variant="default"
+                  />
                 </div>
 
                 {/* Recent Reservations */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Recent Reservations</CardTitle>
-                    <CardDescription>Your latest reservation activity</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {(reservations || []).slice(0, 5).length === 0 ? (
-                      <p className="text-center text-muted-foreground py-8">No reservations yet</p>
-                    ) : (
-                      <div className="space-y-4">
-                        {(reservations || []).slice(0, 5).map((reservation) => (
-                          <div key={reservation.id} className="flex items-center justify-between p-4 border rounded-lg">
-                            <div>
-                              <h3 className="font-semibold">
-                                {reservation.restaurants?.name || "Restaurant"}
-                              </h3>
-                              <p className="text-sm text-muted-foreground">
-                                {reservation.profiles?.display_name || "Guest"} • {new Date(reservation.reservation_date).toLocaleDateString()} at {reservation.reservation_time}
-                              </p>
-                            </div>
+                <SectionCard
+                  title="Recent Reservations"
+                  description="Your latest reservation activity"
+                  icon={Calendar}
+                >
+                  {(reservations || []).slice(0, 5).length === 0 ? (
+                    <div className="text-center py-12">
+                      <Calendar className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+                      <p className="text-muted-foreground">No reservations yet</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {(reservations || []).slice(0, 5).map((reservation) => (
+                        <div 
+                          key={reservation.id} 
+                          className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors group"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-base group-hover:text-primary transition-colors">
+                              {reservation.restaurants?.name || "Restaurant"}
+                            </h3>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {reservation.profiles?.display_name || "Guest"} • {new Date(reservation.reservation_date).toLocaleDateString()} at {reservation.reservation_time}
+                            </p>
+                          </div>
+                          <div className="ml-4">
                             {getStatusBadge(reservation.status)}
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </SectionCard>
             </div>
             )}
 

@@ -4,6 +4,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 import { hasRole, getPrimaryRole } from "@/lib/roleCheck";
 import { DashboardLayout } from "@/components/DashboardLayout";
+import { StatCard } from "@/components/StatCard";
+import { SectionCard } from "@/components/SectionCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -292,85 +294,74 @@ export default function EducatorDashboard() {
     >
       {/* Overview Section */}
       {currentSection === 'overview' && (
-      <div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Courses</CardTitle>
-                      <BookOpen className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{stats.totalCourses}</div>
-                      <p className="text-xs text-muted-foreground">
-                        {courses.filter(c => c.is_published).length} published
-                      </p>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Students</CardTitle>
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{stats.totalStudents}</div>
-                      <p className="text-xs text-muted-foreground">Total enrolled</p>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Enrollments</CardTitle>
-                      <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{stats.totalEnrollments}</div>
-                      <p className="text-xs text-muted-foreground">Total enrollments</p>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Revenue</CardTitle>
-                      <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{formatCurrency(stats.totalRevenue)}</div>
-                      <p className="text-xs text-muted-foreground">From paid courses</p>
-                    </CardContent>
-                  </Card>
+      <div className="space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <StatCard
+                    title="Courses"
+                    value={stats.totalCourses}
+                    description={`${courses.filter(c => c.is_published).length} published`}
+                    icon={BookOpen}
+                    variant="primary"
+                  />
+                  <StatCard
+                    title="Students"
+                    value={stats.totalStudents}
+                    description="Total enrolled"
+                    icon={Users}
+                    variant="success"
+                  />
+                  <StatCard
+                    title="Enrollments"
+                    value={stats.totalEnrollments}
+                    description="Total enrollments"
+                    icon={TrendingUp}
+                    variant="default"
+                  />
+                  <StatCard
+                    title="Revenue"
+                    value={formatCurrency(stats.totalRevenue)}
+                    description="From paid courses"
+                    icon={DollarSign}
+                    variant="success"
+                  />
                 </div>
 
                 {/* Recent Enrollments */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Recent Enrollments</CardTitle>
-                    <CardDescription>Your latest student enrollments</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {(enrollments || []).slice(0, 5).length === 0 ? (
-                      <p className="text-center text-muted-foreground py-8">No enrollments yet</p>
-                    ) : (
-                      <div className="space-y-4">
-                        {(enrollments || []).slice(0, 5).map((enrollment) => (
-                          <div key={enrollment.id} className="flex items-center justify-between p-4 border rounded-lg">
-                            <div>
-                              <h3 className="font-semibold">
-                                {enrollment.courses?.title || "Course"}
-                              </h3>
-                              <p className="text-sm text-muted-foreground">
-                                {enrollment.profiles?.display_name || "Student"} • {new Date(enrollment.enrollment_date).toLocaleDateString()}
-                              </p>
-                            </div>
+                <SectionCard
+                  title="Recent Enrollments"
+                  description="Your latest student enrollments"
+                  icon={Users}
+                >
+                  {(enrollments || []).slice(0, 5).length === 0 ? (
+                    <div className="text-center py-12">
+                      <Users className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+                      <p className="text-muted-foreground">No enrollments yet</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {(enrollments || []).slice(0, 5).map((enrollment) => (
+                        <div 
+                          key={enrollment.id} 
+                          className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors group"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-base group-hover:text-primary transition-colors">
+                              {enrollment.courses?.title || "Course"}
+                            </h3>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {enrollment.profiles?.display_name || "Student"} • {new Date(enrollment.enrollment_date).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <div className="ml-4">
                             <Badge variant={enrollment.status === 'completed' ? "default" : "secondary"}>
                               {enrollment.status}
                             </Badge>
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </SectionCard>
             </div>
             )}
 
