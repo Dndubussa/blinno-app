@@ -1,24 +1,31 @@
+import { supabase } from '@/integrations/supabase/client';
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://www.blinno.app/api';
 
 class ApiClient {
   private baseUrl: string;
-  private token: string | null = null;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
-    // Load token from localStorage
-    if (typeof window !== 'undefined') {
-      this.token = localStorage.getItem('auth_token');
+  }
+
+  /**
+   * Get current Supabase session token
+   */
+  private async getToken(): Promise<string | null> {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      return session?.access_token || null;
+    } catch (error) {
+      console.error('Error getting session token:', error);
+      return null;
     }
   }
 
   setToken(token: string | null) {
-    this.token = token;
-    if (token && typeof window !== 'undefined') {
-      localStorage.setItem('auth_token', token);
-    } else if (typeof window !== 'undefined') {
-      localStorage.removeItem('auth_token');
-    }
+    // Deprecated: Token is now retrieved from Supabase session
+    // Keeping for backward compatibility
+    console.warn('setToken is deprecated. Token is now retrieved from Supabase session.');
   }
 
   private async request<T>(
@@ -31,8 +38,10 @@ class ApiClient {
       ...options.headers,
     };
 
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
+    // Get token from Supabase session
+    const token = await this.getToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
     }
 
     const response = await fetch(url, {
@@ -109,8 +118,9 @@ class ApiClient {
   }
 
   async getCurrentUser() {
-    // If no token, don't make the request - return null immediately
-    if (!this.token) {
+    // Check if we have a session token
+    const token = await this.getToken();
+    if (!token) {
       return null;
     }
     
@@ -119,8 +129,6 @@ class ApiClient {
     } catch (error: any) {
       // 401 is expected when user is not logged in or token is invalid - don't throw
       if (error.status === 401 || error.message?.includes('401') || error.message?.includes('Unauthorized')) {
-        // Clear invalid token
-        this.setToken(null);
         return null;
       }
       throw error;

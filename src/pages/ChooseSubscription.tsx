@@ -25,9 +25,11 @@ export default function ChooseSubscription() {
         // If subscription has an 'id', it means it was explicitly created
         if (subscription && subscription.id && subscription.created_at) {
           setHasSubscription(true);
+          // Get fresh profile data for accurate dashboard route
+          const updatedProfile = await api.getCurrentUser();
           // Redirect to dashboard if they already have a subscription
           const { getDashboardRoute } = await import("@/lib/dashboardRoutes");
-          const dashboardRoute = getDashboardRoute(profile?.roles);
+          const dashboardRoute = getDashboardRoute(updatedProfile?.roles || profile?.roles);
           navigate(dashboardRoute, { replace: true });
         } else {
           setHasSubscription(false);

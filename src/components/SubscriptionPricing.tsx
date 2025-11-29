@@ -290,11 +290,26 @@ export function SubscriptionPricing() {
         
         // If we're on the choose-subscription page, redirect to dashboard after selection
         if (window.location.pathname === '/choose-subscription') {
-          const { getDashboardRoute } = await import("@/lib/dashboardRoutes");
-          const dashboardRoute = getDashboardRoute(profile?.roles);
-          setTimeout(() => {
-            navigate(dashboardRoute, { replace: true });
-          }, 1500);
+          // Get fresh profile data for accurate dashboard route
+          // Wait a bit for backend to update subscription
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          try {
+            const updatedProfile = await api.getCurrentUser();
+            const { getDashboardRoute } = await import("@/lib/dashboardRoutes");
+            const dashboardRoute = getDashboardRoute(updatedProfile?.roles || profile?.roles);
+            setTimeout(() => {
+              navigate(dashboardRoute, { replace: true });
+            }, 1000);
+          } catch (error) {
+            console.error("Error getting updated profile:", error);
+            // Fallback to using current profile
+            const { getDashboardRoute } = await import("@/lib/dashboardRoutes");
+            const dashboardRoute = getDashboardRoute(profile?.roles);
+            setTimeout(() => {
+              navigate(dashboardRoute, { replace: true });
+            }, 1000);
+          }
         }
       }
     } catch (error: any) {

@@ -32,7 +32,6 @@ import {
   FileText,
   CreditCard,
   MessageSquare,
-  LogOut,
   Music,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -48,7 +47,7 @@ interface NavItem {
 export function DashboardSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { profile, signOut } = useAuth();
+  const { profile } = useAuth();
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
 
@@ -213,14 +212,6 @@ export function DashboardSidebar() {
   
   const allNavItems = Array.from(allNavItemsMap.values());
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error("Error signing out:", error);
-    }
-  };
-
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border">
@@ -272,20 +263,6 @@ export function DashboardSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="border-t border-sidebar-border">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={handleSignOut}
-              tooltip="Sign Out"
-              className="text-destructive hover:text-destructive"
-            >
-              <LogOut className="h-4 w-4" />
-              <span>Sign Out</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
     </Sidebar>
   );
 }

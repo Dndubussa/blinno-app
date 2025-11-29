@@ -175,6 +175,21 @@ app.use('/api/courses', courseRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/marketing', marketingRoutes);
 app.use('/api/unsubscribe', unsubscribeRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/social', socialRoutes);
+app.use('/api/wishlist', wishlistRoutes);
+app.use('/api/2fa', twoFactorRoutes);
+app.use('/api/moderation', moderationRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/email-templates', emailTemplateRoutes);
+app.use('/api/artisan', artisanRoutes);
+app.use('/api/events', eventRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/refunds', refundRoutes);
+app.use('/api/disputes', disputeRoutes);
+app.use('/api/freelancer', freelancerRoutes);
+app.use('/api/dashboards', dashboardRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Health check endpoint (accessible at /api/health or /health)
 app.get('/api/health', (req, res) => {

@@ -68,10 +68,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setUser(null);
           setProfile(null);
         }
-      } catch (error) {
-        // No valid session - silently handle
-        setUser(null);
-        setProfile(null);
+      } catch (error: any) {
+        // Handle auth errors gracefully
+        console.error('Auth check error:', error);
+        // If it's an auth session error, clear state
+        if (error?.message?.includes('session') || error?.message?.includes('Auth')) {
+          setUser(null);
+          setProfile(null);
+        }
       } finally {
         setLoading(false);
       }

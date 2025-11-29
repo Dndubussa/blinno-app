@@ -56,8 +56,12 @@ export default function PaymentSuccess() {
         const subscriptionData = await api.getMySubscription();
         setSubscription(subscriptionData);
 
-        // Refresh user data to get updated subscription
+        // Refresh user data to get updated subscription and profile
         await refreshUser();
+        
+        // Wait a bit for profile to update, then get fresh profile data
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const updatedProfile = await api.getCurrentUser();
 
         const paymentStatus = payment?.status;
         if (paymentStatus === "completed" || paymentStatus === "success") {
@@ -73,28 +77,13 @@ export default function PaymentSuccess() {
             return;
           }
 
-          // Determine redirect based on pricing model
-          const pricingModel = subscriptionData?.pricing_model || subscriptionData?.pricingModel;
-
-          if (pricingModel === "subscription") {
-            // Subscription users: redirect to dashboard
-            const dashboardRoute = getDashboardRoute(profile?.roles);
-            setTimeout(() => {
-              navigate(dashboardRoute, { replace: true });
-            }, 2000);
-          } else if (pricingModel === "percentage") {
-            // Percentage users: redirect to dashboard (tier features are already active)
-            const dashboardRoute = getDashboardRoute(profile?.roles);
-            setTimeout(() => {
-              navigate(dashboardRoute, { replace: true });
-            }, 2000);
-          } else {
-            // Default: redirect to dashboard
-            const dashboardRoute = getDashboardRoute(profile?.roles);
-            setTimeout(() => {
-              navigate(dashboardRoute, { replace: true });
-            }, 2000);
-          }
+          // Use updated profile for accurate dashboard route
+          const rolesToUse = updatedProfile?.roles || profile?.roles;
+          const dashboardRoute = getDashboardRoute(rolesToUse);
+          
+          setTimeout(() => {
+            navigate(dashboardRoute, { replace: true });
+          }, 2000);
         } else if (paymentStatus === "failed") {
           setPaymentStatus("failed");
         } else {
@@ -152,9 +141,17 @@ export default function PaymentSuccess() {
                 </p>
               </div>
             )}
-            <Button onClick={() => {
-              const dashboardRoute = getDashboardRoute(profile?.roles);
-              navigate(dashboardRoute);
+            <Button onClick={async () => {
+              // Get fresh profile for accurate route
+              try {
+                const updatedProfile = await api.getCurrentUser();
+                const dashboardRoute = getDashboardRoute(updatedProfile?.roles || profile?.roles);
+                navigate(dashboardRoute);
+              } catch (error) {
+                // Fallback to current profile
+                const dashboardRoute = getDashboardRoute(profile?.roles);
+                navigate(dashboardRoute);
+              }
             }} className="w-full">
               Go to Dashboard
             </Button>

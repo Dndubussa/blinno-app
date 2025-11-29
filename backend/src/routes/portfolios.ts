@@ -34,7 +34,17 @@ router.get('/', async (req, res) => {
 
     if (error) {
       console.error('Supabase query error:', error);
-      throw error;
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
+      return res.status(500).json({ 
+        error: 'Failed to get portfolios',
+        message: error.message,
+        details: process.env.NODE_ENV === 'development' ? error : undefined
+      });
     }
 
     res.json(data || []);
@@ -42,7 +52,8 @@ router.get('/', async (req, res) => {
     console.error('Get portfolios error:', error);
     res.status(500).json({ 
       error: 'Failed to get portfolios',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      message: error?.message || 'Unknown error',
+      details: process.env.NODE_ENV === 'development' ? error : undefined
     });
   }
 });

@@ -27,59 +27,48 @@ const Index = () => {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
   useEffect(() => {
-    // If user is authenticated and not loading, redirect to their dashboard
-    // But only if their email is verified
+    // If user is authenticated and not loading, redirect them away from homepage
+    // Authenticated users should not access the homepage
     if (!loading && user && profile) {
-      // Check if user's email is verified
-      const isEmailVerified = user.email_verified;
-      
-      if (isEmailVerified) {
-        // Check if user needs to select subscription/percentage model
-        const checkSubscription = async () => {
-          try {
-            // Check if user has a creator role that needs subscription
-            const creatorRoles = ['creator', 'freelancer', 'seller', 'lodging', 'restaurant', 'educator', 'journalist', 'artisan', 'employer', 'event_organizer', 'musician'];
-            const userRoles = Array.isArray(profile.roles) ? profile.roles : [profile.roles].filter(Boolean);
-            const isCreatorRole = userRoles.some((role: string) => creatorRoles.includes(role));
+      // Check if user needs to select subscription/percentage model
+      const checkSubscription = async () => {
+        try {
+          // Check if user has a creator role that needs subscription
+          const creatorRoles = ['creator', 'freelancer', 'seller', 'lodging', 'restaurant', 'educator', 'journalist', 'artisan', 'employer', 'event_organizer', 'musician'];
+          const userRoles = Array.isArray(profile.roles) ? profile.roles : [profile.roles].filter(Boolean);
+          const isCreatorRole = userRoles.some((role: string) => creatorRoles.includes(role));
+          
+          if (isCreatorRole) {
+            const { api } = await import("@/lib/api");
+            const subscription = await api.getMySubscription();
             
-            if (isCreatorRole) {
-              const { api } = await import("@/lib/api");
-              const subscription = await api.getMySubscription();
-              
-              // If subscription doesn't have an 'id' or 'created_at', it's a default and user needs to choose
-              if (!subscription?.id || !subscription?.created_at) {
-                navigate("/choose-subscription", { replace: true });
-                return;
-              }
-            }
-            
-            // User has subscription or doesn't need one, redirect to dashboard
-            const dashboardRoute = getDashboardRoute(profile.roles);
-            // Only redirect if we're on the homepage
-            if (window.location.pathname === '/') {
-              navigate(dashboardRoute, { replace: true });
-            }
-          } catch (error) {
-            console.error("Error checking subscription:", error);
-            // If error, assume they need to choose if they're a creator role
-            const creatorRoles = ['creator', 'freelancer', 'seller', 'lodging', 'restaurant', 'educator', 'journalist', 'artisan', 'employer', 'event_organizer', 'musician'];
-            const userRoles = Array.isArray(profile.roles) ? profile.roles : [profile.roles].filter(Boolean);
-            const isCreatorRole = userRoles.some((role: string) => creatorRoles.includes(role));
-            
-            if (isCreatorRole) {
+            // If subscription doesn't have an 'id' or 'created_at', it's a default and user needs to choose
+            if (!subscription?.id || !subscription?.created_at) {
               navigate("/choose-subscription", { replace: true });
-            } else {
-              const dashboardRoute = getDashboardRoute(profile.roles);
-              if (window.location.pathname === '/') {
-                navigate(dashboardRoute, { replace: true });
-              }
+              return;
             }
           }
-        };
-        
-        checkSubscription();
-      }
-      // If email is not verified, stay on the homepage and show a message
+          
+          // User has subscription or doesn't need one, redirect to dashboard
+          const dashboardRoute = getDashboardRoute(profile.roles);
+          navigate(dashboardRoute, { replace: true });
+        } catch (error) {
+          console.error("Error checking subscription:", error);
+          // If error, assume they need to choose if they're a creator role
+          const creatorRoles = ['creator', 'freelancer', 'seller', 'lodging', 'restaurant', 'educator', 'journalist', 'artisan', 'employer', 'event_organizer', 'musician'];
+          const userRoles = Array.isArray(profile.roles) ? profile.roles : [profile.roles].filter(Boolean);
+          const isCreatorRole = userRoles.some((role: string) => creatorRoles.includes(role));
+          
+          if (isCreatorRole) {
+            navigate("/choose-subscription", { replace: true });
+          } else {
+            const dashboardRoute = getDashboardRoute(profile.roles);
+            navigate(dashboardRoute, { replace: true });
+          }
+        }
+      };
+      
+      checkSubscription();
     }
   }, [user, profile, loading, navigate]);
 

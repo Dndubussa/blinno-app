@@ -349,6 +349,7 @@ router.post('/subscribe', authenticate, async (req: AuthRequest, res) => {
       }
 
       return res.json({ 
+        ...data, // Include all database fields (id, created_at, etc.)
         message: `Subscribed to ${tierInfo.name} tier (percentage-based)`, 
         tier: 'percentage', 
         percentage_tier: percentageTierKey,
@@ -393,6 +394,7 @@ router.post('/subscribe', authenticate, async (req: AuthRequest, res) => {
         }
 
         return res.json({ 
+          ...subscription, // Include all database fields (id, created_at, etc.)
           message: `Subscribed to ${tierInfo.name} tier`, 
           tier: subscriptionTierKey,
           pricing_model: 'subscription',
