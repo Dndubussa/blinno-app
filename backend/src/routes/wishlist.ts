@@ -251,9 +251,10 @@ router.get('/check/:itemType/:itemId', authenticate, async (req: AuthRequest, re
     }
 
     const inWishlist = (wishlistItems?.length || 0) > 0;
-    const wishlist = inWishlist ? {
-      id: wishlistItems[0].wishlists.id,
-      name: wishlistItems[0].wishlists.name,
+    const firstItem = wishlistItems && wishlistItems[0] ? wishlistItems[0] : null;
+    const wishlist = inWishlist && firstItem && (firstItem as any).wishlists ? {
+      id: (firstItem as any).wishlists.id,
+      name: (firstItem as any).wishlists.name,
     } : null;
 
     res.json({ inWishlist, wishlist });

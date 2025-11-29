@@ -16,16 +16,16 @@ const getDashboardStats = async (userId: string, role: string) => {
       ]);
       
       // Calculate revenue
-      let totalRevenue = 0;
+      let lodgingRevenue = 0;
       if (revenue.data) {
-        totalRevenue = revenue.data.reduce((sum: number, b: any) => sum + (parseFloat(b.total_amount) || 0), 0);
+        lodgingRevenue = revenue.data.reduce((sum: number, b: any) => sum + (parseFloat(b.total_amount) || 0), 0);
       }
 
       return {
         totalProperties: properties.count || 0,
         totalRooms: rooms.data?.length || 0,
         activeBookings: bookings.data?.length || 0,
-        totalRevenue,
+        totalRevenue: lodgingRevenue,
       };
 
     case 'restaurant':
@@ -50,9 +50,9 @@ const getDashboardStats = async (userId: string, role: string) => {
         supabase.from('course_enrollments').select('*, courses!inner(educator_id, price)').eq('courses.educator_id', userId).eq('payment_status', 'paid'),
       ]);
       
-      let totalRevenue = 0;
+      let educatorRevenue = 0;
       if (courseRevenue.data) {
-        totalRevenue = courseRevenue.data.reduce((sum: number, e: any) => sum + (parseFloat(e.courses?.price) || 0), 0);
+        educatorRevenue = courseRevenue.data.reduce((sum: number, e: any) => sum + (parseFloat(e.courses?.price) || 0), 0);
       }
 
       const uniqueStudents = new Set(enrollments.data?.map((e: any) => e.student_id) || []);
@@ -61,7 +61,7 @@ const getDashboardStats = async (userId: string, role: string) => {
         totalCourses: courses.count || 0,
         totalStudents: uniqueStudents.size,
         totalEnrollments: enrollments.data?.length || 0,
-        totalRevenue,
+        totalRevenue: educatorRevenue,
       };
 
     case 'journalist':

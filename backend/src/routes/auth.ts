@@ -43,8 +43,9 @@ router.post('/register', async (req, res) => {
 
     // Proactively check if user already exists
     try {
-      const { data: existingUser } = await supabaseAdmin.auth.admin.getUserByEmail(email.toLowerCase());
-      if (existingUser?.user) {
+      const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers();
+      const existingUser = authUsers?.users?.find((u: any) => u.email?.toLowerCase() === email.toLowerCase());
+      if (existingUser) {
         return res.status(400).json({ 
           error: 'An account with this email already exists. Please sign in instead.',
           userExists: true,
@@ -197,10 +198,11 @@ router.post('/login', async (req, res) => {
           authError.message.includes('Email not confirmed')) {
         // Check if user exists
         try {
-          const { data: existingUser } = await supabaseAdmin.auth.admin.getUserByEmail(email.toLowerCase());
-          if (existingUser?.user) {
+          const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers();
+          const existingUser = authUsers?.users?.find((u: any) => u.email?.toLowerCase() === email.toLowerCase());
+          if (existingUser) {
             // User exists - provide more specific error
-            if (!existingUser.user.email_confirmed_at) {
+            if (!existingUser.email_confirmed_at) {
               return res.status(401).json({ 
                 error: 'Email not verified. Please verify your email before signing in.',
                 requiresVerification: true

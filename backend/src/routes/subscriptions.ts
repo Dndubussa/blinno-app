@@ -394,7 +394,7 @@ router.post('/subscribe', authenticate, async (req: AuthRequest, res) => {
         }
 
         return res.json({ 
-          ...subscription, // Include all database fields (id, created_at, etc.)
+          ...data, // Include all database fields (id, created_at, etc.)
           message: `Subscribed to ${tierInfo.name} tier`, 
           tier: subscriptionTierKey,
           pricing_model: 'subscription',

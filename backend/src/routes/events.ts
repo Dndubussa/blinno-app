@@ -333,12 +333,14 @@ router.post('/registrations', async (req, res) => {
     }
 
     // Update event's current attendees count
-    await supabase.rpc('increment', {
-      table_name: 'organized_events',
-      column_name: 'current_attendees',
-      id: eventId,
-      increment_by: parseInt(numberOfTickets),
-    }).catch(async () => {
+    try {
+      await supabase.rpc('increment', {
+        table_name: 'organized_events',
+        column_name: 'current_attendees',
+        id: eventId,
+        increment_by: parseInt(numberOfTickets),
+      });
+    } catch (rpcError) {
       // Fallback if RPC doesn't exist
       const { data: currentEvent } = await supabase
         .from('organized_events')
