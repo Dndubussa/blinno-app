@@ -25,7 +25,9 @@ import {
   MapPin,
   CheckCircle2,
   XCircle,
-  Clock
+  Clock,
+  CreditCard,
+  Settings
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ImageUpload } from "@/components/ImageUpload";
@@ -55,6 +57,13 @@ export default function LodgingDashboard() {
   const [showAddProperty, setShowAddProperty] = useState(false);
   const [showAddRoom, setShowAddRoom] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<string>("");
+  // Financial state
+  const [balance, setBalance] = useState<any>(null);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [payouts, setPayouts] = useState<any[]>([]);
+  const [showRequestPayout, setShowRequestPayout] = useState(false);
+  // Profile state
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -73,7 +82,7 @@ export default function LodgingDashboard() {
     if (isLodging) {
       fetchData();
     }
-  }, [isLodging, user]);
+  }, [isLodging, user, currentSection]);
 
   const checkLodgingRole = async () => {
     if (!user || !profile) return;
@@ -110,27 +119,39 @@ export default function LodgingDashboard() {
     if (!user) return;
 
     try {
-      // Fetch properties, rooms, and bookings using API
-      const [propertiesData, roomsData, bookingsData, statsData] = await Promise.all([
-        api.getLodgingProperties(),
-        api.getLodgingRooms(),
-        api.getLodgingBookings(),
-        api.getDashboardStats('lodging'),
-      ]);
+      // Fetch data based on current section
+      if (currentSection === 'financial') {
+        // Fetch financial data
+        const [balanceData, transactionsData, payoutsData] = await Promise.all([
+          api.getBalance().catch(() => null),
+          api.getTransactions({ limit: 50 }).catch(() => ({ transactions: [] })),
+          api.getPayoutHistory().catch(() => [])
+        ]);
+        setBalance(balanceData);
+        setTransactions(transactionsData?.transactions || []);
+        setPayouts(payoutsData || []);
+      } else {
+        // Fetch properties, rooms, and bookings using API
+        const [propertiesData, roomsData, bookingsData, statsData] = await Promise.all([
+          api.getLodgingProperties(),
+          api.getLodgingRooms(),
+          api.getLodgingBookings(),
+          api.getDashboardStats('lodging'),
+        ]);
 
-      setProperties(propertiesData || []);
-      setRooms(roomsData || []);
-      setBookings(bookingsData || []);
-      
-      if (statsData) {
-        setStats({
-          totalProperties: statsData.totalProperties || 0,
-          totalRooms: statsData.totalRooms || 0,
-          activeBookings: statsData.activeBookings || 0,
-          totalRevenue: statsData.totalRevenue || 0,
-        });
+        setProperties(propertiesData || []);
+        setRooms(roomsData || []);
+        setBookings(bookingsData || []);
+        
+        if (statsData) {
+          setStats({
+            totalProperties: statsData.totalProperties || 0,
+            totalRooms: statsData.totalRooms || 0,
+            activeBookings: statsData.activeBookings || 0,
+            totalRevenue: statsData.totalRevenue || 0,
+          });
+        }
       }
-
     } catch (error: any) {
       console.error("Error fetching data:", error);
       toast({
@@ -288,6 +309,113 @@ export default function LodgingDashboard() {
       currency: "USD",
       minimumFractionDigits: 2,
     }).format(amount);
+  };
+
+  const handleRequestPayout = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!user || !balance) return;
+
+    const formData = new FormData(e.currentTarget);
+    const amount = parseFloat(formData.get("amount") as string);
+    const paymentMethod = formData.get("paymentMethod") as string;
+    const accountNumber = formData.get("accountNumber") as string;
+    const accountName = formData.get("accountName") as string;
+
+    const availableBalance = balance?.available_balance || 0;
+    
+    if (amount > availableBalance) {
+      toast({
+        title: t("common.error"),
+        description: `Insufficient funds. Available: ${formatCurrency(availableBalance)}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (amount < 25) {
+      toast({
+        title: t("common.error"),
+        description: "Minimum payout amount is USD 25",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const payoutMethods = await api.getPayoutMethods();
+      let methodId = payoutMethods.find((m: any) => 
+        (m.account_number === accountNumber || m.mobile_number === accountNumber)
+      )?.id;
+
+      if (!methodId) {
+        const methodType = paymentMethod === 'mobile_money' ? 'mobile_money' : 'bank_transfer';
+        const newMethod = await api.addPayoutMethod({
+          methodType: methodType,
+          accountNumber: paymentMethod === 'bank_transfer' ? accountNumber : undefined,
+          accountName: paymentMethod === 'bank_transfer' ? accountName : undefined,
+          mobileNumber: paymentMethod === 'mobile_money' ? accountNumber : undefined,
+        });
+        methodId = newMethod.id;
+      }
+
+      await api.createPayoutRequest({
+        methodId: methodId,
+        amount: amount,
+        currency: 'USD',
+        description: `Payout request for ${accountName}`
+      });
+
+      toast({
+        title: t("common.success"),
+        description: "Payout request submitted successfully"
+      });
+      setShowRequestPayout(false);
+      fetchData();
+    } catch (error: any) {
+      toast({
+        title: t("common.error"),
+        description: error.message || "Failed to submit payout request",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleUpdateProfile = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!user) return;
+
+    setIsUpdatingProfile(true);
+    const formData = new FormData(e.currentTarget);
+
+    const profileFormData = new FormData();
+    profileFormData.append('displayName', formData.get("displayName") as string);
+    profileFormData.append('bio', formData.get("bio") as string || '');
+    profileFormData.append('location', formData.get("location") as string || '');
+    profileFormData.append('phone', formData.get("phone") as string || '');
+    profileFormData.append('website', formData.get("website") as string || '');
+
+    try {
+      await api.updateProfile(profileFormData);
+      toast({ title: t("common.success"), description: "Profile updated successfully!" });
+      window.location.reload();
+    } catch (error: any) {
+      toast({ title: t("common.error"), description: error.message || "Failed to update profile", variant: "destructive" });
+    } finally {
+      setIsUpdatingProfile(false);
+    }
+  };
+
+  const handleAvatarUpload = async (url: string) => {
+    if (!user) return;
+    try {
+      const formData = new FormData();
+      formData.append('avatar_url', url);
+      await api.updateProfile(formData);
+      toast({ title: t("common.success"), description: "Avatar updated!" });
+      window.location.reload();
+    } catch (error: any) {
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
+    }
   };
 
   if (checkingRole) {
@@ -649,6 +777,330 @@ export default function LodgingDashboard() {
                   </Card>
                 )}
             </div>
+      )}
+
+      {/* Financial Section */}
+      {currentSection === 'financial' && (
+      <div>
+            <div className="space-y-6">
+              {/* Financial Summary Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Available Balance</CardTitle>
+                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {balance ? formatCurrency(balance.available_balance || 0) : formatCurrency(0)}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Ready for payout</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Pending Balance</CardTitle>
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {balance ? formatCurrency(balance.pending_balance || 0) : formatCurrency(0)}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Awaiting payment</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Earned</CardTitle>
+                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {balance ? formatCurrency(balance.total_earned || 0) : formatCurrency(stats.totalRevenue)}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Lifetime earnings</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Paid Out</CardTitle>
+                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {balance ? formatCurrency(balance.total_paid_out || 0) : formatCurrency(0)}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Withdrawn funds</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Payout Request Section */}
+              <Card>
+                <CardHeader>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <CardTitle>Payouts</CardTitle>
+                      <CardDescription>Request payouts of your earnings</CardDescription>
+                    </div>
+                    <Button 
+                      onClick={() => setShowRequestPayout(!showRequestPayout)}
+                      disabled={!balance || (balance.available_balance || 0) < 25}
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Request Payout
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {!balance || (balance.available_balance || 0) < 25 ? (
+                    <p className="text-center text-muted-foreground py-4">
+                      Minimum payout amount is USD 25. Available balance: {formatCurrency(balance?.available_balance || 0)}
+                    </p>
+                  ) : null}
+
+                  {showRequestPayout && (
+                    <Card className="mb-6">
+                      <CardHeader>
+                        <CardTitle>Request Payout</CardTitle>
+                        <CardDescription>
+                          Available: {formatCurrency(balance?.available_balance || 0)}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <form onSubmit={handleRequestPayout} className="space-y-4">
+                          <div>
+                            <Label htmlFor="payout-amount">Amount (USD)</Label>
+                            <Input
+                              id="payout-amount"
+                              name="amount"
+                              type="number"
+                              step="0.01"
+                              min="25"
+                              max={balance?.available_balance || 0}
+                              required
+                              placeholder="25"
+                            />
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Minimum: USD 25
+                            </p>
+                          </div>
+                          <div>
+                            <Label htmlFor="payment-method">Payment Method</Label>
+                            <Select name="paymentMethod" required>
+                              <SelectTrigger id="payment-method">
+                                <SelectValue placeholder="Select payment method" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="clickpesa">Click Pesa</SelectItem>
+                                <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                                <SelectItem value="mobile_money">Mobile Money</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label htmlFor="account-number">Account Number / Phone Number</Label>
+                            <Input
+                              id="account-number"
+                              name="accountNumber"
+                              type="text"
+                              required
+                              placeholder="e.g., 0712345678 or Account Number"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="account-name">Account Name</Label>
+                            <Input
+                              id="account-name"
+                              name="accountName"
+                              type="text"
+                              required
+                              placeholder="Account holder name"
+                            />
+                          </div>
+                          <Button type="submit" className="w-full">
+                            Submit Payout Request
+                          </Button>
+                        </form>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {payouts.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">No payout requests yet</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {payouts.map((payout) => (
+                        <div key={payout.id} className="flex items-center justify-between p-4 border rounded-lg">
+                          <div>
+                            <h3 className="font-semibold">Payout #{payout.id?.slice(0, 8) || 'N/A'}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              {payout.created_at ? new Date(payout.created_at).toLocaleDateString() : 'N/A'}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {payout.payment_method || 'N/A'}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-lg font-semibold">{formatCurrency(payout.amount || 0)}</div>
+                            <Badge variant={
+                              payout.status === 'completed' ? 'default' :
+                              payout.status === 'pending' ? 'secondary' :
+                              payout.status === 'processing' ? 'secondary' :
+                              'destructive'
+                            }>
+                              {payout.status || 'pending'}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Transaction History */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Transaction History</CardTitle>
+                  <CardDescription>Your recent financial transactions</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {transactions.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">No transactions yet</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {transactions.map((transaction) => (
+                        <div key={transaction.id} className="flex items-center justify-between p-4 border rounded-lg">
+                          <div>
+                            <h3 className="font-semibold">{transaction.description || transaction.type || 'Transaction'}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              {transaction.created_at ? new Date(transaction.created_at).toLocaleDateString() : 'N/A'}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <div className={`text-lg font-semibold ${
+                              transaction.amount > 0 ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                              {transaction.amount > 0 ? '+' : ''}{formatCurrency(Math.abs(transaction.amount || 0))}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Balance: {formatCurrency(transaction.balance_after || 0)}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+        </div>
+      )}
+
+      {/* Profile Section */}
+      {currentSection === 'profile' && (
+      <div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Profile Settings</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleUpdateProfile} className="space-y-6">
+                  <div>
+                    <Label htmlFor="avatar">Profile Avatar</Label>
+                    <div className="mt-2">
+                      {profile?.avatar_url ? (
+                        <div className="flex items-start gap-4 mb-4">
+                          <img
+                            src={profile.avatar_url}
+                            alt="Current avatar"
+                            className="w-24 h-24 rounded-full object-cover"
+                          />
+                        </div>
+                      ) : null}
+                      <ImageUpload
+                        bucket="avatars"
+                        userId={user?.id || ""}
+                        onUploadComplete={handleAvatarUpload}
+                        currentImage={profile?.avatar_url}
+                        maxSizeMB={2}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="displayName">Display Name</Label>
+                    <Input
+                      id="displayName"
+                      name="displayName"
+                      defaultValue={profile?.display_name}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="bio">Bio</Label>
+                    <Textarea
+                      id="bio"
+                      name="bio"
+                      defaultValue={profile?.bio || ""}
+                      placeholder="Tell us about your lodging business..."
+                      rows={4}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="location">Location</Label>
+                    <Input
+                      id="location"
+                      name="location"
+                      defaultValue={profile?.location || ""}
+                      placeholder="City, Country"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="phone">Phone</Label>
+                    <Input
+                      id="phone"
+                      name="phone"
+                      type="tel"
+                      defaultValue={profile?.phone || ""}
+                      placeholder="+1 (XXX) XXX-XXXX"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="website">Website</Label>
+                    <Input
+                      id="website"
+                      name="website"
+                      type="url"
+                      defaultValue={profile?.website || ""}
+                      placeholder="https://yourwebsite.com"
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Email</Label>
+                    <Input value={user?.email || ""} disabled />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Email cannot be changed
+                    </p>
+                  </div>
+
+                  <Button type="submit" disabled={isUpdatingProfile}>
+                    {isUpdatingProfile && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Save Changes
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+        </div>
       )}
     </DashboardLayout>
   );

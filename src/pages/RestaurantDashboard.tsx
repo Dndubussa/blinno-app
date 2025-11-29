@@ -25,10 +25,14 @@ import {
   XCircle,
   Clock,
   Phone,
-  Globe
+  Globe,
+  CreditCard,
+  Settings,
+  TrendingUp
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { ImageUpload } from "@/components/ImageUpload";
 
 export default function RestaurantDashboard() {
   const { user, profile } = useAuth();
